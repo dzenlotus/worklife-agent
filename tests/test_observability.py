@@ -155,4 +155,4 @@ async def test_observed_public_decorator_preserves_tool_schema_and_signature(tmp
         tool.model_dump() for tool in await plain.list_tools()
     ]
     assert normalize_result(await observed.call_tool("sample", {"name": "actual"}))["name"] == "actual"
-    assert len(await server.list_tools()) == 56
+    assert len(await server.list_tools()) == 65

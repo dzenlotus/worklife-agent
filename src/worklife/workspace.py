@@ -28,6 +28,15 @@ class Workspace:
         self.store = Store(home)
         self.home = self.store.home
         self.ledger = Ledger(self.store)
+        self._blockchain = None
+
+    @property
+    def blockchain(self):
+        if self._blockchain is None:
+            from .blockchain import Blockchain
+
+            self._blockchain = Blockchain(self.store, self.ledger)
+        return self._blockchain
 
     def save_profile(self, profile):
         facts = profile.get("facts", [])
@@ -448,17 +457,39 @@ class Workspace:
             raise ValueError("Invalid author or trust level")
         return self.store.put("trust", author, {"id": author, "level": level, "note": note})
 
-    def shared_records(self, kind=None, subject=None, include_blocked=False):
+    def shared_records(self, kind=None, subject=None, include_blocked=False, confirmed_only=False):
+        from .blockchain import CONFIRMATIONS
+
         trust = {t["id"]: t["level"] for t in self.store.list("trust")}
+        if subject is not None:
+            subject = employer_domain(subject)
+        events = self.blockchain.active_events() if confirmed_only else self.ledger.query(kind, subject)
+        path = self.blockchain.canonical_blocks()
+        confirmations = {
+            event["event_id"]: {
+                "status": "confirmed" if len(path) - block["height"] + 1 >= CONFIRMATIONS else "included",
+                "depth": len(path) - block["height"] + 1,
+                "block_id": block["block_id"],
+                "height": block["height"],
+                "scope": "protocol_validity",
+            }
+            for block in path
+            for event in block["events"]
+        }
         return [
             {
                 **e,
                 "trust": trust.get(
                     e["author"], "self" if e["author"] == self.ledger.author_id else "unknown"
                 ),
+                "confirmation": confirmations.get(
+                    e["event_id"], {"status": "pending", "depth": 0, "scope": "protocol_validity"}
+                ),
             }
-            for e in self.ledger.query(kind, subject)
-            if include_blocked or trust.get(e["author"]) != "blocked"
+            for e in events
+            if (include_blocked or trust.get(e["author"]) != "blocked")
+            and (kind is None or e["kind"] == kind)
+            and (subject is None or e["subject"] == subject)
         ]
 
     def backup(self, destination):
@@ -473,6 +504,15 @@ class Workspace:
         manifest = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in destination.iterdir()}
         (destination / "manifest.json").write_bytes(canonical(manifest))
         return str(destination)
+
+    def pending_records(self):
+        """The whole unconfirmed author chain, including corrections and retractions."""
+        records = []
+        for event in self.ledger.all():
+            confirmation = self.blockchain.confirmation(event["event_id"])
+            if confirmation["status"] != "confirmed":
+                records.append({**event, "confirmation": confirmation})
+        return records
 
     @classmethod
     def restore(cls, source, destination):

@@ -42,9 +42,11 @@ def snapshot(server):
         profile = None
     try:
         integrity = w.ledger.verify()
-        employers = w.shared_records()
+        employers = w.shared_records(confirmed_only=True)
+        chain = w.blockchain.status()
     except ValueError as exc:
         integrity, employers = {"valid": False, "events": None, "heads": {}, "error": str(exc)}, []
+        chain = {"valid": False, "error": str(exc)}
     peers = [
         {"name": name, **{k: v for k, v in config.items() if k in {"url", "author", "token_env"}}}
         for name, config in server.worklife_peers().items()
@@ -89,6 +91,8 @@ def snapshot(server):
             "peers": peers,
             "last_sync": w.store.list("sync"),
             "scope": "employers_only",
+            "chain": chain,
+            "proposals": len(w.pending_records()) if integrity["valid"] else None,
             "summary": server.worklife_network.status()
             if integrity["valid"]
             else {

@@ -6,8 +6,9 @@ from pathlib import Path
 
 from mcp.types import ToolAnnotations
 
-from .automatic_network import NetworkManager
 from .browser import Browser
+from .chain_network import BlockchainNetwork
+from .chain_tools import register_chain_tools
 from .connectors import Connectors
 from .federation import sync_peer
 from .observability import ObservedMCP
@@ -39,6 +40,10 @@ Signatures prove origin and chain continuity, not factual truth or one-person-on
 Never upload CVs, mail bodies, employee/recruiter names or contacts, secrets or personal identifiers to the public log.
 Signing author fingerprints are technical provenance, not worker profiles.
 Keep conflicting claims with provenance; use local trust decisions instead of a universal employer score.
+knowledge_publish creates a pending proposal. knowledge_query returns only chain-confirmed protocol-valid records.
+Use blockchain_challenge / blockchain_qualify to earn monthly rights and blockchain_mine with a bounded budget.
+Use blockchain_connect / blockchain_sync for open v2 peers; raw v1 GitHub data is never silently confirmed.
+Qualification and PoW do not prove autonomous identity or factual employer truth. Inspect evidence separately.
 """
 
 
@@ -46,7 +51,14 @@ def create_server(config):
     w = Workspace(config.home)
     connectors = Connectors(config.connectors, w)
     browser = Browser(w.home / "browser-profile", headed=os.getenv("WORKLIFE_HEADED") == "1")
-    network = NetworkManager(w, relay_url=config.network_relay_url, relay_repo=config.network_relay_repo)
+
+    def peers():
+        return {
+            **{p.get("name", p["url"]): p for p in config.peers},
+            **{p["id"]: p["config"] for p in w.store.list("peer")},
+        }
+
+    network = BlockchainNetwork(w, peers)
 
     async def network_loop():
         while True:
@@ -84,6 +96,7 @@ def create_server(config):
             "experiments": w.store.list("experiment"),
             "jobs": len(w.store.list("job")),
             "shared": w.ledger.verify(),
+            "chain": w.blockchain.status(),
             "identity": w.ledger.author_id,
             "connectors": connectors.capabilities(),
         }
@@ -302,12 +315,13 @@ def create_server(config):
 
     @mcp.tool(annotations=external)
     def knowledge_publish(kind: str, subject: str, payload: dict) -> dict:
-        """OPT-IN EMPLOYERS ONLY: kind=employer or retraction; subject=company domain (acme.example).
+        """Create a PENDING EMPLOYER PROPOSAL: kind=employer or retraction; subject=company domain.
         Required payload: claim,source_url,observed_at,evidence_kind(advertised/confirmed/observed/hypothesis).
         Optional name=company name; tags: organization,vacancy,salary,remote,schedule,hiring_process,test_task,
         communication,payment,working_conditions,benefits. Numeric metrics: response_days,hiring_stages,
         test_hours,weekly_hours,salary_delay_days. supersedes references your earlier employer record.
-        No worker profiles, candidate scores, CV results, employee names or contact details; review free text."""
+        No worker profiles, candidate scores, CV results, employee names or contact details; review free text.
+        This signature does not confirm a record or send it to the old public GitHub relay."""
         event = w.ledger.publish(kind, subject, payload)
         network.mark_dirty()
         return event
@@ -316,8 +330,13 @@ def create_server(config):
     def knowledge_query(
         kind: str | None = None, subject: str | None = None, include_blocked: bool = False
     ) -> list[dict]:
-        """Employer-only claims, keyed by company domain, with signatures, sources and local author trust."""
-        return w.shared_records(kind, subject, include_blocked)
+        """Only chain-confirmed employer records, with provenance and protocol confirmation, not truth proof."""
+        return w.shared_records(kind, subject, include_blocked, confirmed_only=True)
+
+    @mcp.tool(annotations=read)
+    def knowledge_proposals() -> list[dict]:
+        """Pending local/legacy observations; never treat an arbitrary self-signature as accepted knowledge."""
+        return w.pending_records()
 
     @mcp.tool(annotations=read)
     def knowledge_verify() -> dict:
@@ -341,16 +360,14 @@ def create_server(config):
         """Local trust: trusted,unknown,blocked. A signature or many identities alone never earns trust."""
         return w.trust_author(author, level, note)
 
-    def peers():
-        return {
-            **{p.get("name", p["url"]): p for p in config.peers},
-            **{p["id"]: p["config"] for p in w.store.list("peer")},
-        }
-
     @mcp.tool(annotations=write)
-    def peer_register(name: str, url: str, author: str, token_env: str = "WORKLIFE_NETWORK_TOKEN") -> dict:
-        """Register a replica with its independently verified identity fingerprint and environment token reference."""
-        value = {"url": url, "author": author, "token_env": token_env}
+    def peer_register(
+        name: str, url: str, author: str = "", token_env: str = "WORKLIFE_NETWORK_TOKEN", protocol: int = 2
+    ) -> dict:
+        """Connect an open v2 chain node. Explicit protocol=1 keeps the old token-protected proposal transport."""
+        if protocol not in {1, 2}:
+            raise ValueError("Unsupported peer protocol")
+        value = {"url": url, "author": author, "token_env": token_env, "protocol": protocol}
         w.store.put("peer", name, {"id": name, "config": value})
         return value
 
@@ -373,4 +390,5 @@ def create_server(config):
     from .tools_extra import register_tools
 
     register_tools(mcp, w, connectors, peers)
+    register_chain_tools(mcp, w, network)
     return mcp

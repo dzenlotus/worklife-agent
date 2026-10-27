@@ -145,6 +145,40 @@ def worker_cycle(config, w, operations=None, network=None):
     return packet
 
 
+def chain_command(workspace, args):
+    chain = workspace.blockchain
+    command = args.chain_command
+    if command == "status":
+        return chain.status()
+    if command == "challenge":
+        return chain.challenge()
+    if command == "qualify":
+        return chain.qualify(max_attempts=args.max_attempts)
+    if command == "mine":
+        if not 0 <= args.max_attempts <= 1_000_000:
+            raise ValueError("Mining budget must be between 0 and 1000000 attempts")
+        return chain.mine(max_attempts=args.max_attempts)
+    if command == "sync":
+        from .chain_network import sync_chain_peer
+
+        return sync_chain_peer(workspace, args.url)
+    if command == "export":
+        path = Path(args.destination).expanduser().resolve()
+        packet = {"network": chain.status()["network"], "blocks": chain.all()}
+        path.write_text(json.dumps(packet, ensure_ascii=False))
+        return {"path": str(path), "blocks": len(packet["blocks"])}
+    packet = json.loads(Path(args.source).read_text())
+    if not isinstance(packet, dict) or packet.get("network") != chain.status()["network"]:
+        raise ValueError("Unsupported chain export")
+    blocks = packet.get("blocks")
+    if not isinstance(blocks, list):
+        raise ValueError("Chain export requires blocks")
+    imported = 0
+    for offset in range(0, len(blocks), 100):
+        imported += chain.import_blocks(blocks[offset : offset + 100])["imported"]
+    return {"imported": imported, "chain": chain.status()}
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Worklife — personal job-search tools and signed shared knowledge"
@@ -152,6 +186,25 @@ def main():
     parser.add_argument("--config", help="TOML configuration path (or WORKLIFE_CONFIG)")
     parser.add_argument("--home", help="Private local state directory (or WORKLIFE_HOME)")
     sub = parser.add_subparsers(dest="command", required=True)
+    chain = sub.add_parser("chain", help="Tokenless blockchain with monthly qualification and bounded PoW")
+    chain_sub = chain.add_subparsers(dest="chain_command", required=True)
+    for name in ("status", "challenge"):
+        chain_sub.add_parser(name)
+    for name in ("qualify", "mine"):
+        operation = chain_sub.add_parser(name)
+        operation.add_argument("--max-attempts", type=int, default=100000)
+    chain_sync = chain_sub.add_parser("sync")
+    chain_sync.add_argument("url")
+    chain_export = chain_sub.add_parser("export")
+    chain_export.add_argument("destination")
+    chain_import = chain_sub.add_parser("import")
+    chain_import.add_argument("source")
+    simulation = chain_sub.add_parser("simulate", help="Real-hash fixed-budget identity-splitting experiment")
+    simulation.add_argument("--trials", type=int, default=1_500_000)
+    simulation.add_argument("--keys", default="1,1000,10000")
+    simulation.add_argument("--attacker-fraction", type=float, default=0.2)
+    simulation.add_argument("--seed", type=int, default=20261027)
+    simulation.add_argument("--repeats", type=int, default=1)
     for name in ("init", "identity", "mcp", "demo", "verify", "tools"):
         sub.add_parser(name)
     invoke = sub.add_parser("call", help="Call any MCP tool with a JSON object")
@@ -185,6 +238,19 @@ def main():
         config = load_config(args.config)
         if args.home:
             config.home = Path(args.home).expanduser().resolve()
+        if args.command == "chain" and args.chain_command == "simulate":
+            from .chain_simulation import simulate
+
+            emit(
+                simulate(
+                    keys=tuple(int(value) for value in args.keys.split(",")),
+                    total_trials=args.trials,
+                    attacker_fraction=args.attacker_fraction,
+                    seed=args.seed,
+                    repeats=args.repeats,
+                )
+            )
+            return
         if args.command == "restore":
             restored = Workspace.restore(args.source, args.destination)
             emit({"home": str(restored.home), "integrity": restored.ledger.verify()})
@@ -221,7 +287,9 @@ def main():
                 server.worklife_browser.close()
             return
         w = Workspace(config.home)
-        if args.command in {"identity", "init"}:
+        if args.command == "chain":
+            emit(chain_command(w, args))
+        elif args.command in {"identity", "init"}:
             emit({"home": str(w.home), "author": w.ledger.author_id, "public_key": w.ledger.public_key})
         elif args.command == "demo":
             emit(demo(w))
