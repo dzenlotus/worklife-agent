@@ -1,8 +1,6 @@
 import { useState } from "react";
 import {
-  Alert,
   Button,
-  Card,
   TextArea,
   Tabs,
   Link,
@@ -10,31 +8,24 @@ import {
   Typography,
   Select,
   ListBox,
-  Separator,
 } from "@heroui/react";
-import { typographyVariants } from "@heroui/styles";
-import { MarketSummary, RecommendationSummary } from "./AgencyViews.jsx";
-import { BlurFade, NumberTicker } from "./magicui.jsx";
+import { MarketSummary } from "./AgencyViews.jsx";
+import { employerName, jobStage, jobLocation, salaryLabel } from "./board.js";
 import {
   Panel,
-  PageHeading,
   Status,
   Empty,
   DataTable,
-  AgentButton,
   Timestamp,
   DetailAccordion,
   Icon,
-  IconCircle,
 } from "./ui.jsx";
 import {
   list,
-  statistics,
   filterJobs,
   safeURL,
   currentConditions,
   goalExcerpt,
-  employerGroups,
 } from "./model.js";
 import { monitorActivity } from "./activity.js";
 
@@ -376,287 +367,218 @@ export function ActivityLog({ state, onInspect, limit }) {
   );
 }
 
-function resultName(target, state) {
-  if (!target) return null;
-  const bucket = {
-    job: "jobs",
-    cv: "cvs",
-    action: "actions",
-    resource: "resources",
-    schedule_run: "schedule_runs",
-  }[target.kind];
-  const record = list(bucket ? state[bucket] : state.agent?.runs).find(
-    (entry) => entry.id === target.id,
-  );
+export const MarketPanel = MarketSummary;
+
+function OverviewJob({ job, recommendation, state, onInspect, onCommand, pending }) {
+  const stage = jobStage(job, state.applications);
   return (
-    record?.name ||
-    record?.title ||
-    record?.headline ||
-    record?.payload?.subject ||
-    null
+    <article className="overview-job-row">
+      <div className="overview-job-main">
+        <p className="overview-job-company">{employerName(job)}</p>
+        <button className="overview-job-title" onClick={() => onInspect("job", job.id)}>
+          {job.title || "Вакансия без названия"}
+        </button>
+        <p className="overview-job-meta">
+          <strong>{salaryLabel(job)}</strong><span>{jobLocation(job)}</span>
+        </p>
+        {recommendation ? (
+          <p className="overview-job-reason">
+            {recommendation.assessment_status === "stale" ? "Анализ нужно обновить. " : ""}
+            {list(recommendation.reasons)[0] || "Откройте вакансию, чтобы проверить условия."}
+          </p>
+        ) : null}
+      </div>
+      <div className="overview-job-actions">
+        <Status value={job.blocked ? "blocked" : stage} />
+        {stage === "new" && !job.blocked ? (
+          <Button
+            variant="outline"
+            size="sm"
+            isPending={pending === `save:${job.id}`}
+            onPress={() => onCommand("pipeline_update", { job_id: job.id, stage: "saved" }, `save:${job.id}`)}
+          >
+            Сохранить
+          </Button>
+        ) : (
+          <Button variant="ghost" size="sm" onPress={() => onInspect("job", job.id)}>
+            Открыть<Icon name="next" />
+          </Button>
+        )}
+      </div>
+    </article>
   );
 }
 
-function ActivityFeed({ entries, state, onInspect }) {
-  if (!entries.length)
-    return (
-      <Empty icon="activity" title="Журнал пока пуст">
-        Здесь появятся действия вашего агента, сохранённые результаты и ход
-        поручений.
-      </Empty>
-    );
+export default function Overview({ state, pending, onInspect, onCommand, onConditions }) {
+  const jobs = list(state.jobs),
+    cvs = list(state.cvs),
+    profile = state.profile || {},
+    conditions = currentConditions(profile),
+    roles = list(profile.target_roles),
+    needsProfile = !state.demo && (state.advisor?.status === "needs_profile" || (!cvs.length && !list(profile.facts).length)),
+    activity = monitorActivity(state).slice(0, 3),
+    activeRuntime = list(state.agent?.runs).find((run) => ["running", "queued", "cancelling"].includes(run.status)),
+    runningCall = list(state.tool_calls).find((call) => call.status === "running"),
+    activeJobs = jobs.filter((job) => !job.blocked && !["accepted", "rejected", "withdrawn"].includes(jobStage(job, state.applications))),
+    recommendations = list(state.advisor?.recommendations).filter((row) => row.decision !== "reject" && row.assessment_status !== "stale" && activeJobs.some((job) => job.id === row.job_id)),
+    featured = recommendations.length
+      ? recommendations.slice(0, 3).map((row) => jobs.find((job) => job.id === row.job_id))
+      : filterJobs({ ...state, jobs: activeJobs }).slice(0, 3),
+    nextActions = list(state.advisor?.next_actions).filter((action) => !["consider", "complete_profile"].includes(action.kind) && (!action.job_id || activeJobs.some((job) => job.id === action.job_id))).slice(0, 3),
+    next = list(state.schedules).filter((schedule) => schedule.enabled && schedule.next_run_at).sort((a, b) => a.next_run_at.localeCompare(b.next_run_at))[0],
+    marketCount = state.market?.report?.counts?.unique_jobs,
+    unread = list(state.messages).filter((message) => message.unread === true && message.direction === "inbound").length,
+    showWorkspace = jobs.length > 0 || !needsProfile;
+
   return (
-    <div className="activity-feed" role="list" aria-label="Последние действия">
-      {entries.map((entry) => {
-        const name = resultName(entry.target, state),
-          icon =
-            {
-              job: "search",
-              cv: "cv",
-              resource: "resources",
-              action: "activity",
-              schedule_run: "schedules",
-            }[entry.target?.kind] ||
-            (entry.tool?.includes("search")
-              ? "discover"
-              : entry.tool?.startsWith("job_")
-                ? "search"
-                : entry.tool?.startsWith("cv_")
-                  ? "cv"
-                  : entry.tool?.includes("employer")
-                    ? "employers"
-                    : "activity");
-        return (
-          <BlurFade key={entry.id} className="activity-row" role="listitem">
-            <time className="activity-time">
-              {new Date(entry.at)
-                .toLocaleString("ru-RU", {
-                  day: "numeric",
-                  month: "short",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-                .replace(" г.", "")}
-            </time>
-            <IconCircle name={icon} />
-            <div className="activity-copy">
-              <h3>{entry.summary || entry.tool || "Действие агента"}</h3>
-              {entry.description || entry.detail ? (
-                <p>{entry.description || entry.detail}</p>
-              ) : name ? (
-                <p>{name}</p>
-              ) : null}
-              {entry.error ? <p>{entry.error}</p> : null}
-            </div>
-            <div className="activity-actions">
-              {entry.status ? <Status value={entry.status} /> : null}
-              {entry.source === "mcp" ? (
-                <Button
-                  variant="outline"
-                  onPress={() => onInspect("tool_call", entry.id)}
-                >
-                  Подробнее
-                  <Icon name="next" />
-                </Button>
-              ) : entry.target ? (
-                <Button
-                  variant="outline"
-                  onPress={() => onInspect(entry.target.kind, entry.target.id)}
-                >
-                  Подробнее
-                  <Icon name="next" />
-                </Button>
-              ) : null}
-            </div>
-          </BlurFade>
-        );
-      })}
-    </div>
-  );
-}
-export const MarketPanel = MarketSummary;
-export default function Overview({
-  state,
-  pending,
-  onInspect,
-  onCommand,
-  onConditions,
-}) {
-  const activity = monitorActivity(state),
-    calls = list(state.tool_calls),
-    running = calls.filter((c) => c.status === "running");
-  const schedules = list(state.schedules),
-    next = schedules
-      .filter((s) => s.enabled)
-      .sort((a, b) =>
-        (a.next_run_at || "").localeCompare(b.next_run_at || ""),
-      )[0];
-  const saved = [
-    ["search", "Сохранённые вакансии", list(state.jobs).length],
-    ["employers", "Компании", employerGroups(state.employers).length],
-    ["resources", "Источники", list(state.resources).length],
-  ];
-  const activeRuntime = list(state.agent?.runs).find((run) =>
-    ["running", "queued", "cancelling"].includes(run.status),
-  );
-  const needsProfile = !state.demo && state.advisor?.status === "needs_profile";
-  return (
-    <>
-      <PageHeading
-        title="Обзор"
-        description="Активность агента, результаты и контекст рынка"
-      >
-        {state.demo ? (
-          <span className="demo-badge">Концепт · демоданные</span>
-        ) : running.length ? (
-          <Status value="running">В работе: {running.length}</Status>
+    <div className="overview-home">
+      <header className="overview-header">
+        <div>
+          <h1>Поиск работы</h1>
+          {roles.length ? <p className="overview-intro">{roles.join(" · ")}</p> : null}
+        </div>
+        {state.demo ? <span className="demo-badge">Демонстрационные данные</span> : !needsProfile ? (
+          <Button variant="outline" size="sm" onPress={onConditions}>
+            <Icon name="settings" />Условия поиска
+          </Button>
         ) : null}
-      </PageHeading>
-      {activeRuntime ? (
-        <Alert>
-          <Alert.Content>
-            <Alert.Title>Встроенный исполнитель работает</Alert.Title>
-            <Alert.Description>
-              {goalExcerpt(activeRuntime.goal)}
-            </Alert.Description>
-            <div className="inline-actions">
-              <Button
-                variant="outline"
-                onPress={() => onInspect("run", activeRuntime.id)}
-              >
-                Журнал
-              </Button>
-              <Button
-                variant="danger-soft"
-                isPending={pending === "cancel:" + activeRuntime.id}
-                onPress={() =>
-                  onCommand(
-                    "agent_cancel",
-                    { run_id: activeRuntime.id },
-                    "cancel:" + activeRuntime.id,
-                  )
-                }
-              >
-                Остановить
-              </Button>
+      </header>
+
+      {needsProfile ? (
+        <section className="overview-start" aria-labelledby="overview-start-title">
+          <div className="overview-section-heading">
+            <h2 id="overview-start-title">С чего начнём?</h2>
+          </div>
+          <div className="overview-start-step">
+            <span className="overview-step-icon" data-tone="cv"><Icon name="cv" /></span>
+            <div>
+              <h3>{cvs.length ? "Резюме добавлено" : "Опыт и навыки"}</h3>
+              <p>{cvs.length ? cvs[0].name || cvs[0].headline || "Ваш опыт сохранён" : "Подойдёт резюме в PDF, DOCX или текстовом файле."}</p>
             </div>
-          </Alert.Content>
-        </Alert>
-      ) : null}
-      <div className="overview-grid">
-        <section
-          aria-label="Активность агента"
-          className={needsProfile ? "overview-onboarding-column" : undefined}
-        >
-          {needsProfile ? (
-            <Panel title="Ваш следующий шаг">
-              <RecommendationSummary
-                state={state}
-                onInspect={onInspect}
-                onConditions={onConditions}
-              />
-            </Panel>
-          ) : null}
-          <Panel
-            title="Последняя активность"
-            className="activity-panel"
-            action={
-              <Button
-                variant="outline"
-                size="sm"
-                onPress={() => onInspect("activity")}
-              >
-                <Icon name="list" />
-                Весь журнал<span className="down-chevron">⌄</span>
-              </Button>
-            }
-          >
-            <ActivityFeed
-              entries={activity.slice(0, 6)}
-              state={state}
-              onInspect={onInspect}
-            />
-          </Panel>
+            <Button variant={cvs.length ? "outline" : "primary"} size="sm" onPress={() => { location.hash = "cv"; }}>
+              {cvs.length ? "Открыть" : "Загрузить резюме"}<Icon name="next" />
+            </Button>
+          </div>
+          <div className="overview-start-step">
+            <span className="overview-step-icon" data-tone="settings"><Icon name="settings" /></span>
+            <div>
+              <h3>{conditions.length || roles.length ? "Условия сохранены" : "Желаемая работа"}</h3>
+              <p>{[...roles, ...conditions].slice(0, 2).join(" · ") || "Роль, доход и формат работы."}</p>
+            </div>
+            <Button variant="outline" size="sm" onPress={onConditions}>
+              {conditions.length || roles.length ? "Изменить" : "Указать условия"}
+            </Button>
+          </div>
+          <p className="overview-context-note">
+            Можно начать с разговора об этом с вашим агентом.
+          </p>
         </section>
-        <aside className="overview-summary" aria-label="Сводка">
-          <MarketSummary state={state} />
-          <Panel title="Результаты" className="results-panel">
-            <div className="result-list">
-              {saved.map(([page, title, count]) => (
-                <a key={page} href={"#" + page}>
-                  <Icon name={page} />
-                  <span>{title}</span>
-                  <strong>
-                    <NumberTicker value={count} />
-                  </strong>
-                  <Icon name="next" />
-                </a>
-              ))}
-            </div>
-          </Panel>
-          <Panel
-            className="next-panel"
-            title={
-              <span className="heading-with-icon">
-                <Icon name="schedules" />
-                Следующий запуск
-              </span>
-            }
-          >
-            <div className="next-run">
-              <IconCircle name="cv" />
-              <div>
-                <p>
-                  {next
-                    ? next.name
-                    : schedules.length
-                      ? "Расписание на паузе"
-                      : "Запусков пока нет"}
-                </p>
-                <p className="muted">
-                  {next ? (
-                    <Timestamp value={next.next_run_at} />
-                  ) : schedules.length ? (
-                    `Поручений на паузе: ${schedules.length}`
-                  ) : (
-                    "Попросите агента настроить."
-                  )}
-                </p>
-              </div>
-              <button
-                className="more-button"
-                aria-label="Открыть расписание"
-                onClick={() => {
-                  location.hash = "schedules";
-                }}
-              >
-                ⋮
-              </button>
-            </div>
-          </Panel>
-        </aside>
-      </div>
-      {!state.demo && !needsProfile ? (
-        <Panel title="Рекомендации и следующие шаги">
-          <RecommendationSummary
-            state={state}
-            onInspect={onInspect}
-            onConditions={onConditions}
-          />
-          {list(state.advisor?.next_actions).length ? (
-            <ul className="evidence-list">
-              {state.advisor.next_actions.slice(0, 4).map((action, index) => (
-                <li key={index}>
-                  {action.title}
-                  {action.reason ? (
-                    <span className="muted"> — {action.reason}</span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </Panel>
       ) : null}
-    </>
+
+      {activeRuntime || runningCall ? (
+        <section className="overview-running" aria-label="Текущая работа агента">
+          <Status value={activeRuntime?.status || "running"} />
+          <p>{activeRuntime ? goalExcerpt(activeRuntime.goal) : runningCall.summary || "Агент выполняет поручение"}</p>
+          <Button variant="ghost" size="sm" onPress={() => onInspect(activeRuntime ? "run" : "tool_call", activeRuntime?.id || runningCall.id)}>Журнал</Button>
+          {activeRuntime ? (
+            <Button variant="danger-soft" size="sm" isPending={pending === `cancel:${activeRuntime.id}`} onPress={() => onCommand("agent_cancel", { run_id: activeRuntime.id }, `cancel:${activeRuntime.id}`)}>Остановить</Button>
+          ) : null}
+        </section>
+      ) : null}
+
+      {showWorkspace ? (
+        <div className="overview-layout">
+          <div className="overview-main-column">
+            <section className="overview-opportunities" aria-labelledby="overview-jobs-title">
+              <div className="overview-section-heading">
+                <h2 id="overview-jobs-title">{recommendations.length ? "Стоит рассмотреть" : "Ваши вакансии"}</h2>
+                {jobs.length ? <Link href="#search">Все вакансии<Icon name="next" /></Link> : null}
+              </div>
+              {featured.length ? (
+                <div className="overview-job-list">
+                  {featured.map((job) => (
+                    <OverviewJob key={job.id} {...{ job, state, onInspect, onCommand, pending }} recommendation={recommendations.find((row) => row.job_id === job.id)} />
+                  ))}
+                </div>
+              ) : (
+                <div className="overview-empty-search">
+                  <Icon name="discover" />
+                  <h3>{jobs.length ? "Активных вакансий пока нет" : "Готовы к поиску"}</h3>
+                  <p>{jobs.length ? "Завершённые вакансии сохранены в истории." : "Обсудите с агентом, какую работу ищете. Найденные предложения будут собраны здесь."}</p>
+                  {jobs.length ? <Link href="#search">Открыть историю<Icon name="next" /></Link> : <Button variant="outline" size="sm" onPress={onConditions}>Проверить условия</Button>}
+                </div>
+              )}
+            </section>
+
+            {nextActions.length || unread ? (
+              <section className="overview-attention" aria-labelledby="overview-attention-title">
+                <div className="overview-section-heading"><h2 id="overview-attention-title">Следующие шаги</h2></div>
+                <div className="overview-attention-list">
+                  {unread ? (
+                    <a className="overview-attention-item" href="#search/inbox">
+                      <Icon name="activity" /><span><strong>Входящие сообщения · {unread}</strong><span>Откройте переписку по вакансиям</span></span><Icon name="next" />
+                    </a>
+                  ) : null}
+                  {nextActions.map((action, index) => {
+                    const job = jobs.find((item) => item.id === action.job_id);
+                    return (
+                      <button className="overview-attention-item" key={`${action.kind}-${action.job_id || index}`} onClick={() => job ? onInspect("job", job.id) : onConditions()}>
+                        <Icon name={action.kind === "prepare_interview" ? "schedules" : "cv"} />
+                        <span><strong>{action.title}</strong>{job ? <span>{job.title} · {employerName(job)}</span> : null}{action.reason ? <span>{action.reason}</span> : null}</span>
+                        <Icon name="next" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : null}
+          </div>
+
+          <aside className="overview-side-column" aria-label="Контекст поиска">
+            <section className="overview-brief">
+              <div className="overview-section-heading"><h2>Условия поиска</h2><Button variant="ghost" size="sm" onPress={onConditions}>Изменить</Button></div>
+              <div className="overview-brief-list">
+                {conditions.length ? conditions.slice(0, 3).map((condition, index) => <p className="overview-brief-row" key={index}><Icon name="check" /><span>{condition}</span></p>) : <p className="overview-context-note">Уточните доход и формат работы, чтобы агент мог учитывать их при поиске.</p>}
+                {list(profile.target_locations).length ? <p className="overview-brief-row"><Icon name="employers" /><span>{profile.target_locations.join(" · ")}</span></p> : null}
+                <a className="overview-brief-row" href="#cv"><Icon name="cv" /><span>{cvs.length ? cvs[0].name || cvs[0].headline || "Моё резюме" : "Добавить резюме"}</span><Icon name="next" /></a>
+              </div>
+            </section>
+            {marketCount > 0 ? (
+              <section className="overview-brief overview-market-brief">
+                <div className="overview-section-heading"><h2>Контекст рынка</h2></div>
+                <p>В сохранённой выборке: <strong>{marketCount}</strong> вакансий.</p>
+                <Link href="#market">Сравнить условия<Icon name="next" /></Link>
+              </section>
+            ) : null}
+            {next ? (
+              <section className="overview-brief overview-schedule-brief">
+                <div className="overview-section-heading"><h2>По расписанию</h2></div>
+                <p><strong>{next.name}</strong></p>
+                <p className="overview-context-note"><Timestamp value={next.next_run_at} /></p>
+                <Link href="#schedules">Открыть расписание<Icon name="next" /></Link>
+              </section>
+            ) : null}
+          </aside>
+        </div>
+      ) : null}
+
+      {activity.length ? (
+        <section className="overview-journal" aria-labelledby="overview-journal-title">
+          <div className="overview-section-heading">
+            <h2 id="overview-journal-title">Последние действия</h2>
+            <Button variant="ghost" size="sm" onPress={() => onInspect("activity")}>Весь журнал<Icon name="next" /></Button>
+          </div>
+          {activity.map((entry) => (
+            <div className="overview-journal-row" key={entry.id}>
+              <Timestamp value={entry.at} />
+              <span>{entry.error || entry.summary || "Действие агента"}</span>
+              {entry.source === "mcp" || entry.target ? (
+                <Button variant="ghost" size="sm" aria-label={`Открыть действие: ${entry.summary || "действие агента"}`} onPress={() => entry.source === "mcp" ? onInspect("tool_call", entry.id) : onInspect(entry.target.kind, entry.target.id)}><Icon name="next" /></Button>
+              ) : null}
+            </div>
+          ))}
+        </section>
+      ) : null}
+    </div>
   );
 }

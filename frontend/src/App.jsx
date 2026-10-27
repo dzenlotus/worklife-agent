@@ -14,6 +14,7 @@ import {
   Accordion,
 } from "@heroui/react";
 import { typographyVariants } from "@heroui/styles";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import {
   SearchBoard,
   MarketBoard,
@@ -72,10 +73,10 @@ const navigation = [
   ["tactics", "Тактики"],
   ["settings", "Настройки"],
 ];
-const pageFromHash = () =>
-  navigation.some(([key]) => key === location.hash.slice(1))
-    ? location.hash.slice(1)
-    : "overview";
+const pageFromHash = () => {
+  const page = location.hash.slice(1).split("/")[0];
+  return navigation.some(([key]) => key === page) ? page : "overview";
+};
 const stringify = (value) => JSON.stringify(value, null, 2);
 function errorText(error) {
   const text = error?.message || String(error);
@@ -478,55 +479,71 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
     </>
   );
 }
-function Navigation({ page, onNavigate }) {
-  const primary = ["overview", "market", "search", "employers", "schedules"];
-  const [materialsOpen, setMaterialsOpen] = useState(
-    [
-      "cv",
-      "strengths",
-      "repositories",
-      "resources",
-      "accounts",
-      "experiments",
-      "tactics",
-    ].includes(page),
-  );
-  const item = (key) => (
-    <button
-      key={key}
-      className={`nav-item ${page === key ? "selected" : ""}`}
-      data-page={key}
-      aria-current={page === key ? "page" : undefined}
-      onClick={() => onNavigate(key)}
-    >
-      <Icon name={key} />
-      <span>{navigation.find(([id]) => id === key)[1]}</span>
-    </button>
-  );
+function Navigation({
+  page,
+  onNavigate,
+  collapsed = false,
+  onExpand,
+  id = "sidebar-navigation",
+}) {
+  const primary = ["overview", "search", "market", "cv", "employers", "schedules"];
+  const secondary = [
+    "strengths",
+    "repositories",
+    "resources",
+    "accounts",
+    "experiments",
+    "tactics",
+  ];
+  const [materialsOpen, setMaterialsOpen] = useState(secondary.includes(page));
+  const item = (key) => {
+    const title = navigation.find(([id]) => id === key)[1];
+    return (
+      <button
+        key={key}
+        className={`nav-item ${page === key ? "selected" : ""}`}
+        data-page={key}
+        title={collapsed ? title : undefined}
+        aria-label={title}
+        aria-current={page === key ? "page" : undefined}
+        onClick={() => onNavigate(key)}
+      >
+        <span className={`nav-icon nav-icon-${key}`} aria-hidden="true">
+          <Icon name={key} />
+        </span>
+        <span className="nav-label">{title}</span>
+      </button>
+    );
+  };
   return (
-    <nav className="navigation" aria-label="Разделы Worklife">
+    <nav id={id} className="navigation" aria-label="Разделы Worklife">
       <div className="nav-primary">{primary.map(item)}</div>
       <div className="nav-secondary">
         <button
-          className={`nav-item ${materialsOpen ? "expanded" : ""}`}
-          aria-expanded={materialsOpen}
-          onClick={() => setMaterialsOpen(!materialsOpen)}
+          className={`nav-item ${materialsOpen && !collapsed ? "expanded" : ""} ${secondary.includes(page) ? "selected" : ""}`}
+          data-page="more"
+          title={collapsed ? "Ещё разделы" : undefined}
+          aria-label="Ещё разделы"
+          aria-expanded={materialsOpen && !collapsed}
+          aria-controls={`${id}-more`}
+          onClick={() => {
+            if (collapsed) {
+              onExpand?.();
+              setMaterialsOpen(true);
+            } else {
+              setMaterialsOpen(!materialsOpen);
+            }
+          }}
         >
-          <Icon name="materials" />
-          <span>Материалы</span>
-          <Icon name="next" />
+          <span className="nav-icon nav-icon-more" aria-hidden="true">
+            <Icon name="materials" />
+          </span>
+          <span className="nav-label">Ещё</span>
+          <Icon name="next" className="nav-chevron" />
         </button>
-        {materialsOpen ? (
-          <div className="nav-submenu">
-            {[
-              "cv",
-              "strengths",
-              "repositories",
-              "resources",
-              "accounts",
-              "experiments",
-              "tactics",
-            ].map(item)}
+        {materialsOpen && !collapsed ? (
+          <div id={`${id}-more`} className="nav-submenu">
+            {secondary.map(item)}
           </div>
         ) : null}
         {item("settings")}
@@ -540,6 +557,15 @@ export default function App() {
     [error, setError] = useState(""),
     [page, setPage] = useState(pageFromHash),
     [navigationOpen, setNavigationOpen] = useState(false),
+    [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+      try {
+        return (
+          window.localStorage.getItem("worklife.sidebar.collapsed") === "true"
+        );
+      } catch {
+        return false;
+      }
+    }),
     [draft, setDraft] = useState({ author: "", goal: "", context: null }),
     [modelDialog, setModelDialog] = useState(null),
     [pending, setPending] = useState(""),
@@ -566,6 +592,12 @@ export default function App() {
     setDraft((previous) => ({ ...previous, goal: value }));
   const setContext = (value) =>
     setDraft((previous) => ({ ...previous, context: value }));
+  const setSidebar = (collapsed) => {
+    setSidebarCollapsed(collapsed);
+    try {
+      window.localStorage.setItem("worklife.sidebar.collapsed", String(collapsed));
+    } catch {}
+  };
   useEffect(() => {
     if (!author) return;
     let saved = { goal: "", context: null };
@@ -608,6 +640,9 @@ export default function App() {
     const change = () => {
       setPage(pageFromHash());
       setNavigationOpen(false);
+      if (location.hash !== "#search/inbox") {
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      }
     };
     window.addEventListener("hashchange", change);
     return () => window.removeEventListener("hashchange", change);
@@ -868,23 +903,50 @@ export default function App() {
       >
         К содержанию
       </Link>
-      <div className="worklife-app">
-        <aside className="app-sidebar">
-          <div className="brand">
-            <a href="#overview" aria-label="Worklife — обзор">
-              Worklife
-            </a>
-            <p>MCP-инструменты</p>
+      <div className={`worklife-app${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
+        <aside
+          className={`app-sidebar${sidebarCollapsed ? " is-collapsed" : ""}`}
+          aria-label="Боковая панель"
+        >
+          <div className="sidebar-top">
+            <div className="brand">
+              <a href="#overview" aria-label="Worklife — обзор" title="Worklife — обзор">
+                <span className="brand-mark" aria-hidden="true">w</span>
+                <span className="brand-name">Worklife</span>
+              </a>
+            </div>
+            <Button
+              className="sidebar-toggle"
+              variant="ghost"
+              size="sm"
+              isIconOnly
+              aria-label={sidebarCollapsed ? "Развернуть боковую панель" : "Свернуть боковую панель"}
+              title={sidebarCollapsed ? "Развернуть боковую панель" : "Свернуть боковую панель"}
+              aria-expanded={!sidebarCollapsed}
+              aria-controls="sidebar-navigation"
+              onPress={() => setSidebar(!sidebarCollapsed)}
+            >
+              {sidebarCollapsed ? (
+                <PanelLeftOpen aria-hidden="true" />
+              ) : (
+                <PanelLeftClose aria-hidden="true" />
+              )}
+            </Button>
           </div>
           <div className="navigation-scroll">
-            <Navigation page={page} onNavigate={navigate} />
+            <Navigation
+              page={page}
+              onNavigate={navigate}
+              collapsed={sidebarCollapsed}
+              onExpand={() => setSidebar(false)}
+            />
           </div>
           <div className="sidebar-footer">
-            <button aria-label="Обновить данные" onClick={refresh}>
+            <button aria-label="Обновить данные" title="Обновить данные" onClick={refresh}>
               <Icon name="refresh" />
-              Обновить
+              <span className="sidebar-footer-label">Обновить</span>
             </button>
-            <time aria-label="Время обновления данных">
+            <time className="sidebar-updated" aria-label="Время обновления данных">
               {error
                 ? "Нет связи"
                 : updated
@@ -929,12 +991,7 @@ export default function App() {
             {!state ? (
               <>
                 <PageHeading
-                  title={title}
-                  description={
-                    page === "overview"
-                      ? "Активность агента, результаты и контекст рынка"
-                      : undefined
-                  }
+                  title={page === "overview" ? "Поиск работы" : title}
                 />
                 {error ? (
                   <>
@@ -978,7 +1035,7 @@ export default function App() {
           onClose={() => setNavigationOpen(false)}
           title="Разделы Worklife"
         >
-          <Navigation state={state} page={page} onNavigate={navigate} />
+          <Navigation id="dialog-navigation" page={page} onNavigate={navigate} />
         </Dialog>
         {state ? (
           <>
@@ -1009,29 +1066,109 @@ export default function App() {
                 className="flex flex-col gap-3"
                 onSubmit={saveConditions}
               >
-                <p>
-                  Опишите обычными словами, какую работу вы ищете: доход,
-                  график, место и то, что для вас важно.
-                </p>
-                <label className="form-field">
-                  Желаемые должности
-                  <Input
-                    value={targetRoles}
-                    onChange={(event) => setTargetRoles(event.target.value)}
-                    placeholder="Например, frontend-разработчик, руководитель команды"
-                  />
-                </label>
-                <div className="detail-grid">
-                  <label className="form-field">
-                    Города и страны
-                    <Input
-                      value={targetLocations}
-                      onChange={(event) =>
-                        setTargetLocations(event.target.value)
+                <fieldset className="form-section">
+                  <legend>Работа</legend>
+                  <div className="form-section-fields">
+                    <label className="form-field">
+                      Желаемые должности
+                      <Input
+                        value={targetRoles}
+                        onChange={(event) => setTargetRoles(event.target.value)}
+                        placeholder="Например, frontend-разработчик, руководитель команды"
+                      />
+                    </label>
+                    <div className="detail-grid">
+                      <label className="form-field">
+                        Города и страны
+                        <Input
+                          value={targetLocations}
+                          onChange={(event) =>
+                            setTargetLocations(event.target.value)
+                          }
+                          placeholder="Москва, удалённо"
+                        />
+                      </label>
+                      <SelectField
+                        label="Удалённая работа"
+                        value={
+                          searchRules.remote === true
+                            ? "yes"
+                            : searchRules.remote === false
+                              ? "no"
+                              : ""
+                        }
+                        onChange={(value) =>
+                          setRule("remote", value === "" ? "" : value === "yes")
+                        }
+                      >
+                        <option value="">Не задано</option>
+                        <option value="yes">Обязательна</option>
+                        <option value="no">Не обязательна</option>
+                      </SelectField>
+                    </div>
+                  </div>
+                </fieldset>
+                <fieldset className="form-section">
+                  <legend>Оплата</legend>
+                  <div className="form-section-fields detail-grid">
+                    <label className="form-field">
+                      Доход от
+                      <Input
+                        type="number"
+                        min="0"
+                        value={searchRules.min_salary ?? ""}
+                        onChange={(e) =>
+                          setRule(
+                            "min_salary",
+                            e.target.value === "" ? "" : Number(e.target.value),
+                          )
+                        }
+                        placeholder="Не задан"
+                      />
+                    </label>
+                    <SelectField
+                      label="Валюта"
+                      value={searchRules.currency || ""}
+                      onChange={(value) => setRule("currency", value)}
+                    >
+                      <option value="">Не задана</option>
+                      {["RUB", "USD", "EUR"].map((value) => (
+                        <option key={value}>{value}</option>
+                      ))}
+                    </SelectField>
+                    <SelectField
+                      label="Период оплаты"
+                      value={searchRules.salary_period || ""}
+                      onChange={(value) => setRule("salary_period", value)}
+                    >
+                      <option value="">Не задан</option>
+                      <option value="month">Месяц</option>
+                      <option value="year">Год</option>
+                      <option value="hour">Час</option>
+                    </SelectField>
+                    <SelectField
+                      label="Налоги"
+                      value={
+                        searchRules.salary_gross === true
+                          ? "gross"
+                          : searchRules.salary_gross === false
+                            ? "net"
+                            : ""
                       }
-                      placeholder="Москва, удалённо"
-                    />
-                  </label>
+                      onChange={(value) =>
+                        setRule(
+                          "salary_gross",
+                          value === "" ? "" : value === "gross",
+                        )
+                      }
+                    >
+                      <option value="">Не задано</option>
+                      <option value="gross">До налогов</option>
+                      <option value="net">На руки</option>
+                    </SelectField>
+                  </div>
+                </fieldset>
+                <DetailAccordion title="Дополнительно" id="conditions-additional">
                   <label className="form-field">
                     Языки работы
                     <Input
@@ -1040,117 +1177,41 @@ export default function App() {
                       placeholder="Русский, английский"
                     />
                   </label>
-                </div>
-                <div className="detail-grid">
-                  <label className="form-field">
-                    Доход от
-                    <Input
-                      type="number"
-                      min="0"
-                      value={searchRules.min_salary ?? ""}
-                      onChange={(e) =>
-                        setRule(
-                          "min_salary",
-                          e.target.value === "" ? "" : Number(e.target.value),
-                        )
-                      }
-                      placeholder="Не задан"
-                    />
-                  </label>
-                  <SelectField
-                    label="Валюта"
-                    value={searchRules.currency || ""}
-                    onChange={(value) => setRule("currency", value)}
-                  >
-                    <option value="">Не задана</option>
-                    {["RUB", "USD", "EUR"].map((value) => (
-                      <option key={value}>{value}</option>
-                    ))}
-                  </SelectField>
-                  <SelectField
-                    label="Период оплаты"
-                    value={searchRules.salary_period || ""}
-                    onChange={(value) => setRule("salary_period", value)}
-                  >
-                    <option value="">Не задан</option>
-                    <option value="month">Месяц</option>
-                    <option value="year">Год</option>
-                    <option value="hour">Час</option>
-                  </SelectField>
-                  <SelectField
-                    label="Налоги"
-                    value={
-                      searchRules.salary_gross === true
-                        ? "gross"
-                        : searchRules.salary_gross === false
-                          ? "net"
-                          : ""
-                    }
-                    onChange={(value) =>
-                      setRule(
-                        "salary_gross",
-                        value === "" ? "" : value === "gross",
-                      )
-                    }
-                  >
-                    <option value="">Не задано</option>
-                    <option value="gross">До налогов</option>
-                    <option value="net">На руки</option>
-                  </SelectField>
-                  <SelectField
-                    label="Удалённая работа"
-                    value={
-                      searchRules.remote === true
-                        ? "yes"
-                        : searchRules.remote === false
-                          ? "no"
-                          : ""
-                    }
-                    onChange={(value) =>
-                      setRule("remote", value === "" ? "" : value === "yes")
-                    }
-                  >
-                    <option value="">Не задано</option>
-                    <option value="yes">Обязательна</option>
-                    <option value="no">Не обязательна</option>
-                  </SelectField>
-                  <label className="form-field">
-                    Часов в неделю, не больше
-                    <Input
-                      type="number"
-                      min="0"
-                      value={searchRules.max_hours ?? ""}
-                      onChange={(e) =>
-                        setRule(
-                          "max_hours",
-                          e.target.value === "" ? "" : Number(e.target.value),
-                        )
-                      }
-                      placeholder="Не задано"
-                    />
-                  </label>
-                  <label className="form-field">
-                    Получить первый доход до
-                    <input
-                      className="native-input"
-                      type="date"
-                      value={incomeDeadline}
-                      onChange={(e) => setIncomeDeadline(e.target.value)}
-                    />
-                  </label>
-                </div>
-                <Label>Дополнительные условия</Label>
-                <TextArea
-                  aria-label="Условия поиска работы"
-                  rows={7}
-                  value={conditions}
-                  onChange={(event) => setConditions(event.target.value)}
-                  placeholder="Хочу работать удалённо, до 40 часов в неделю. Важно…"
-                />
-                <p>
-                  Агент учтёт эти условия в следующих поручениях. Факты опыта и
-                  готовые CV сохранятся.
-                </p>
+                  <div className="detail-grid">
+                    <label className="form-field">
+                      Часов в неделю, не больше
+                      <Input
+                        type="number"
+                        min="0"
+                        value={searchRules.max_hours ?? ""}
+                        onChange={(e) =>
+                          setRule(
+                            "max_hours",
+                            e.target.value === "" ? "" : Number(e.target.value),
+                          )
+                        }
+                        placeholder="Не задано"
+                      />
+                    </label>
+                    <label className="form-field">
+                      Получить первый доход до
+                      <input
+                        className="native-input"
+                        type="date"
+                        value={incomeDeadline}
+                        onChange={(e) => setIncomeDeadline(e.target.value)}
+                      />
+                    </label>
+                  </div>
+                  <Label>Дополнительные условия</Label>
+                  <TextArea
+                    aria-label="Условия поиска работы"
+                    rows={3}
+                    value={conditions}
+                    onChange={(event) => setConditions(event.target.value)}
+                    placeholder="Хочу работать удалённо, до 40 часов в неделю. Важно…"
+                  />
+                </DetailAccordion>
               </form>
             </Dialog>
             <Dialog

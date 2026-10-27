@@ -96,15 +96,15 @@ export function Status({ value, children }) {
           ? "active"
           : "neutral";
   return (
-    <span className={`status status-${kind}`}>
+    <span className={`status status-${kind}`} data-status={value}>
       {kind === "success" ? <Icon name="check" /> : null}
       {children || label(value)}
     </span>
   );
 }
-export function Panel({ title, action, children, className = "" }) {
+export function Panel({ title, action, children, className = "", id, tabIndex }) {
   return (
-    <section className={`panel ${className}`}>
+    <section id={id} tabIndex={tabIndex} className={`panel ${className}`}>
       {title || action ? (
         <header className="panel-heading">
           {title ? <h2>{title}</h2> : null}
@@ -128,13 +128,13 @@ export function PageHeading({ title, description, children }) {
 }
 export function Empty({ title, children, action, icon }) {
   return (
-    <div className="flex max-w-2xl flex-col gap-4 py-6">
-      {icon ? <IconCircle name={icon} /> : null}
-      <div className="flex flex-col gap-2">
-        <Typography.Paragraph weight="medium">{title}</Typography.Paragraph>
-        <Typography.Paragraph color="muted">{children}</Typography.Paragraph>
+    <div className="empty-state">
+      {icon ? <span className="empty-mark"><Icon name={icon} /></span> : null}
+      <div>
+        <h3 className="empty-title">{title}</h3>
+        <div className="empty-description">{children}</div>
       </div>
-      {action}
+      {action ? <div className="empty-action">{action}</div> : null}
     </div>
   );
 }

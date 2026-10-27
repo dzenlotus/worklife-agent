@@ -3,11 +3,10 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 
 const source = new URL("./", import.meta.url);
-test("reference layout and official Magic UI remain explicit and motion accessible", () => {
+test("official Magic UI keeps reduced-motion support", () => {
   const css = readFileSync(new URL("styles.css", source), "utf8"),
     magic = readFileSync(new URL("magicui.jsx", source), "utf8");
   assert.match(css, /prefers-reduced-motion/);
-  assert.match(css, /grid-template-columns:\s*minmax\(0,\s*1fr\) 378px/);
   assert.match(magic, /magicui.design/);
   assert.match(magic, /useSpring/);
   assert.match(magic, /useInView/);

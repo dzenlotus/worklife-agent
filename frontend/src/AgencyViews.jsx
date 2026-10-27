@@ -102,17 +102,24 @@ function JobCard({
       (r) => r.job_id === job.id,
     );
   return (
-    <BlurFade className={`job-card ${compact ? "compact" : ""}`}>
+    <BlurFade className={`job-card ${compact ? "compact" : "job-row"}`}>
       <div className="job-card-main">
-        <div className="job-company">
-          <Icon name="employers" />
-          {employerName(job)}
-        </div>
+        {compact ? (
+          <div className="job-company">
+            <Icon name="employers" />
+            {employerName(job)}
+          </div>
+        ) : null}
         <button className="job-title" onClick={() => onInspect("job", job.id)}>
           {job.title || "Вакансия без названия"}
         </button>
-        <p className="job-salary">{salaryLabel(job)}</p>
+        {compact ? <p className="job-salary">{salaryLabel(job)}</p> : null}
         <p className="muted job-meta">
+          {!compact ? (
+            <>
+              <span className="job-company">{employerName(job)}</span> ·{" "}
+            </>
+          ) : null}
           {jobLocation(job)} · {jobSource(job)}
         </p>
         {recommendation ? (
@@ -125,15 +132,18 @@ function JobCard({
         ) : null}
       </div>
       <div className="job-actions">
+        {!compact ? <p className="job-salary">{salaryLabel(job)}</p> : null}
         <Status value={job.blocked ? "blocked" : stage} />
-        <Button
-          variant="outline"
-          size="sm"
-          onPress={() => onInspect("job", job.id)}
-        >
-          Подробнее
-          <Icon name="next" />
-        </Button>
+        {compact ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onPress={() => onInspect("job", job.id)}
+          >
+            Подробнее
+            <Icon name="next" />
+          </Button>
+        ) : null}
         {stage === "new" ? (
           <Button
             variant="secondary"
@@ -161,6 +171,17 @@ export function SearchBoard({
   pending,
   onConditions,
 }) {
+  useEffect(() => {
+    const focusInbox = () => {
+      if (location.hash !== "#search/inbox") return;
+      const inbox = document.getElementById("search-inbox");
+      inbox?.scrollIntoView({ block: "start" });
+      inbox?.focus({ preventScroll: true });
+    };
+    focusInbox();
+    window.addEventListener("hashchange", focusInbox);
+    return () => window.removeEventListener("hashchange", focusInbox);
+  }, []);
   const [filters, setFilters] = useState({
       query: "",
       stage: "",
@@ -176,42 +197,38 @@ export function SearchBoard({
   return (
     <>
       <PageHeading
-        title="Вакансии"
-        description="Ваш личный поиск: предложения, соответствие опыту и следующие шаги."
+        title={
+          <span>
+            Вакансии <span className="count-badge">{all.length}</span>
+          </span>
+        }
       >
-        <Button variant="outline" onPress={onConditions}>
+        <div className="view-switch" role="group" aria-label="Вид вакансий">
+          {[
+            ["list", "Список"],
+            ["board", "Воронка"],
+          ].map(([key, title]) => (
+            <Button
+              key={key}
+              variant="ghost"
+              size="sm"
+              aria-pressed={mode === key}
+              onPress={() => setMode(key)}
+            >
+              {title}
+            </Button>
+          ))}
+        </div>
+        <Button variant="outline" size="sm" onPress={onConditions}>
           <Icon name="settings" />
           Условия поиска
         </Button>
       </PageHeading>
-      <Panel
-        className="board-panel"
-        title={
-          <span>
-            Предложения <span className="count-badge">{all.length}</span>
-          </span>
-        }
-        action={
-          <div className="view-switch" role="group" aria-label="Вид вакансий">
-            {[
-              ["list", "Список"],
-              ["board", "Воронка"],
-            ].map(([key, title]) => (
-              <button
-                key={key}
-                aria-pressed={mode === key}
-                onClick={() => setMode(key)}
-              >
-                {title}
-              </button>
-            ))}
-          </div>
-        }
-      >
-        <div className="job-filters">
+      <Panel className="board-panel search-results-panel">
+        <div className="job-filters search-toolbar">
           <div className="search-input">
             <Icon name="discover" />
-            <input
+            <Input
               aria-label="Поиск вакансий"
               placeholder="Должность, компания или навык"
               value={filters.query}
@@ -259,8 +276,8 @@ export function SearchBoard({
             Удалённо
           </label>
         </div>
-        <p className="muted small">
-          {jobs.length} из {all.length} предложений
+        <p className="muted small board-result-count" aria-live="polite">
+          Показано {jobs.length} из {all.length}
         </p>
         {!jobs.length ? (
           <Empty
@@ -280,7 +297,7 @@ export function SearchBoard({
           >
             {all.length
               ? "Измените поисковый запрос или фильтры."
-              : "Добавьте резюме в Материалы и поручите своему MCP-агенту найти вакансии. Здесь появятся реальные предложения с источниками и объяснением, почему они подходят."}
+              : "Передайте агенту резюме и расскажите, какую работу ищете. Подобранные вакансии появятся здесь."}
           </Empty>
         ) : mode === "list" ? (
           <div className="job-list">
@@ -330,13 +347,6 @@ export function SearchBoard({
           </div>
         )}
       </Panel>
-      <Panel title="Совет агента">
-        <RecommendationSummary
-          state={state}
-          onInspect={onInspect}
-          onConditions={onConditions}
-        />
-      </Panel>
       <ConversationPanel {...{ state, onInspect, onCommand, pending }} />
     </>
   );
@@ -358,6 +368,9 @@ function ConversationPanel({ state, onInspect, onCommand, pending }) {
   };
   return (
     <Panel
+      className="conversation-panel"
+      id="search-inbox"
+      tabIndex={-1}
       title={
         <span>
           Переписка <span className="count-badge">{messages.length}</span>
@@ -380,76 +393,67 @@ function ConversationPanel({ state, onInspect, onCommand, pending }) {
         </div>
       }
     >
-      <p className="muted small">
-        Сохранённые сообщения из подключённых каналов. Связь с вакансией
-        указывается явно. Привязка и отметка прочтения сохраняются здесь,
-        в вашей личной базе.
-      </p>
       {visible.length ? (
-        <div className="event-list">
+        <div className="event-list conversation-list">
           {visible.map((message) => {
             const job = list(state.jobs).find(
               (entry) => entry.id === message.job_id,
             );
             return (
-              <article className="event-row" key={message.id}>
-                <Icon name="activity" />
-                <div>
-                  <div className="inline-actions">
+              <article className="event-row conversation-row" key={message.id}>
+                <div className="conversation-main">
+                  <div className="conversation-heading">
                     {job ? (
                       <button onClick={() => onInspect("job", job.id)}>
                         {job.title}
                       </button>
                     ) : (
-                      <span className="status">
+                      <span className="conversation-subject">
                         {message.job_id
                           ? "Вакансия недоступна"
-                          : "Не привязано"}
+                          : "Без вакансии"}
                       </span>
                     )}
-                    <span className="muted small">
-                      {{
-                        inbound: "Входящее",
-                        outbound: "Исходящее",
-                        unknown: "Направление не указано",
-                      }[message.direction] || "Направление не указано"}{" "}
-                      ·{" "}
-                      {{
-                        email: "Почта",
-                        telegram: "Telegram",
-                        phone: "Телефон",
-                      }[message.channel] ||
-                        message.channel ||
-                        "Канал не указан"}
+                    <span className="muted small conversation-time">
+                      <Timestamp
+                        value={message.occurred_at || message.created_at}
+                      />
                     </span>
                   </div>
-                  <p className="preserve-lines">
+                  <p className="preserve-lines conversation-preview">
                     {message.text || "Текст сообщения отсутствует"}
                   </p>
-                  <p className="muted small">
-                    <Timestamp
-                      value={message.occurred_at || message.created_at}
-                    />
+                  <p className="muted small conversation-meta">
+                    {{
+                      email: "Почта",
+                      telegram: "Telegram",
+                      phone: "Телефон",
+                    }[message.channel] || message.channel || "Канал не указан"}
+                    {message.direction === "inbound"
+                      ? " · Входящее"
+                      : message.direction === "outbound"
+                        ? " · Исходящее"
+                        : ""}
                     {message.unread
                       ? " · Не прочитано"
                       : message.read_at
                         ? " · Прочитано"
-                        : message.status === "observed"
-                          ? " · Сохранено из источника"
-                          : null}
+                        : null}
                   </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onPress={() => {
-                      setSelected(message);
-                      setJobId("");
-                      setRead("");
-                    }}
-                  >
-                    Управлять сообщением
-                  </Button>
                 </div>
+                <Button
+                  className="conversation-open"
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Управлять сообщением"
+                  onPress={() => {
+                    setSelected(message);
+                    setJobId("");
+                    setRead("");
+                  }}
+                >
+                  Открыть <Icon name="next" />
+                </Button>
               </article>
             );
           })}
@@ -463,8 +467,8 @@ function ConversationPanel({ state, onInspect, onCommand, pending }) {
           }
         >
           {scope === "unassigned"
-            ? "У всех сохранённых сообщений есть подтверждённая связь с вакансией."
-            : "Попросите своего MCP-агента проверить подключённую почту или другой канал. Полученные сообщения появятся здесь, даже если вакансия ещё неизвестна."}
+            ? "Все сообщения связаны с вакансиями."
+            : "Ответы компаний и другая переписка появятся здесь после проверки агентом."}
         </Empty>
       )}
       <Dialog
@@ -485,8 +489,7 @@ function ConversationPanel({ state, onInspect, onCommand, pending }) {
             }}
           >
             <p className="small preserve-lines break-words">
-              {(selected.text || "Текст сообщения отсутствует").slice(0, 280)}
-              {selected.text?.length > 280 ? "…" : ""}
+              {selected.text || "Текст сообщения отсутствует"}
             </p>
             <p className="muted small">
               {selected.job_id
@@ -1102,42 +1105,65 @@ export function MarketBoard({ state, onCommand, pending }) {
           </>
         )}
       </Panel>
-      <Panel title="Основания и ограничения">
-        <p>
-          {typeof current?.methodology === "string"
-            ? current.methodology
-            : "Статистика описывает только собранные вакансии и не представляет весь рынок труда."}
+      <Panel>
+        <p className="muted small">
+          Статистика описывает сохранённую выборку, а не весь рынок.
+          {groups.some((entry) => entry.small_sample)
+            ? " В группах меньше 5 вакансий показатели неустойчивы."
+            : ""}
+          {groups.some(
+            (entry) =>
+              entry.gross == null ||
+              !entry.currency ||
+              entry.currency === "unknown" ||
+              !["month", "year", "hour", "week", "day"].includes(entry.period),
+          )
+            ? " Есть предложения с неизвестной валютой, периодом оплаты или налогами."
+            : ""}
+          {current?.counts?.invalid_salary
+            ? ` Некорректные зарплаты исключены: ${current.counts.invalid_salary}.`
+            : ""}
+          {snapshot && current && !current.snapshot
+            ? " Запрошенный снимок не найден."
+            : ""}
         </p>
-        <EvidenceList
-          items={current?.limitations}
-          empty="Для оценки покрытия ещё нужны вакансии и источники."
-        />
-        {current?.snapshot ? (
-          <p className="muted">
-            Снимок: {current.snapshot.name} ·{" "}
-            <Timestamp value={current.snapshot.created_at} /> · Дубликаты:{" "}
-            {current.counts?.duplicates || 0} · Некорректные зарплаты:{" "}
-            {current.counts?.invalid_salary || 0}
+        <DetailAccordion title="Как рассчитана статистика">
+          <p>
+            {typeof current?.methodology === "string"
+              ? current.methodology
+              : "Статистика описывает только собранные вакансии и не представляет весь рынок труда."}
           </p>
-        ) : null}
-        <div className="source-links">
-          {list(current?.snapshot?.sources).map((s, i) => (
-            <span key={i}>
-              {safeURL(typeof s === "string" ? s : s.url) ? (
-                <a
-                  href={typeof s === "string" ? s : s.url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {typeof s === "string" ? s : s.name || s.url}
-                  <Icon name="external" />
-                </a>
-              ) : (
-                itemText(s)
-              )}
-            </span>
-          ))}
-        </div>
+          <EvidenceList
+            items={current?.limitations}
+            empty="Для оценки покрытия ещё нужны вакансии и источники."
+          />
+          {current?.snapshot ? (
+            <p className="muted">
+              Снимок: {current.snapshot.name} ·{" "}
+              <Timestamp value={current.snapshot.created_at} /> · Дубликаты:{" "}
+              {current.counts?.duplicates || 0} · Некорректные зарплаты:{" "}
+              {current.counts?.invalid_salary || 0}
+            </p>
+          ) : null}
+          <div className="source-links">
+            {list(current?.snapshot?.sources).map((s, i) => (
+              <span key={i}>
+                {safeURL(typeof s === "string" ? s : s.url) ? (
+                  <a
+                    href={typeof s === "string" ? s : s.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {typeof s === "string" ? s : s.name || s.url}
+                    <Icon name="external" />
+                  </a>
+                ) : (
+                  itemText(s)
+                )}
+              </span>
+            ))}
+          </div>
+        </DetailAccordion>
       </Panel>
       <Panel title="Сохранить текущую выборку">
         <form className="snapshot-form" onSubmit={create}>
@@ -1212,7 +1238,7 @@ export function ResumeBoard({
             : "Не удалось импортировать резюме.",
         );
       await onRefresh();
-      setMessage("Резюме импортировано. Оно доступно в вариантах ниже.");
+      setMessage("Резюме импортировано. Оно доступно в списке вариантов.");
       setFile(null);
       setName("");
       e.target.reset();
@@ -1222,72 +1248,52 @@ export function ResumeBoard({
       setPending(false);
     }
   }
+  const importForm = (
+    <form onSubmit={upload} className="resume-form">
+      <label className="file-drop">
+        <Icon name="cv" />
+        <strong>{file ? file.name : "Выберите файл резюме"}</strong>
+        <span>TXT, Markdown, PDF или DOCX</span>
+        <input
+          type="file"
+          accept=".txt,.md,.pdf,.docx"
+          aria-label="Файл резюме"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          required
+        />
+      </label>
+      <label className="form-field">
+        Название версии
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Основное резюме"
+        />
+      </label>
+      <SelectField label="Язык" value={language} onChange={setLanguage}>
+        <option value="ru">Русский</option>
+        <option value="en">English</option>
+        <option value="it">Italiano</option>
+        <option value="fr">Français</option>
+      </SelectField>
+      <Button
+        type="submit"
+        variant="secondary"
+        isPending={pending}
+        isDisabled={!file}
+      >
+        Импортировать
+      </Button>
+    </form>
+  );
   return (
     <>
       <PageHeading
         title="Резюме"
         description="Ваш опыт, подтверждённые факты и версии под разные вакансии."
       />
-      <div className="two-column">
-        <Panel title="Импортировать резюме">
-          <form onSubmit={upload} className="resume-form">
-            <label className="file-drop">
-              <Icon name="cv" />
-              <strong>{file ? file.name : "Выберите файл резюме"}</strong>
-              <span>TXT, Markdown, PDF или DOCX</span>
-              <input
-                type="file"
-                accept=".txt,.md,.pdf,.docx"
-                aria-label="Файл резюме"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                required
-              />
-            </label>
-            <label className="form-field">
-              Название версии
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Основное резюме"
-              />
-            </label>
-            <SelectField label="Язык" value={language} onChange={setLanguage}>
-              <option value="ru">Русский</option>
-              <option value="en">English</option>
-              <option value="it">Italiano</option>
-              <option value="fr">Français</option>
-            </SelectField>
-            <Button
-              type="submit"
-              variant="secondary"
-              isPending={pending}
-              isDisabled={!file}
-            >
-              Импортировать
-            </Button>
-            {message ? <p role="status">{message}</p> : null}
-          </form>
-        </Panel>
-        <Panel title="Как агент использует резюме">
-          <div className="setup-note">
-            <Icon name="strengths" />
-            <div>
-              <h3>Сначала факты, затем рекомендации</h3>
-              <p className="muted">
-                Резюме сохраняется в вашей личной базе. Агент сравнивает опыт с
-                требованиями вакансии, показывает совпадения и вопросы для
-                уточнения.
-              </p>
-              <p className="muted">
-                Новые версии и адаптации появятся здесь после вашего поручения
-                агенту.
-              </p>
-            </div>
-          </div>
-        </Panel>
-      </div>
-      <Panel title={`Варианты резюме · ${list(state.cvs).length}`}>
-        {list(state.cvs).length ? (
+      {list(state.cvs).length ? (
+        <Panel title={`Варианты резюме · ${list(state.cvs).length}`}>
           <div className="cv-list">
             {state.cvs.map((cv) => (
               <BlurFade key={cv.id} className="cv-row">
@@ -1320,13 +1326,14 @@ export function ResumeBoard({
               </BlurFade>
             ))}
           </div>
-        ) : (
-          <Empty title="Резюме ещё не добавлено">
-            Импортируйте готовый файл или попросите агента составить резюме из
-            фактов вашего опыта.
-          </Empty>
-        )}
-      </Panel>
+        </Panel>
+      ) : null}
+      {list(state.cvs).length ? (
+        <DetailAccordion title="Добавить резюме">{importForm}</DetailAccordion>
+      ) : (
+        <Panel title="Добавить резюме">{importForm}</Panel>
+      )}
+      {message ? <p role="status">{message}</p> : null}
     </>
   );
 }

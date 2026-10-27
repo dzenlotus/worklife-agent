@@ -1,35 +1,43 @@
 # Worklife interface
 
-The approved reference is `design/references/2026-10-27-market-concepts/01-quiet-graphite.png` (1586 × 992). The interface follows its measured geometry, restrained graphite surfaces, pale blue accent and ordinary line icons. Reference typography, spacing, corner radii and component styles are implemented explicitly in `src/styles.css`; the former color-only stock-component guard has been replaced because it prevented matching the approved reference.
+The application is a compact, dark desktop workspace for a personal job-search agent. Its first screen is organized around the person's next useful decision and real vacancies. Execution history is a secondary utility. The external MCP agent remains the main conversation surface; the UI does not pretend to send messages to a connected chat.
 
-At reference width, the sidebar is 246 px; main content starts at x=272; the journal is 898 px wide; the right rail starts at x=1190 and is 378 px wide. The title starts at (284,24) with 40 px / 48 px type. The three rail panels are Market, Results and Next run. Navigation and refresh remain stable during the initial API load. Main headings and page shells never animate into place. Only while a real profile needs setup, the existing onboarding panel leads the left column and the activity panel uses content height, keeping résumé and conditions actions visible on the first screen. The right rail and populated/reference layout stay in their original positions.
+## Visual system
 
-Typography uses self-hosted Golos Text, with normal 400, medium 500 and semibold 600 weights, on both the application and public site. It was chosen for its native Cyrillic text forms and screen-reading proportions. The original Google Fonts WOFF2 files, full SIL OFL 1.1 license and source hashes are in `src/fonts/`; the license is also copied into both published asset directories. Cyrillic and Latin are preloaded. `font-display: optional` prevents a late font swap on a slow connection; the Arial fallback has an adjusted x-height and explicit ascent/descent. Titles retain the reference line boxes, body copy remains normal weight, and financial values, counts and timestamps use tabular figures. Optical letter spacing and clearer empty-column labels improve scanability without changing the reference panel geometry.
+The 212 px navigation column, neutral charcoal content pane and restrained separators establish a coherent desktop workspace inspired by Apple HIG and the publicly shown Codex interface. The sidebar can collapse to a 64 px rail on an explicit click; this local preference persists. It never opens on hover. Most sections are open, and vacancy and conversation records are rows rather than nested cards. An elevated surface is reserved for the initial setup and dialogs. Small colored route icons act as navigation landmarks; vacancy rows stay neutral.
 
-HeroUI supplies accessible controls, modals, tables and disclosures; Lucide supplies icons. The five primary destinations remain visible. Materials expands to reveal résumés, strengths, repositories, sources, accounts, experiments and tactics. Narrow screens use a modal navigation menu and stacked content.
+The application uses the native macOS system-font stack (`-apple-system`, `BlinkMacSystemFont`, `system-ui`) with the bundled Golos family as a fallback. SF fonts are not embedded or downloaded. Golos and its SIL OFL license remain bundled for the public site's typography and fallback use. Page titles use 28/36 px, section and vacancy titles 16/24 px, body 14/22 px and secondary text 12–13 px. Semantic theme variables are scoped to `html.dark:has(.worklife-app)`, including portal dialogs.
 
-## Actual functionality
+Navigation icon colors distinguish the core destinations: overview blue, vacancies cyan, market amber, CV purple, employers teal and schedule rose. Primary actions are blue. Funnel chips use consistently labeled tones for application, reply, interview, offer and outcome. Text labels always accompany status colors. Content stays opaque; modest material depth belongs to navigation, controls and dialogs. There are no decorative gradient headlines, blurred color blobs or equal feature-card grids.
 
-- Jobs: combined search, stage, location, source and remote filters; list and horizontally scrollable stage board; inspectable matching evidence and questions; CV comparison; saving a stage, note, next action and due date.
-- Market: immutable snapshots and separate salary groups by currency, period and tax basis, descriptive distributions, source basis and explicit limitations. No synthetic salary default is used.
-- Résumés: TXT, Markdown, PDF and DOCX upload through the local `/api/resume` endpoint, with variants and the existing document preview/download flow.
-- Schedule: existing recurring tasks, pause/resume and history, plus interviews and offers with local persistence through the tools API.
-- Overview: actual tool activity, market summary, local counts, the next scheduled task and grounded recommendations/setup prompts.
+HeroUI supplies controls, dialogs, tables and disclosures, and Lucide supplies 16–18 px line icons. Keyboard focus is visible. Sidebars, headers and navigation do not animate into place. Magic UI's source components remain available for small content transitions and numeric values; reduced motion is respected.
 
-The main intelligence remains the user's connected MCP agent. The embedded model runtime remains optional in Settings. Empty profile, CV and vacancy states remain honest. Synthetic reference-comparison data exists only in an explicitly labeled artifact fixture; it is never written to the real workspace database.
+## Information hierarchy
 
-## Magic UI provenance and motion
+- **Start:** one short panel for the person's experience and job conditions, with real résumé navigation and the existing conditions dialog. No empty market metrics or fabricated activity.
+- **Overview:** up to three real opportunities with their reasons and stage, followed by incoming messages and next actions. Actual conditions, résumé, market coverage and the next scheduled job form a secondary column when there is enough room. The latest three operations appear in a compact journal below.
+- **Vacancies:** one title, list/board switch, composable filters, and flat rows. A recommendation stays with its vacancy rather than being repeated in a second list. The title opens the full evidence, CV and pipeline dialog.
+- **Messages:** short previews with time, channel and local read state; the existing dialog retains the complete body and explicit vacancy/read controls. No guessed linkage or provider write is introduced by the redesign.
+- **Market and résumés:** results and current documents take precedence over procedural explanation. Detailed methodology remains available through disclosure; important uncertainty remains visible.
+- **Other sections:** the same typography, controls, open sections and dialog geometry apply to employers, schedules, experiments, resources and settings.
 
-`src/magicui.jsx` adapts the free MIT-licensed Blur Fade, Number Ticker and Border Beam components from the official `https://magicui.design/r/<name>.json` registry. Registry sources for Blur Fade and Number Ticker were fetched and inspected on 2026-10-27. The existing `motion` dependency supplies the official motion primitives. This is component-source integration, not a renamed local UI library, and uses no paid components or API.
+At 900 px the full compact sidebar remains visible; secondary overview content moves below results. Narrow devices retain the existing navigation dialog and larger input targets. Rows and dialogs wrap long Russian text and source references without horizontal page overflow.
 
-Local adaptations add Russian number formatting, an accessible final-value label and live `prefers-reduced-motion` support. Blur Fade is used for activity and vacancy records without translation of the application shell. Number Ticker displays real counts and reported medians. Border Beam remains available to the existing public site, but is not used in the quiet reference application panels. Reduced motion disables reveals and renders final numeric values immediately.
+## Data and behavior
 
-## Verification
+All displayed counts, salaries, messages and outcomes come from the local API. Empty states remain empty. Synthetic visual-check data lives only in the isolated acceptance workspace, never in the person's real profile or shared employer database. UI changes preserve the existing tools, persistence, original résumé downloads, filters, pipeline updates and explicit message controls.
 
-`npm test` includes meaningful filter/state and missing/one-sided salary checks. The frontend build verifies the local and public asset paths before synchronizing generated files. Browser evidence, screenshots at 1586 / 1440 / 1280 / 390, and measured rectangles are in `artifacts/agency-build/frontend/`. The initial-load frame probe in `artifacts/initial-load-20261027/` remains available. An exact raster equality claim is not made: font rasterization, photographic texture in the source image and standard icon paths remain distinguishable.
+Current visual evidence and functional checks are in `artifacts/design-reset/`. Screenshots, not unit-test counts, are used to assess composition. Functional checks separately cover routes, filters, dialogs and navigation. The earlier raster-reference measurements in `artifacts/agency-build/` describe the previous layout and are not the acceptance target of this design.
 
-## Public landing page
+## Public site
 
-The public `Site.jsx` entry has a separate, scoped `site.css`. The landing uses a coastal photograph across the full first viewport, followed by problem → emotion → solution, an interactive search example, a six-principle manifesto, shared employer knowledge and setup. This presentation is separate from the application's quiet graphite workspace design. Synthetic demo vacancies are explicitly labeled.
+`Site.jsx` and its scoped `site.css` have their own presentation and release work. This app redesign does not edit the landing page or its installation workflow.
 
-`site-magicui.jsx` adapts the official MIT-licensed Shimmer Button as a navigation link. The existing Blur Fade and Border Beam supply entrance and example-frame motion. All animations respect reduced motion. Backgrounds are generated project-local JPEGs; exact prompts and generation provenance are recorded in `src/site-assets/README.md`.
+## Reference rationale
+
+- [Apple Sidebars](https://developer.apple.com/design/human-interface-guidelines/sidebars): concise hierarchy, familiar symbols and an explicit hide/show control.
+- [Apple Color](https://developer.apple.com/design/human-interface-guidelines/color): consistent semantic color with text/glyph alternatives.
+- [Apple Materials](https://developer.apple.com/design/human-interface-guidelines/materials): separate navigation and content; avoid glass on every content card.
+- [Apple Typography](https://developer.apple.com/design/human-interface-guidelines/typography): use system text, a coherent hierarchy and legible weights.
+- [Codex public interface](https://openai.com/codex/): compact navigation and a distinct working pane. This is inspiration, not a claim of pixel identity with the installed app.
+- [Sitepeel's critique](https://sitepeel.dev/guides/check-if-website-looks-ai-generated/) and [Superdesign's critique](https://superdesign.dev/blog/why-ai-design-looks-generic) informed the removal of generic copy, arbitrary effects and repetitive card layouts. These are editorial observations about generic design, not a reliable detector of AI authorship. Good usability conventions are retained.
