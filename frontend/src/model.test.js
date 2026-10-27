@@ -57,6 +57,24 @@ test("employer list groups company observations without treating authors as orga
   assert.equal(groups[0].domain, "acme.example");
   assert.equal(groups[0].observations.length, 2);
 });
+test("untrusted company names fall back to domains without changing signed records", () => {
+  for (const name of [{ x: 1 }, ["Company"], 42, true, null, ""]) {
+    const records = ["first.example", "second.example"].map((subject) => ({
+      kind: "employer",
+      subject,
+      payload: { name, claim: "Remote work" },
+      event_id: subject,
+      signature: "unchanged",
+    }));
+    const original = structuredClone(records);
+    const groups = employerGroups(records);
+    assert.deepEqual(groups.map((group) => group.name), ["first.example", "second.example"]);
+    assert.deepEqual(records, original);
+    assert.equal(groups[0].observations[0].payload, records[0].payload);
+    assert.equal(employerGroups([{ domain: "flat.example", name }])[0].name, "flat.example");
+  }
+  assert.equal(employerGroups([{ subject: "valid.example", payload: { name: "Компания А" } }])[0].name, "Компания А");
+});
 test("automatic network status never fabricates protected copies or successful synchronization", () => {
   assert.equal(exchangeSummary({}).protected_copies, undefined);
   assert.equal(

@@ -71,7 +71,7 @@ def build_snapshot(snapshot, issues):
             ):
                 raise ValueError("Unsupported submission")
             incoming.extend(batch["events"])
-        except (ValueError, TypeError, AttributeError):
+        except (ValueError, TypeError, AttributeError, RecursionError):
             malformed += 1
     for group in fragments.values():
         try:
@@ -84,7 +84,7 @@ def build_snapshot(snapshot, issues):
             if event["event_id"] != group["event_id"]:
                 raise ValueError("Fragment event ID mismatch")
             incoming.append(event)
-        except (ValueError, TypeError, KeyError):
+        except (ValueError, TypeError, KeyError, RecursionError):
             malformed += 1
     merged = merge_events(snapshot["events"], incoming)
     result = {

@@ -102,7 +102,7 @@ export function employerGroups(records) {
     if (!groups.has(domain))
       groups.set(domain, {
         domain,
-        name: payload.name || domain,
+        name: typeof payload.name === "string" && payload.name ? payload.name : domain,
         observations: [],
       });
     groups.get(domain).observations.push({ ...entry, payload });

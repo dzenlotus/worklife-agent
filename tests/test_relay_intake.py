@@ -120,3 +120,40 @@ def test_fragment_intake_never_reassembles_without_github_submitter_identity(tmp
     )
     assert result["events"] == []
     assert result["validation"]["rejected"] == 2
+
+
+def test_deeply_nested_issue_does_not_block_valid_submissions(tmp_path):
+    from worklife.relay_intake import MARKER, build_snapshot
+
+    event = record(Workspace(tmp_path))
+    poison = {"body": MARKER + "[" * 12000 + "0" + "]" * 12000}
+    valid = {"body": MARKER + json.dumps({"protocol": 1, "events": [event]})}
+    result = build_snapshot({"protocol": 1, "events": []}, [poison, valid])
+    assert result["events"] == [event]
+    assert result["validation"]["rejected"] == 1
+    assert build_snapshot(result, [poison, valid]) == result
+
+
+def test_deeply_nested_fragment_does_not_block_valid_submissions(tmp_path):
+    from worklife.relay_intake import MARKER, build_snapshot
+
+    event = record(Workspace(tmp_path))
+    poison = {
+        "user": {"id": 17},
+        "body": MARKER
+        + json.dumps(
+            {
+                "protocol": 1,
+                "fragment": {
+                    "event_id": "0" * 64,
+                    "group": "b" * 32,
+                    "index": 0,
+                    "total": 1,
+                    "data": "[" * 12000 + "0" + "]" * 12000,
+                },
+            }
+        ),
+    }
+    result = build_snapshot({"protocol": 1, "events": []}, [poison, *fragments(event)])
+    assert result["events"] == [event]
+    assert result["validation"]["rejected"] == 1
