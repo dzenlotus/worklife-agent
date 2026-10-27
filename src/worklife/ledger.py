@@ -3,7 +3,9 @@
 import hashlib
 import json
 import re
+import sqlite3
 from urllib.parse import urlparse
+from uuid import uuid4
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
@@ -84,6 +86,13 @@ class Ledger:
         self.key = Ed25519PrivateKey.from_private_bytes(path.read_bytes())
         self.public_key = self.key.public_key().public_bytes_raw().hex()
         self.author_id = hashlib.sha256(bytes.fromhex(self.public_key)).hexdigest()
+        self.archive_path = store.home / "employer_archive"
+        self.checkpoint_path = store.home / "employer-checkpoint.json"
+        # Opening a damaged workspace must leave recovery available, not bless its current rows.
+        try:
+            self._archive_current()
+        except (ValueError, OSError, sqlite3.DatabaseError):
+            pass
 
     @staticmethod
     def check_event(event):
@@ -120,10 +129,11 @@ class Ledger:
             Ed25519PublicKey.from_public_bytes(public).verify(
                 bytes.fromhex(event["signature"]), bytes.fromhex(digest)
             )
-        except (KeyError, TypeError, InvalidSignature, OverflowError) as exc:
+        except (KeyError, TypeError, InvalidSignature, OverflowError, AttributeError) as exc:
             raise ValueError("Invalid signed event") from exc
 
     def publish(self, kind, subject, payload):
+        self.verify()
         validate_payload(kind, payload)
         subject = employer_domain(subject)
         with self.store.connect() as db:
@@ -145,6 +155,7 @@ class Ledger:
             digest = hashlib.sha256(canonical(body)).hexdigest()
             event = {**body, "event_id": digest, "signature": self.key.sign(bytes.fromhex(digest)).hex()}
             self._insert(db, event)
+        self._archive_current()
         return event
 
     def _insert(self, db, event):
@@ -180,6 +191,7 @@ class Ledger:
         return True
 
     def import_events(self, events):
+        self.verify()
         if not isinstance(events, list) or len(events) > 1000:
             raise ValueError("Import requires at most 1000 events per batch")
         for event in events:
@@ -187,6 +199,7 @@ class Ledger:
         with self.store.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             count = sum(self._insert(db, e) for e in sorted(events, key=lambda e: (e["author"], e["seq"])))
+        self._archive_current()
         return {"imported": count}
 
     def export(self, after=0, limit=1000):
@@ -225,6 +238,7 @@ class Ledger:
 
     def verify(self):
         heads = {}
+        known = {}
         with self.store.connect() as db:
             rows = db.execute("SELECT * FROM events ORDER BY rowid").fetchall()
         for row in rows:
@@ -237,9 +251,151 @@ class Ledger:
                 previous["event_id"] if previous else GENESIS
             ):
                 raise ValueError("Broken author chain in local storage")
+            self._check_correction(event, known)
             heads[event["author"]] = event
+            known[event["event_id"]] = event
+        self._require_checkpoint(list(known.values()))
         return {
             "valid": True,
             "events": len(rows),
             "heads": {author: {"seq": e["seq"], "event_id": e["event_id"]} for author, e in heads.items()},
         }
+
+    @staticmethod
+    def _check_correction(event, known):
+        target = event["payload"].get("supersedes")
+        if target:
+            original = known.get(target)
+            if not original or any(original[k] != event[k] for k in ("author", "subject")):
+                raise ValueError("Only the author may correct/retract their own record for this subject")
+
+    def _checkpoint(self):
+        if not self.checkpoint_path.exists():
+            return None
+        try:
+            checkpoint = json.loads(self.checkpoint_path.read_text())
+            body = {k: v for k, v in checkpoint.items() if k != "signature"}
+            if set(body) != {"version", "author", "public_key", "heads"} or (
+                body["version"] != 1
+                or body["author"] != self.author_id
+                or body["public_key"] != self.public_key
+                or not isinstance(body["heads"], dict)
+            ):
+                raise ValueError("Invalid checkpoint identity")
+            self.key.public_key().verify(bytes.fromhex(checkpoint["signature"]), canonical(body))
+            return body
+        except (ValueError, KeyError, TypeError, AttributeError, InvalidSignature) as exc:
+            raise ValueError("Invalid signed employer checkpoint") from exc
+
+    def _require_checkpoint(self, events, archive_fallback=True):
+        checkpoint = self._checkpoint()
+        if checkpoint is None:
+            if archive_fallback:
+                from .automatic_network import merge_events
+
+                archived, bad_paths = self._read_archive()
+                verified = merge_events([], archived)
+                if bad_paths or verified["rejected"] or verified["pending"]:
+                    raise ValueError("Invalid or incomplete employer archive")
+                positions = {(e["author"], e["seq"]): e["event_id"] for e in events}
+                if any(positions.get((e["author"], e["seq"])) != e["event_id"] for e in archived):
+                    raise ValueError("Employer archive detects missing or changed author history")
+            return
+        by_position = {(e["author"], e["seq"]): e["event_id"] for e in events}
+        for author, head in checkpoint["heads"].items():
+            if by_position.get((author, head["seq"])) != head["event_id"]:
+                raise ValueError("Employer checkpoint detects missing or changed author history")
+
+    def _archive_current(self):
+        integrity = self.verify()
+        with self.store.connect() as db:
+            events = [json.loads(row[0]) for row in db.execute("SELECT document FROM events ORDER BY rowid")]
+        self.archive_path.mkdir(exist_ok=True, mode=0o700)
+        for event in events:
+            path = self.archive_path / f"{event['event_id']}.json"
+            encoded = canonical(event)
+            if path.exists():
+                previous = path.read_bytes()
+                if previous != encoded:
+                    quarantine = self.store.home / "employer_quarantine"
+                    quarantine.mkdir(exist_ok=True, mode=0o700)
+                    self._write_private(quarantine / f"{uuid4().hex}.archive.json", previous)
+                    self._write_private(path, encoded)
+            else:
+                self._write_private(path, encoded)
+        body = {
+            "version": 1,
+            "author": self.author_id,
+            "public_key": self.public_key,
+            "heads": integrity["heads"],
+        }
+        self._write_private(
+            self.checkpoint_path,
+            canonical(
+                {
+                    **body,
+                    "signature": self.key.sign(canonical(body)).hex(),
+                }
+            ),
+        )
+
+    @staticmethod
+    def _write_private(path, data):
+        temporary = path.with_name(f".{path.name}.{uuid4().hex}.tmp")
+        try:
+            with temporary.open("xb") as handle:
+                temporary.chmod(0o600)
+                handle.write(data)
+            temporary.replace(path)
+        finally:
+            temporary.unlink(missing_ok=True)
+
+    def repair(self, extra_events=None):
+        """Restore only employer rows, preserving identity and every private table/object."""
+        from .automatic_network import merge_events
+
+        checkpoint = self._checkpoint()
+        archived, bad_paths = self._read_archive()
+        if bad_paths and (not extra_events or not checkpoint):
+            raise ValueError("Invalid employer archive; refusing recovery without a complete remote copy")
+        merged = merge_events([], archived + (extra_events or []))
+        events = merged["events"]
+        # The signed checkpoint prevents a valid but older snapshot becoming a silent reset.
+        self._require_checkpoint(events, archive_fallback=False)
+        if (not checkpoint and not archived) or (not events and self._raw_rows()):
+            raise ValueError("No complete employer checkpoint/archive available for recovery")
+        if merged["rejected"] or merged["pending"]:
+            archive_ids = {e["event_id"] for e in archived}
+            if not archive_ids.issubset({e["event_id"] for e in events}):
+                raise ValueError("Incomplete or conflicting employer archive; refusing recovery")
+        quarantine = self.store.home / "employer_quarantine"
+        quarantine.mkdir(exist_ok=True, mode=0o700)
+        self._write_private(quarantine / f"{uuid4().hex}.json", canonical(self._raw_rows()))
+        for path in bad_paths:
+            self._write_private(quarantine / f"{uuid4().hex}.archive.json", path.read_bytes())
+        with self.store.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            db.execute("DELETE FROM events")
+            for event in events:
+                self._insert(db, event)
+        for path in bad_paths:
+            path.unlink()
+        self._archive_current()
+        return {"recovered": len(events), "valid": True}
+
+    def _read_archive(self):
+        archived, bad_paths = [], []
+        for path in sorted(self.archive_path.glob("*.json")):
+            try:
+                event = json.loads(path.read_text())
+                self.check_event(event)
+                if path.stem != event["event_id"]:
+                    raise ValueError("Archive filename differs from event")
+                archived.append(event)
+            except (ValueError, TypeError, KeyError):
+                bad_paths.append(path)
+        return archived, bad_paths
+
+    def _raw_rows(self):
+        with self.store.connect() as db:
+            return [dict(row) for row in db.execute("SELECT * FROM events ORDER BY rowid")]

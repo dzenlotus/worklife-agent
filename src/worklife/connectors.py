@@ -98,6 +98,7 @@ class Connectors:
                     data=form,
                 )
                 response.raise_for_status()
+                self.workspace.record_source(c.get("name") or c.get("type") or "API", base, "api")
                 return response.json() if response.content else {"status": response.status_code}
         except httpx.HTTPStatusError as exc:
             retry = exc.response.headers.get("Retry-After")

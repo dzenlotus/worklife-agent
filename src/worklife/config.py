@@ -10,6 +10,11 @@ class Config:
     connectors: dict = field(default_factory=dict)
     peers: list = field(default_factory=list)
     network_token_env: str = "WORKLIFE_NETWORK_TOKEN"
+    network_auto: bool = True
+    network_relay_url: str = (
+        "https://raw.githubusercontent.com/dzenlotus/worklife-employers/main/snapshot.json"
+    )
+    network_relay_repo: str = "dzenlotus/worklife-employers"
 
 
 def load_config(path=None):
@@ -27,11 +32,15 @@ def load_config(path=None):
     for name, config in connectors.items():
         if not config.get("type"):
             raise ValueError(f"Connector {name} requires a type")
+    network = data.get("network", {})
     return Config(
         home.resolve(),
         connectors,
         data.get("peers", []),
-        data.get("network", {}).get("token_env", "WORKLIFE_NETWORK_TOKEN"),
+        network.get("token_env", "WORKLIFE_NETWORK_TOKEN"),
+        network.get("auto", True) and os.getenv("WORKLIFE_NETWORK_OFFLINE") != "1",
+        network.get("relay_url", Config.network_relay_url),
+        network.get("relay_repo", Config.network_relay_repo),
     )
 
 

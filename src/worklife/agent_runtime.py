@@ -10,6 +10,7 @@ from urllib.parse import urlsplit
 
 import httpx
 
+from .credentials import Credentials
 from .operations import Operations
 from .storage import now
 from .workspace import uid
@@ -44,25 +45,157 @@ class AgentRuntime:
     def __init__(self, workspace, tool_server):
         self.workspace, self.store, self.tool_server = workspace, workspace.store, tool_server
         self.operations = Operations(workspace)
-        self._base = os.getenv("WORKLIFE_AGENT_BASE_URL", "").strip().rstrip("/")
-        self._model = os.getenv("WORKLIFE_AGENT_MODEL", "").strip()
-        self._key = os.getenv("WORKLIFE_AGENT_API_KEY", "").strip()
         self._lock, self._queue = threading.RLock(), queue.Queue()
         self._closed, self._pending = False, set()
+        self._credentials = Credentials(workspace)
+        self._config_path = workspace.home / "agent-model.json"
+        try:
+            saved = json.loads(self._config_path.read_text())
+            if not isinstance(saved, dict):
+                saved = {}
+        except (OSError, ValueError):
+            saved = {}
+        env = {
+            name: os.getenv("WORKLIFE_AGENT_" + name, "").strip() for name in ("BASE_URL", "MODEL", "API_KEY")
+        }
+        try:
+            self._base, _ = self._endpoint(env["BASE_URL"] or saved.get("base_url", ""))
+        except ValueError:
+            self._base = ""
+        self._model = env["MODEL"] or saved.get("model", "")
+        if not isinstance(self._model, str):
+            self._model = ""
+        self._key = env["API_KEY"]
+        if (
+            not self._key
+            and saved.get("credential")
+            and self._origin(self._base) == self._origin(saved.get("base_url", ""))
+        ):
+            try:
+                self._key = (
+                    self._credentials._call("get_password", self._credentials.service, saved["credential"])
+                    or ""
+                )
+            except ValueError:
+                self._key = ""
+        self._source = "environment" if any(env.values()) else "saved" if saved else "none"
         self._worker = threading.Thread(target=self._work, name="worklife-agent", daemon=True)
         self._worker.start()
 
-    def _configured(self):
-        parts = urlsplit(self._base)
-        if not self._base or not self._model or parts.scheme not in {"http", "https"} or not parts.hostname:
-            return False
-        if parts.username or parts.password or parts.query or parts.fragment:
-            return False
+    @staticmethod
+    def _endpoint(base_url):
+        if not isinstance(base_url, str) or not base_url.strip():
+            raise ValueError("Model provider URL is required")
+        base_url = base_url.strip().rstrip("/")
+        try:
+            parts = urlsplit(base_url)
+            if (
+                parts.scheme not in {"http", "https"}
+                or not parts.hostname
+                or parts.username is not None
+                or parts.password is not None
+                or parts.query
+                or parts.fragment
+                or any(c.isspace() for c in base_url)
+            ):
+                raise ValueError
+            parts.port  # Validate an explicitly supplied port.
+        except ValueError:
+            raise ValueError("Use an HTTP(S) provider URL without credentials, query or fragment") from None
         try:
             local = ipaddress.ip_address(parts.hostname).is_loopback
         except ValueError:
             local = parts.hostname.lower() == "localhost"
+        return base_url, local
+
+    @staticmethod
+    def _origin(base_url):
+        try:
+            parts = urlsplit(base_url)
+            return parts.scheme, parts.hostname, parts.port or {"https": 443, "http": 80}.get(parts.scheme)
+        except (TypeError, ValueError):
+            return None
+
+    def _connection_key(self, base_url, api_key):
+        if api_key is None:
+            return self._key if self._origin(base_url) == self._origin(self._base) else ""
+        if not isinstance(api_key, str):
+            raise ValueError("API key must be text")
+        return api_key.strip()
+
+    def _configured(self):
+        try:
+            _, local = self._endpoint(self._base)
+        except ValueError:
+            return False
+        if not self._model:
+            return False
         return bool(self._key or local)
+
+    def connection(self):
+        with self._lock:
+            return {
+                "base_url": self._base,
+                "model": self._model,
+                "has_key": bool(self._key),
+                "configured": self._configured(),
+                "source": self._source,
+            }
+
+    def configure(self, base_url, model, api_key=None, persist=True):
+        base_url, local = self._endpoint(base_url)
+        if not isinstance(model, str) or not model.strip():
+            raise ValueError("Model name is required")
+        if type(persist) is not bool:
+            raise ValueError("persist must be true or false")
+        with self._lock:
+            if self._pending:
+                raise ValueError("An agent run is active; wait for it to finish before changing the model")
+            if self._closed:
+                raise ValueError("Agent runtime is closed")
+            key = self._connection_key(base_url, api_key)
+            if not key and not local:
+                raise ValueError("Remote model providers require an API key")
+            if persist:
+                reference = "agent-model-api-key" if key else None
+                if key:
+                    self._credentials._call("set_password", self._credentials.service, reference, key)
+                metadata = {"base_url": base_url, "model": model.strip(), "credential": reference}
+                fd = os.open(self._config_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+                with os.fdopen(fd, "w") as file:
+                    os.fchmod(file.fileno(), 0o600)
+                    json.dump(metadata, file, ensure_ascii=False)
+            self._base, self._model, self._key = base_url, model.strip(), key
+            self._source = "saved" if persist else "session"
+            return self.connection()
+
+    def list_models(self, base_url, api_key=None):
+        base_url, local = self._endpoint(base_url)
+        with self._lock:
+            key = self._connection_key(base_url, api_key)
+        if not key and not local:
+            raise ValueError("Remote model providers require an API key")
+        try:
+            headers = {"Authorization": "Bearer " + key} if key else {}
+            with httpx.Client(timeout=10, headers=headers, trust_env=False) as client:
+                response = client.get(base_url + "/models")
+                response.raise_for_status()
+                body = response.json()
+            data = body.get("data") if isinstance(body, dict) else None
+            if not isinstance(data, list):
+                raise ValueError
+            names = {
+                item["id"].strip()
+                for item in data
+                if isinstance(item, dict) and isinstance(item.get("id"), str) and item["id"].strip()
+            }
+            return sorted(name.replace(key, "[redacted]") if key else name for name in names)
+        except httpx.HTTPStatusError as exc:
+            raise ValueError(f"Model provider returned HTTP {exc.response.status_code}") from None
+        except httpx.RequestError:
+            raise ValueError("Could not reach the model provider; check its URL and connection") from None
+        except ValueError:
+            raise ValueError("Model provider returned an invalid model list") from None
 
     def _safe(self, value):
         value = _jsonable(value)

@@ -1,0 +1,36 @@
+name: Update employer data
+on:
+  issues:
+    types: [opened, edited, reopened]
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+permissions:
+  contents: write
+  issues: read
+concurrency:
+  group: employer-data
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: dzenlotus/worklife-agent
+          ref: __CLIENT_COMMIT__
+          path: _toolkit
+      - uses: astral-sh/setup-uv@v6
+      - name: Verify signed employer submissions
+        run: uv run --project _toolkit python -m worklife.relay_intake --snapshot snapshot.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Retain the verified shared copy
+        run: |
+          git add snapshot.json
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Update verified employer records'
+          git push

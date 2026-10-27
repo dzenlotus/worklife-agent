@@ -116,7 +116,7 @@ def demo(workspace):
     }
 
 
-def worker_cycle(config, w, operations=None):
+def worker_cycle(config, w, operations=None, network=None):
     peers = {
         **{p.get("name", p["url"]): p for p in config.peers},
         **{p["id"]: p["config"] for p in w.store.list("peer")},
@@ -135,6 +135,7 @@ def worker_cycle(config, w, operations=None):
         "due_tasks": w.due_tasks(),
         "peers": reports,
         "scheduled_runs": operations.run_due() if operations else [],
+        "network": network.tick() if network and config.network_auto else None,
         "note": "Agent cycles require a configured model and a running app/worker",
     }
     path = w.home / "worker-status.json"
@@ -260,7 +261,7 @@ def main():
             try:
                 while True:
                     previous = {r["id"] for r in server.worklife_runtime.status()["runs"]}
-                    packet = worker_cycle(config, w, server.worklife_operations)
+                    packet = worker_cycle(config, w, server.worklife_operations, server.worklife_network)
                     if args.once:
                         packet["agent_results"] = finish_started_runs(server, previous)
                     emit(packet)

@@ -80,10 +80,24 @@ def snapshot(server):
             "peers": peers,
             "last_sync": w.store.list("sync"),
             "scope": "employers_only",
+            "summary": server.worklife_network.status()
+            if integrity["valid"]
+            else {
+                "status": "recovering",
+                "label": "Восстанавливаем общую базу",
+                "detail": "Проверяем сохранные копии. Повреждённые записи не используются.",
+                "employers": 0,
+                "protected_copies": 0,
+                "last_sync": None,
+                "auto": True,
+            },
         },
         "statistics": server.worklife_operations.statistics(),
         "connectors": server.worklife_connectors.capabilities(),
-        "agent": server.worklife_runtime.status(),
+        "agent": {
+            **server.worklife_runtime.status(),
+            "connection": server.worklife_runtime.connection(),
+        },
     }
 
 
@@ -99,9 +113,16 @@ def create_app(config, scheduler=True):
                 server.worklife_operations.activity_record("scheduler_error", type(exc).__name__)
             await asyncio.sleep(5)
 
+    async def network_tick():
+        while True:
+            if config.network_auto:
+                await asyncio.to_thread(server.worklife_network.tick)
+            await asyncio.sleep(5)
+
     @asynccontextmanager
     async def lifespan(app):
         task = asyncio.create_task(tick()) if scheduler else None
+        network_task = asyncio.create_task(network_tick()) if scheduler else None
         try:
             yield
         finally:
@@ -109,6 +130,10 @@ def create_app(config, scheduler=True):
                 task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):
                     await task
+            if network_task:
+                network_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await network_task
             server.worklife_runtime.close()
             server.worklife_browser.close()
 
@@ -125,6 +150,42 @@ def create_app(config, scheduler=True):
         except Exception as exc:
             return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
 
+    async def model(request):
+        if request.method == "GET":
+            return JSONResponse(server.worklife_runtime.connection(), headers={"Cache-Control": "no-store"})
+        try:
+            args = await request.json()
+            if not isinstance(args, dict):
+                raise ValueError("Model connection must be a JSON object")
+            result = await asyncio.to_thread(
+                server.worklife_runtime.configure,
+                args.get("base_url"),
+                args.get("model"),
+                args.get("api_key"),
+                args.get("persist", True),
+            )
+            return JSONResponse({"ok": True, "result": result}, headers={"Cache-Control": "no-store"})
+        except ValueError as exc:
+            return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+        except Exception:
+            return JSONResponse(
+                {"ok": False, "error": "Could not save the model connection"}, status_code=400
+            )
+
+    async def models(request):
+        try:
+            args = await request.json()
+            if not isinstance(args, dict):
+                raise ValueError("Model connection must be a JSON object")
+            result = await asyncio.to_thread(
+                server.worklife_runtime.list_models, args.get("base_url"), args.get("api_key")
+            )
+            return JSONResponse({"ok": True, "result": result}, headers={"Cache-Control": "no-store"})
+        except ValueError as exc:
+            return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+        except Exception:
+            return JSONResponse({"ok": False, "error": "Could not list the provider models"}, status_code=400)
+
     async def download(request):
         try:
             result = await invoke(
@@ -140,17 +201,24 @@ def create_app(config, scheduler=True):
 
     async def static(request):
         filename = request.path_params.get("filename", "index.html")
-        if filename not in {"index.html", "app.css", "app.js"}:
+        path = (web / filename).resolve()
+        if (
+            not path.is_relative_to(web.resolve())
+            or not path.is_file()
+            or (filename != "index.html" and not filename.startswith("assets/"))
+        ):
             return JSONResponse({"error": "not found"}, status_code=404)
-        return FileResponse(web / filename, headers={"Cache-Control": "no-store"})
+        return FileResponse(path, headers={"Cache-Control": "no-store"})
 
     app = Starlette(
         routes=[
             Route("/api/state", state),
+            Route("/api/model", model, methods=["GET", "POST"]),
+            Route("/api/model/models", models, methods=["POST"]),
             Route("/api/tools/{name}", tool, methods=["POST"]),
             Route("/api/cv/{cv_id}/download", download),
             Route("/", static),
-            Route("/{filename}", static),
+            Route("/{filename:path}", static),
         ],
         lifespan=lifespan,
     )

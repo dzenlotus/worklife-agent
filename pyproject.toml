@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "worklife-agent"
-version = "0.2.0"
+version = "0.3.0"
 description = "Local-first job-search tools and a signed, replicated employer knowledge network for personal agents"
 readme = "README.md"
 requires-python = ">=3.12"

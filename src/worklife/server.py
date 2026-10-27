@@ -1,3 +1,4 @@
+import asyncio
 import html
 import os
 from contextlib import asynccontextmanager
@@ -6,6 +7,7 @@ from pathlib import Path
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
+from .automatic_network import NetworkManager
 from .browser import Browser
 from .connectors import Connectors
 from .federation import sync_peer
@@ -27,6 +29,9 @@ Choose relevant sources yourself: job aggregators, employer sites and profession
 If needed and authorized, register job-search accounts, use the user's configured mailbox for verification,
 and track actual registration status with account_save. Discover and save platforms; there is no fixed source list.
 Use resources, statistics, schedules, tactics, evidence-backed strengths, own Git analyses and multilingual CVs.
+Own the setup and bookkeeping yourself. Do not ask the user to add resources, platforms, accounts or schedules manually.
+Discover sources, record actual account states, maintain useful recurring search/monitor schedules for ongoing goals.
+Ask the person only for goals, meaningful preferences, or information/access you genuinely cannot obtain.
 For newly registered accounts, generate credentials with credential_create and fill them with browser_fill_credential.
 Keep only credential references in account notes; never put passwords in ordinary records or tool argument logs.
 Honor the employer blocklist. Attach _employer_domain or _job_id to contact actions so company checks are explicit.
@@ -41,12 +46,21 @@ def create_server(config):
     w = Workspace(config.home)
     connectors = Connectors(config.connectors, w)
     browser = Browser(w.home / "browser-profile", headed=os.getenv("WORKLIFE_HEADED") == "1")
+    network = NetworkManager(w, relay_url=config.network_relay_url, relay_repo=config.network_relay_repo)
+
+    async def network_loop():
+        while True:
+            if config.network_auto:
+                await asyncio.to_thread(network.tick)
+            await asyncio.sleep(5)
 
     @asynccontextmanager
     async def lifespan(server):
+        network_task = asyncio.create_task(network_loop())
         try:
             yield {}
         finally:
+            network_task.cancel()
             mcp.worklife_runtime.close()
             browser.close()
 
@@ -266,7 +280,9 @@ def create_server(config):
     def browser_open(url: str) -> dict:
         """Open a page in a persistent browser profile. Supports sites without API; sign in manually if needed.
         Respect platform access rules; do not bypass CAPTCHA. Browser extra and Chromium required."""
-        return browser.open(url)
+        result = browser.open(url)
+        w.record_source(result.get("title"), result.get("url", url), "browser")
+        return result
 
     @mcp.tool(annotations=read)
     def browser_inspect() -> dict:
@@ -292,7 +308,9 @@ def create_server(config):
         communication,payment,working_conditions,benefits. Numeric metrics: response_days,hiring_stages,
         test_hours,weekly_hours,salary_delay_days. supersedes references your earlier employer record.
         No worker profiles, candidate scores, CV results, employee names or contact details; review free text."""
-        return w.ledger.publish(kind, subject, payload)
+        event = w.ledger.publish(kind, subject, payload)
+        network.mark_dirty()
+        return event
 
     @mcp.tool(annotations=read)
     def knowledge_query(
@@ -314,7 +332,9 @@ def create_server(config):
     @mcp.tool(annotations=write)
     def knowledge_import(events: list[dict]) -> dict:
         """Verify/import up to 1000 signed events atomically; rejects forged data, missing predecessors, forks."""
-        return w.ledger.import_events(events)
+        result = w.ledger.import_events(events)
+        network.mark_dirty()
+        return result
 
     @mcp.tool(annotations=write)
     def author_trust(author: str, level: str, note: str = "") -> dict:
@@ -348,6 +368,8 @@ def create_server(config):
 
     # Also used by the one-shot CLI, which does not enter the MCP transport lifespan.
     mcp.worklife_browser = browser
+    mcp.worklife_network = network
+    mcp.worklife_network_auto = config.network_auto
     from .tools_extra import register_tools
 
     register_tools(mcp, w, connectors, peers)

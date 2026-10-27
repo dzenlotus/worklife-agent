@@ -40,6 +40,41 @@ class Workspace:
     def get_profile(self):
         return self.store.get("profile", "me")
 
+    def record_source(self, name, url, capability):
+        """Remember an agent-used service automatically, without credentials/search queries."""
+        parsed = urlparse(url)
+        if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+            return None
+        host = parsed.hostname.lower()
+        origin = f"{parsed.scheme}://{host}" + (f":{parsed.port}" if parsed.port else "")
+        existing = next((p for p in self.store.list("platform") if p.get("url") == origin), None)
+        key = existing["id"] if existing else hashlib.sha256(origin.encode()).hexdigest()[:24]
+        previous = existing or {}
+        value = {
+            **previous,
+            "id": key,
+            "name": (name or host)[:200],
+            "url": origin,
+            "capabilities": sorted(set(previous.get("capabilities", []) + [capability])),
+            "notes": previous.get("notes", "Обнаружено агентом во время работы"),
+            "created_at": previous.get("created_at", now()),
+            "updated_at": now(),
+            "discovered_by": "agent",
+        }
+        self.store.put("platform", key, value)
+        try:
+            resource = self.store.get("resource", key)
+        except ValueError:
+            resource = {
+                "id": key,
+                "kind": "source",
+                "notes": "Обнаружено агентом",
+                "budget": None,
+                "created_at": now(),
+            }
+        self.store.put("resource", key, {**resource, "name": value["name"], "url": origin})
+        return value
+
     def create_cv(self, name, fact_ids, headline, summary=""):
         profile = self.get_profile()
         facts = {f["id"]: f for f in profile.get("facts", [])}
