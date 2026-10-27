@@ -23,7 +23,7 @@ test("HeroUI allows semantic color tokens only, with no component or typography 
     const content = readFileSync(new URL(file, source), "utf8");
     assert.doesNotMatch(content, /\bstyle\s*=|<svg\b|<path\b|#[0-9a-f]{3,8}\b|--(?:wl|site|accent)|\b(?:wl|site)-[a-z]+\b/i, file);
     for (const [, classes] of content.matchAll(/className="([^"]*)"/g)) {
-      assert.ok(classes.split(/\s+/).every((value) => ["sr-only", "focus:not-sr-only"].includes(value) || /^(?:(?:sm|md|lg|xl):)?(?:flex(?:-\w+)?|grid(?:-cols-\d+)?|gap-\d+|p[xytrbl]?-\d+|m[xy]?-auto|w-(?:full|\d+)|min-w-0|max-w-[a-z0-9]+|overflow(?:-[xy])?-(?:auto|hidden)|items-\w+|justify-\w+|shrink-0|block|hidden)$/.test(value)), `${file}: only layout and keyboard-accessibility utilities are allowed (${classes})`);
+      assert.ok(classes.split(/\s+/).every((value) => ["sr-only", "focus:not-sr-only"].includes(value) || /^(?:(?:sm|md|lg|xl):)?(?:flex(?:-\w+)?|grid(?:-cols-\d+)?|gap-\d+|p[xytrbl]?-\d+|m[xytrbl]?-auto|w-(?:full|\d+)|min-w-0|max-w-[a-z0-9]+|overflow(?:-[xy])?-(?:auto|hidden)|items-\w+|justify-\w+|shrink-0|block|hidden|sticky|top-0|h-dvh|min-h-(?:dvh|0))$/.test(value)), `${file}: only layout and keyboard-accessibility utilities are allowed (${classes})`);
     }
   }
   const html = readFileSync(new URL("../index.html", source), "utf8");

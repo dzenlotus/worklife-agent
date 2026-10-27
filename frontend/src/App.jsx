@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Input, TextArea, Spinner, Link, Label, Typography, Alert, CloseButton, Separator } from "@heroui/react";
+import { Button, Input, TextArea, Spinner, Link, Label, Typography, Alert, CloseButton, Separator, Surface, Accordion } from "@heroui/react";
 import Overview, { ActivityLog, GoalComposer, RunHistory } from "./Overview.jsx";
 import ModelConnection from "./ModelConnection.jsx";
 import { composeGoal, readDraft, saveDraft } from "./goals.js";
@@ -30,7 +30,7 @@ import {
 
 const navigation = [
   ["overview", "Обзор"],
-  ["search", "Поиск"],
+  ["search", "Вакансии"],
   ["schedules", "Расписание"],
   ["experiments", "Эксперименты"],
   ["strengths", "Сильные стороны"],
@@ -312,24 +312,26 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
     </>
   );
 }
-function Navigation({ state, page, onNavigate }) {
+function Navigation({ page, onNavigate }) {
+  const primary = ["overview", "search", "employers", "schedules"];
   const groups = [
-    ["Работа", ["overview", "search", "schedules"]],
-    ["Материалы", ["cv", "strengths", "resources", "repositories", "tactics"]],
-    ["Анализ и настройки", ["employers", "experiments", "accounts", "settings"]],
+    ["materials", "Материалы", ["cv", "strengths", "repositories"]],
+    ["tools", "Инструменты", ["resources", "accounts", "experiments", "tactics"]],
   ];
-  return <nav className="flex flex-col gap-6" aria-label="Разделы Worklife">
-    {groups.map(([title, keys]) => <section className="flex flex-col gap-2" key={title} aria-label={title}>
-      <Typography.Paragraph size="sm" color="muted" className="px-3">{title}</Typography.Paragraph>
-      <div className="flex flex-col gap-1">{keys.map((key) => {
-        const text = navigation.find(([id]) => id === key)[1];
-        const bucket = { search: "jobs", cv: "cvs", schedules: "schedules", resources: "resources" }[key];
-        const count = bucket ? list(state?.[bucket]).length : 0;
-        return <Button key={key} fullWidth size="sm" variant={page === key ? "secondary" : "ghost"} aria-current={page === key ? "page" : undefined} onPress={() => onNavigate(key)}>
-          <span className="flex w-full items-center justify-between gap-3"><span>{text}</span>{count ? <span>{count}</span> : null}</span>
-        </Button>;
-      })}</div>
-    </section>)}
+  const activeGroup = groups.find(([, , keys]) => keys.includes(page))?.[0];
+  const item = (key) => <Button key={key} fullWidth size="md" variant={page === key ? "secondary" : "ghost"} aria-current={page === key ? "page" : undefined} onPress={() => onNavigate(key)}>
+    <span className="flex w-full items-center justify-between">{navigation.find(([id]) => id === key)[1]}</span>
+  </Button>;
+  return <nav className="flex flex-col gap-5" aria-label="Разделы Worklife">
+    <div className="flex flex-col gap-1">{primary.map(item)}</div>
+    <Separator />
+    <Accordion key={activeGroup || "main"} defaultExpandedKeys={activeGroup ? [activeGroup] : []} hideSeparator>
+      {groups.map(([id, title, keys]) => <Accordion.Item id={id} key={id}>
+        <Accordion.Heading><Accordion.Trigger>{title}<Accordion.Indicator /></Accordion.Trigger></Accordion.Heading>
+        <Accordion.Panel><Accordion.Body><div className="flex flex-col gap-1">{keys.map(item)}</div></Accordion.Body></Accordion.Panel>
+      </Accordion.Item>)}
+    </Accordion>
+    {item("settings")}
   </nav>;
 }
 export default function App() {
@@ -572,24 +574,29 @@ export default function App() {
                 ? "Вызов MCP"
               : "Подробности действия";
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 p-4 md:flex-row md:p-6">
-      <aside className="hidden w-full flex-col gap-8 md:flex md:w-48 md:shrink-0">
-        <div className="flex flex-col gap-2 px-3">
-          <Link href="#overview" aria-label="Worklife — обзор"><Typography.Heading level={3}>Worklife</Typography.Heading></Link>
-          <Typography.Paragraph size="sm" color="muted">Монитор агента</Typography.Paragraph>
-        </div>
-        <Navigation state={state} page={page} onNavigate={navigate} />
-        <Link className="sr-only focus:not-sr-only" onPress={() => document.getElementById("app-main")?.focus()}>К содержанию</Link>
-      </aside>
-      <div className="flex min-w-0 flex-1 flex-col gap-6">
-        <header className="flex flex-wrap items-center justify-between gap-3 md:justify-end">
-          <Button variant="secondary" className="md:hidden" aria-expanded={navigationOpen} onPress={() => setNavigationOpen(true)}>Меню</Button>
-          <div className="flex flex-wrap items-center gap-3">
-            <Typography.Paragraph size="sm" color="muted">{error ? "Нет соединения" : updated ? `Обновлено в ${updated.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}` : "Подключение…"}</Typography.Paragraph>
-            <Button variant="ghost" size="sm" aria-label="Обновить данные" onPress={refresh}>Обновить</Button>
+    <div className="flex min-h-dvh flex-col md:flex-row">
+      <aside className="hidden md:sticky md:top-0 md:flex md:h-dvh md:w-60 md:shrink-0">
+        <Surface className="flex min-h-0 w-full flex-col gap-6 p-5">
+          <div className="flex shrink-0 flex-col gap-1 px-3 py-3">
+            <Link href="#overview" aria-label="Worklife — обзор"><Typography.Heading level={3}>Worklife</Typography.Heading></Link>
+            <Typography.Paragraph size="xs" color="muted">MCP-инструменты</Typography.Paragraph>
           </div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto"><Navigation page={page} onNavigate={navigate} /></div>
+          <div className="mt-auto flex shrink-0 flex-col gap-3 px-3 py-3">
+            <Separator />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Button variant="ghost" size="sm" aria-label="Обновить данные" onPress={refresh}>Обновить</Button>
+              <Typography.Paragraph size="xs" color="muted" aria-label="Время обновления данных">{error ? "Нет связи" : updated ? updated.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" }) : "Загрузка…"}</Typography.Paragraph>
+            </div>
+          </div>
+          <Link className="sr-only focus:not-sr-only" onPress={() => document.getElementById("app-main")?.focus()}>К содержанию</Link>
+        </Surface>
+      </aside>
+      <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-1 flex-col gap-6 p-5 md:p-8 lg:p-10">
+        <header className="flex items-center justify-between md:hidden">
+          <Button variant="secondary" aria-expanded={navigationOpen} onPress={() => setNavigationOpen(true)}>Разделы</Button>
+          <Button variant="ghost" size="sm" aria-label="Обновить данные" onPress={refresh}>Обновить</Button>
         </header>
-        <Separator />
         {message ? <Alert><Alert.Content><Alert.Description>{message}</Alert.Description></Alert.Content><CloseButton aria-label="Закрыть уведомление" onPress={() => setMessage("")} /></Alert> : null}
         <main id="app-main" className="flex flex-col gap-6" tabIndex={-1}>
           {!state ? (

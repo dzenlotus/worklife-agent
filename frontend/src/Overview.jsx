@@ -219,88 +219,60 @@ function resultName(target, state) {
   return record?.name || record?.title || record?.headline || record?.payload?.subject || null;
 }
 
-function LatestActivity({ entry, state, onInspect }) {
-  if (!entry) return <Card><Card.Content className="flex flex-col gap-4 py-6">
-    <Typography.Heading level={2}>Вызовов MCP пока нет</Typography.Heading>
-    <Typography.Paragraph color="muted">Дайте поручение в чате вашего агента. Здесь появятся вызовы MCP и сохранённые результаты.</Typography.Paragraph>
-  </Card.Content></Card>;
-  const name = resultName(entry.target, state);
-  return <Card>
-    <Card.Header className="flex flex-col gap-4">
-      <div className="flex w-full flex-wrap items-center justify-between gap-3">
-        <Typography.Paragraph size="sm" color="muted">Последнее действие</Typography.Paragraph>
-        {entry.status ? <Status value={entry.status} /> : null}
-      </div>
-      {entry.source === "mcp" ? <Typography.Heading level={2}>{entry.summary || (entry.status === "running" ? "Выполняется вызов MCP" : "Вызов MCP записан")}</Typography.Heading> : <Typography.Paragraph weight="medium">{entry.summary || entry.tool}</Typography.Paragraph>}
-    </Card.Header>
-    <Card.Content className="flex flex-col gap-4">
-      {name ? <Typography.Paragraph>{name}</Typography.Paragraph> : null}
-      {entry.error ? <Alert status="danger"><Alert.Content><Alert.Description>{entry.error}</Alert.Description></Alert.Content></Alert> : null}
-      <div className="flex flex-wrap items-center gap-3">
-        {entry.source === "mcp" ? <Typography.Code>{entry.tool}</Typography.Code> : null}
-        <Typography.Paragraph size="sm" color="muted"><Timestamp value={entry.at} /></Typography.Paragraph>
-        {Number.isFinite(entry.duration_seconds) ? <Typography.Paragraph size="sm" color="muted">{entry.duration_seconds.toLocaleString("ru-RU", { maximumFractionDigits: 2 })} с</Typography.Paragraph> : null}
-      </div>
-    </Card.Content>
-    {entry.target || entry.source === "mcp" ? <Card.Footer className="flex flex-wrap gap-2">
-      {entry.target ? <Button variant="secondary" size="sm" onPress={() => onInspect(entry.target.kind, entry.target.id)}>Открыть результат</Button> : null}
-      {entry.source === "mcp" ? <Button variant="ghost" size="sm" onPress={() => onInspect("tool_call", entry.id)}>Подробнее о вызове</Button> : null}
-    </Card.Footer> : null}
-  </Card>;
-}
-
-function EarlierActivity({ entries, onInspect }) {
-  if (!entries.length) return null;
-  return <section className="flex flex-col gap-3" aria-label="Предыдущие действия">
-    <Typography.Paragraph size="sm" color="muted">Ранее</Typography.Paragraph>
-    <div className="flex flex-col gap-4">{entries.map((entry, index) => <div className="flex flex-col gap-4" key={entry.id}>
-      {index ? <Separator /> : null}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <Typography.Paragraph weight="medium">{entry.error || entry.summary || entry.tool}</Typography.Paragraph>
-          <div className="flex flex-wrap items-center gap-3">
-            {entry.source === "mcp" ? <Typography.Code>{entry.tool}</Typography.Code> : null}
-            <Typography.Paragraph size="sm" color="muted"><Timestamp value={entry.at} /></Typography.Paragraph>
+function ActivityFeed({ entries, state, onInspect }) {
+  if (!entries.length) return <Empty title="Журнал пока пуст">Здесь появятся действия вашего агента.</Empty>;
+  return <div className="flex flex-col" role="list" aria-label="Последние действия">
+    {entries.map((entry, index) => {
+      const name = resultName(entry.target, state);
+      return <div key={entry.id} role="listitem">
+        {index ? <Separator /> : null}
+        <div className="flex flex-col gap-3 py-5 sm:flex-row sm:items-start sm:gap-5">
+          <div className="shrink-0 sm:w-28"><Typography.Paragraph size="xs" color="muted"><Timestamp value={entry.at} /></Typography.Paragraph></div>
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            {name && entry.target ? <Link onPress={() => onInspect(entry.target.kind, entry.target.id)}>{name}</Link> : <Typography.Paragraph weight="medium">{entry.summary || entry.tool}</Typography.Paragraph>}
+            {name ? <Typography.Paragraph size="sm" color="muted">{entry.summary}</Typography.Paragraph> : null}
+            {entry.error ? <Typography.Paragraph size="sm">{entry.error}</Typography.Paragraph> : null}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
             {entry.status ? <Status value={entry.status} /> : null}
+            {entry.source === "mcp" ? <Button variant="ghost" size="sm" onPress={() => onInspect("tool_call", entry.id)}>Детали</Button> : entry.target ? <Button variant="ghost" size="sm" onPress={() => onInspect(entry.target.kind, entry.target.id)}>Открыть</Button> : null}
           </div>
         </div>
-        {entry.source === "mcp" ? <Button variant="ghost" size="sm" onPress={() => onInspect("tool_call", entry.id)}>Подробнее</Button> : entry.target ? <Button variant="ghost" size="sm" onPress={() => onInspect(entry.target.kind, entry.target.id)}>Результат</Button> : null}
-      </div>
-    </div>)}</div>
-  </section>;
+      </div>;
+    })}
+  </div>;
 }
 
 export default function Overview({ state, pending, onInspect, onCommand }) {
   const stats = statistics(state), activity = monitorActivity(state), calls = list(state.tool_calls);
   const running = calls.filter((call) => call.status === "running");
-  const schedules = list(state.schedules), enabled = schedules.filter((schedule) => schedule.enabled);
-  const next = enabled.slice().sort((a, b) => (a.next_run_at || "").localeCompare(b.next_run_at || ""))[0];
-  const saved = [["resources", "Ресурсы", list(state.resources).length], ["cv", "CV", list(state.cvs).length], ["employers", "Работодатели", employerGroups(state.employers).length], ["strengths", "Сильные стороны", list(state.strengths).length]].filter(([, , count]) => count);
+  const schedules = list(state.schedules);
+  const next = schedules.filter((schedule) => schedule.enabled).sort((a, b) => (a.next_run_at || "").localeCompare(b.next_run_at || ""))[0];
+  const saved = [["search", "Вакансии", stats.jobs], ["cv", "Резюме", list(state.cvs).length], ["employers", "Компании", employerGroups(state.employers).length], ["resources", "Источники", list(state.resources).length]].filter(([, , count]) => count);
   const activeRuntime = list(state.agent?.runs).find((run) => ["running", "queued", "cancelling"].includes(run.status));
   return <>
-    <PageHeading title="Работа агента">
-      {running.length ? <Status value="running">В работе: {running.length}</Status> : null}
-    </PageHeading>
+    <PageHeading title="Обзор">{running.length ? <Status value="running">В работе: {running.length}</Status> : null}</PageHeading>
     {activeRuntime ? <Alert><Alert.Content><Alert.Title>Встроенный исполнитель работает</Alert.Title><Alert.Description>{goalExcerpt(activeRuntime.goal)}</Alert.Description><div className="flex flex-wrap gap-2 py-2"><Button variant="secondary" size="sm" onPress={() => onInspect("run", activeRuntime.id)}>Журнал</Button><Button variant="danger-soft" size="sm" isPending={pending === "cancel:" + activeRuntime.id} onPress={() => onCommand("agent_cancel", { run_id: activeRuntime.id }, "cancel:" + activeRuntime.id)}>Остановить</Button></div></Alert.Content></Alert> : null}
-    <div className="flex flex-col gap-8 xl:flex-row">
-      <section className="flex min-w-0 flex-1 flex-col gap-6" aria-label="Журнал работы">
-        <LatestActivity entry={activity[0]} state={state} onInspect={onInspect} />
-        <EarlierActivity entries={activity.slice(1, 5)} onInspect={onInspect} />
-        {activity.length ? <div className="flex flex-wrap items-center justify-between gap-3"><Typography.Paragraph size="sm" color="muted">{calls.length ? `Вызовов MCP в журнале: ${calls.length}` : `Событий в журнале: ${activity.length}`}</Typography.Paragraph><Button variant="ghost" size="sm" onPress={() => onInspect("activity")}>Весь журнал</Button></div> : null}
+    <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+      <section className="min-w-0 flex-1" aria-label="Активность агента">
+        <Card>
+          <Card.Header className="flex flex-row items-center justify-between gap-3">
+            <Card.Title>Активность</Card.Title>
+            {activity.length ? <Button variant="ghost" size="sm" onPress={() => onInspect("activity")}>Весь журнал</Button> : null}
+          </Card.Header>
+          <Card.Content><ActivityFeed entries={activity.slice(0, 6)} state={state} onInspect={onInspect} /></Card.Content>
+        </Card>
       </section>
-      {saved.length || schedules.length ? <aside className="flex w-full flex-col gap-6 xl:w-64 xl:shrink-0" aria-label="Сводка работы">
-        {saved.length ? <section className="flex flex-col gap-4" aria-labelledby="saved-heading">
-          <Typography.Heading level={4} id="saved-heading">Сохранено</Typography.Heading>
-          <dl className="flex flex-col gap-3">{saved.map(([page, title, count]) => <div className="flex items-center justify-between gap-3" key={page}><dt><Link href={`#${page}`}>{title}</Link></dt><dd>{count}</dd></div>)}</dl>
-        </section> : null}
-        {saved.length && schedules.length ? <Separator /> : null}
-        {schedules.length ? <section className="flex flex-col gap-3" aria-labelledby="schedule-heading">
-          <div className="flex flex-wrap items-center justify-between gap-3"><Typography.Heading level={4} id="schedule-heading">Расписание</Typography.Heading>{schedules.length ? <Status value={next ? "planned" : "paused"} /> : null}</div>
+      {saved.length || schedules.length ? <aside className="flex w-full flex-col gap-5 xl:w-60 xl:shrink-0" aria-label="Сводка">
+        {saved.length ? <Card><Card.Header><Card.Title>Результаты</Card.Title></Card.Header><Card.Content>
+          <dl className="flex flex-col gap-4">{saved.map(([page, title, count]) => <div className="flex items-center justify-between gap-3" key={page}><dt><Link href={`#${page}`}>{title}</Link></dt><dd><Typography.Paragraph weight="medium">{count}</Typography.Paragraph></dd></div>)}</dl>
+        </Card.Content></Card> : null}
+        {schedules.length ? <Card><Card.Header className="flex flex-row flex-wrap items-center justify-between gap-2"><Card.Title>Расписание</Card.Title><Status value={next ? "planned" : "paused"} /></Card.Header><Card.Content className="flex flex-col gap-3">
           {next ? <><Typography.Paragraph size="sm">{next.name}</Typography.Paragraph><Typography.Paragraph size="sm" color="muted"><Timestamp value={next.next_run_at} /></Typography.Paragraph><div><Button variant="outline" size="sm" isPending={pending === "pause:" + next.id} onPress={() => onCommand("schedule_toggle", { schedule_id: next.id, enabled: false }, "pause:" + next.id)}>Приостановить</Button></div></> : <Typography.Paragraph size="sm" color="muted">Заданий на паузе: {schedules.length}</Typography.Paragraph>}
-          <Link href="#schedules">Открыть расписание</Link>
-        </section> : null}
+          <Link href="#schedules">Открыть</Link>
+        </Card.Content></Card> : null}
       </aside> : null}
     </div>
-    {stats.jobs > 0 ? <><Separator /><div className="flex flex-wrap items-center justify-between gap-3"><Typography.Paragraph size="sm" color="muted">Откликов: {stats.applied} · Ответов: {stats.replies}</Typography.Paragraph><Link href="#search">Открыть поиск</Link></div><Pipeline state={state} onInspect={onInspect} limit={6} /></> : null}
+    {stats.jobs > 0 ? <><div className="flex flex-wrap items-center justify-between gap-3"><Typography.Paragraph size="sm" color="muted">Откликов: {stats.applied} · Ответов: {stats.replies}</Typography.Paragraph><Link href="#search">Все вакансии</Link></div><Pipeline state={state} onInspect={onInspect} limit={6} /></> : null}
   </>;
 }

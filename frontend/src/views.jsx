@@ -1,4 +1,4 @@
-import { Button, Link, Typography, Alert } from "@heroui/react";
+import { Button, Link, Typography, Alert, Chip } from "@heroui/react";
 import {
   Panel,
   PageHeading,
@@ -41,13 +41,9 @@ const Source = ({ value, children }) =>
 function EmployerObservation({ entry }) {
   const basis = observationBasis(entry);
   return <div className="flex flex-col gap-3 py-3">
-    <span >{basis.label}</span>
-    <p>{entry.payload.claim}</p>
-    <p >{basis.verification}</p>
-    <div className="flex flex-wrap gap-3">
-      {entry.payload.source_url ? <Source value={entry.payload.source_url}>Источник</Source> : <span>Источник не указан</span>}
-      <span>Наблюдение: {formatDate(entry.payload.observed_at)}</span>
-    </div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><Chip size="sm" variant="soft">{basis.label}</Chip><Typography.Paragraph size="xs" color="muted"><Timestamp value={entry.payload.observed_at} /></Typography.Paragraph></div>
+    <Typography.Paragraph>{entry.payload.claim}</Typography.Paragraph>
+    <div className="flex flex-wrap items-center gap-4"><Typography.Paragraph size="sm" color="muted">{basis.verification}</Typography.Paragraph>{entry.payload.source_url ? <Source value={entry.payload.source_url}>Источник</Source> : <Typography.Paragraph size="sm" color="muted">Источник не указан</Typography.Paragraph>}</div>
   </div>;
 }
 const TopicHeading = ({ title, description }) => <PageHeading title={title} description={description} />;
@@ -331,7 +327,7 @@ export function EmployersView({ state, ask, onBlock, onCommand, pending }) {
     <>
       <PageHeading
         title="Работодатели"
-        description="Компании, их вакансии и условия. Общая база не содержит профилей работников."
+        description="Общая база наблюдений о компаниях."
       >
         <Button variant="outline" size="sm" onPress={() => onBlock("")}>
           Блокировать компанию
@@ -354,7 +350,7 @@ export function EmployersView({ state, ask, onBlock, onCommand, pending }) {
           empty="Общая база пока пуста. Агент будет собирать наблюдения о работодателях и обновлять их автоматически."
           render={(company) => (
               <div className="flex w-full min-w-0 flex-col gap-3">
-                <div className="flex flex-wrap items-start justify-between gap-3"><div className="flex flex-col gap-2"><Typography.Heading level={3}>{company.name}</Typography.Heading><Typography.Paragraph size="sm" color="muted">{company.domain}</Typography.Paragraph></div><Button variant="ghost" size="sm" onPress={() => onBlock(company.domain)}>Блокировать</Button></div>
+                <div className="flex flex-wrap items-start justify-between gap-3"><div className="flex flex-col gap-2"><Typography.Heading level={4}>{company.name}</Typography.Heading><Typography.Paragraph size="sm" color="muted">{company.domain}</Typography.Paragraph></div><Button variant="ghost" size="sm" onPress={() => onBlock(company.domain)}>Блокировать</Button></div>
                 {company.observations.slice(0, 2).map((entry, index) => (
                   <EmployerObservation key={entry.event_id || index} entry={entry} />
                 ))}
@@ -378,7 +374,7 @@ export function EmployersView({ state, ask, onBlock, onCommand, pending }) {
         <p>Обмен касается только компаний: вакансий, условий и процесса найма. CV, личные результаты откликов, имена и контакты людей не публикуются. Перед публикацией агент проверяет, что текст касается только работодателя.</p>
       </DetailAccordion>
       <div className="flex flex-col gap-4">
-        <Panel title="Ваши исключения">
+        <DetailAccordion title={`Исключённые компании · ${blocks.filter((block) => block.blocked).length}`} id="employer-exclusions">
           <RecordList
             items={blocks.filter((b) => b.blocked)}
             empty="Нет заблокированных компаний. Локальные исключения не публикуются в общей базе."
@@ -410,7 +406,7 @@ export function EmployersView({ state, ask, onBlock, onCommand, pending }) {
               </>
             )}
           />
-        </Panel>
+        </DetailAccordion>
       </div>
     </>
   );
@@ -434,8 +430,8 @@ export function ResourcesView({ state, ask }) {
 
               <div className="flex min-w-0 flex-1 flex-col gap-3">
                 <Typography.Heading level={3}>{resource.name}</Typography.Heading>
-                <p>{resource.notes}</p>
-                <Source value={resource.url} />
+                <Typography.Paragraph size="sm" color="muted">{resource.notes}</Typography.Paragraph>
+                <Source value={resource.url}>{safeURL(resource.url) ? new URL(resource.url).hostname : resource.url}</Source>
                 <div className="flex flex-wrap gap-3">
                   <span>{humanLabel(resource.kind)}</span>
                   {resource.budget != null ? (
