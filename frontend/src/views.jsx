@@ -28,7 +28,7 @@ import { Pipeline } from "./Overview.jsx";
 const Source = ({ value, children }) =>
   safeURL(value) ? (
     <Link
-      
+
       href={safeURL(value)}
       target="_blank"
       rel="noreferrer"
@@ -171,7 +171,7 @@ export function SchedulesView({ state, ask, onCommand, pending, onInspect }) {
             empty="Агент сохранит следующие шаги и напоминания по мере работы."
             render={(task) => (
               <>
-                
+
                 <div className="flex min-w-0 flex-1 flex-col gap-3">
                   <Typography.Heading level={3}>{task.title}</Typography.Heading>
                   <p>{formatDate(task.due_at)}</p>
@@ -233,7 +233,7 @@ export function ExperimentsView({ state, ask, onInspect }) {
             );
             return (
               <>
-                
+
                 <div className="flex min-w-0 flex-1 flex-col gap-3">
                   <Typography.Heading level={3}>{experiment.hypothesis}</Typography.Heading>
                   <div className="flex flex-wrap gap-3">
@@ -275,7 +275,7 @@ export function StrengthsView({ state, ask }) {
           empty="Агент предложит сильные стороны, когда изучит ваш опыт и проекты."
           render={(strength) => (
             <>
-              
+
               <div className="flex min-w-0 flex-1 flex-col gap-3">
                 <Typography.Heading level={3}>{strength.title}</Typography.Heading>
                 <p>{strength.description}</p>
@@ -312,7 +312,7 @@ export function CVView({ state, ask, onInspect }) {
           empty="Агент подготовит CV под вашу цель и подходящие вакансии. Поручите ему изучить факты вашего опыта."
           render={(cv) => (
             <>
-              
+
               <div className="flex min-w-0 flex-1 flex-col gap-3">
                 <Typography.Heading level={3}>{cv.name || cv.headline}</Typography.Heading>
                 <p>{cv.headline}</p>
@@ -369,7 +369,7 @@ export function EmployersView({ state, ask, onBlock, onCommand, pending }) {
           empty="Общая база пока пуста. Агент будет собирать наблюдения о работодателях и обновлять их автоматически."
           render={(company) => (
             <>
-              
+
               <div className="flex min-w-0 flex-1 flex-col gap-3">
                 <Typography.Heading level={3}>{company.name}</Typography.Heading>
                 <span className="block">{company.domain}</span>
@@ -457,7 +457,7 @@ export function ResourcesView({ state, ask }) {
           empty="Агент выберет полезные источники и ресурсы под вашу задачу."
           render={(resource) => (
             <>
-              
+
               <div className="flex min-w-0 flex-1 flex-col gap-3">
                 <Typography.Heading level={3}>{resource.name}</Typography.Heading>
                 <p>{resource.notes}</p>
@@ -506,7 +506,7 @@ export function AccountsView({ state, ask }) {
           empty="Агент сам определит, какие аккаунты нужны, и сохранит состояния регистрации и подтверждения почты."
           render={(account) => (
             <>
-              
+
               <div className="flex min-w-0 flex-1 flex-col gap-3">
                 <Typography.Heading level={3}>
                   {platforms.get(account.platform_id)?.name ||
@@ -531,7 +531,7 @@ export function AccountsView({ state, ask }) {
             empty="Агент подбирает площадки под цель, а не по фиксированному списку."
             render={(platform) => (
               <>
-                
+
                 <div className="flex min-w-0 flex-1 flex-col gap-3">
                   <Typography.Heading level={3}>{platform.name}</Typography.Heading>
                   <Source value={platform.url} />
@@ -566,7 +566,7 @@ export function RepositoriesView({ state, ask }) {
           empty="Поручите агенту изучить локальный репозиторий и укажите его путь обычным сообщением."
           render={(repository) => (
             <>
-              
+
               <div className="flex min-w-0 flex-1 flex-col gap-3">
                 <Typography.Heading level={3}>{repository.name || repository.path}</Typography.Heading>
                 <p className="overflow-x-auto">{repository.path}</p>
@@ -619,7 +619,7 @@ export function TacticsView({ state, ask }) {
           empty="Агент предложит следующий подход, когда изучит вашу цель и результаты поиска."
           render={(tactic) => (
             <>
-              
+
               <div className="flex min-w-0 flex-1 flex-col gap-3">
                 <Typography.Heading level={3}>{tactic.name}</Typography.Heading>
                 <p>{tactic.hypothesis}</p>
@@ -645,7 +645,7 @@ export function TacticsView({ state, ask }) {
               items={list(state.research)}
               render={(research) => (
                 <>
-                  
+
                   <div className="flex min-w-0 flex-1 flex-col gap-3">
                     <Typography.Heading level={3}>{research.title}</Typography.Heading>
                     <p>{research.hypothesis}</p>

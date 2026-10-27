@@ -177,7 +177,7 @@ function DetailContent({ detail, state, ask, onDownload, pending, onInspect }) {
           }
         >
           Поручить перевод агенту
-          
+
         </Button>
       </>
     );
@@ -259,7 +259,7 @@ function DetailContent({ detail, state, ask, onDownload, pending, onInspect }) {
         </dl>
         {safeURL(job.url) ? (
           <Link
-            
+
             href={safeURL(job.url)}
             target="_blank"
             rel="noreferrer"
@@ -279,7 +279,7 @@ function DetailContent({ detail, state, ask, onDownload, pending, onInspect }) {
             }
           >
             Обсудить с агентом
-            
+
           </Button>
         </div>
       </>
@@ -588,7 +588,7 @@ export default function App() {
             <div className="flex flex-col gap-4 py-8">
               {error ? (
                 <>
-                  
+
                   <Typography.Heading level={1}>Не удалось подключиться</Typography.Heading>
                   <p>
                     {error} Проверьте, что Worklife запущен на вашем компьютере.

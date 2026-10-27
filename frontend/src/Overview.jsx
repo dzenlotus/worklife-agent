@@ -90,7 +90,7 @@ export function Pipeline({ state, onInspect, limit }) {
       <Tabs
         selectedKey={filter}
         onSelectionChange={setFilter}
-        
+
       >
         <Tabs.ListContainer>
           <Tabs.List aria-label="Состояние вакансий">
@@ -143,7 +143,7 @@ export function GoalComposer({
       }}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        
+
         <Label htmlFor="agent-goal">Основная цель поиска</Label>
         <span>ПОИСК РАБОТЫ</span>
       </div>
@@ -176,10 +176,10 @@ export function GoalComposer({
           type="submit"
           isPending={pending}
           isDisabled={configured !== false && !goal.trim() && !context?.text?.trim()}
-          
+
         >
           {configured === false ? "Подключить модель" : "Запустить поручение"}
-          
+
         </Button>
       </div>
       {configured === false ? (
@@ -294,12 +294,12 @@ export default function Overview({
         </div>
       ) : null}
       {firstUse ? <div className="flex flex-col gap-3 py-4">
-        
+
         <div><Typography.Heading level={2}>Поручений пока не было</Typography.Heading><p>{state.agent?.configured ? "Запустите цель выше. Здесь появятся действия агента и фактические результаты." : "Подключите модель, чтобы начать. Ваша цель и условия останутся на месте."}</p></div>
       </div> : <div className={!hasStatistics && !schedules.length ? "flex flex-col gap-6" : "grid gap-6 lg:grid-cols-2"}>
         <Panel
           title="Активность агента"
-          
+
           action={
             <Button
               variant="ghost"
@@ -316,7 +316,7 @@ export default function Overview({
                 <li key={event.id}>
                   <time>{formatDate(event.at, true)}</time>
                   <span >
-                    
+
                   </span>
                   <div>
                     <strong>{activitySummary(event, state).text}</strong>
@@ -356,7 +356,7 @@ export default function Overview({
             </div>
           </Panel> : null}
           {schedules.length ? <Panel >
-            
+
             <div>
               <Typography.Heading level={2}>Следующий запуск</Typography.Heading>
               <p>
