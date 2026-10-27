@@ -17,7 +17,7 @@
 |---|---|
 | Поиск вакансий | Адаптеры HH, Greenhouse и Lever; сохранение результатов и источников |
 | Оценка условий | Удалёнка, зарплата/валюта/период/gross-net, часы, этапы найма, тестовое; неизвестное → уточнение |
-| Почта | SMTP с TLS, вложениями и ответом в ветку; IMAP с UID, чтение без пометки «прочитано» |
+| Почта | SMTP/IMAP; AgentMail через HTTP: создание адресов, входящие, чтение писем, отправка и ответы |
 | Сообщения | Telegram Bot API; произвольные HTTP API, пример Slack |
 | Другие платформы | Настраиваемые HTTP-операции и persistent Chromium с формами/загрузкой файлов |
 | CV | Варианты из исходных фактов с источниками; Markdown, HTML и настоящий PDF |
@@ -37,7 +37,6 @@ Greenhouse/Lever здесь читают вакансии; подача заяв
 ## Быстрый запуск
 
 Нужны Python 3.12+ и [uv](https://docs.astral.sh/uv/getting-started/installation/).
-В этой рабочей папке окружение уже установлено.
 
 ```sh
 git clone https://github.com/dzenlotus/worklife-agent.git
@@ -155,6 +154,52 @@ IMAP-письма читаются без изменения флага Seen. SM
 если почтовый провайдер допускает только OAuth, используйте его HTTP API или добавьте соответствующую авторизацию.
 Telegram `updates` принимает `offset`; агент должен сохранить последний обработанный offset в своей заметке.
 HH: `me,resumes,negotiations,messages` для чтения; `apply,reply` для записи.
+
+### Отдельная почта агента: AgentMail
+
+Коннектор `agentmail` входит в `config.example.toml` и работает через те же MCP-инструменты Worklife.
+Отдельный MCP-сервер или дополнительная библиотека не нужны. Создайте ключ в
+[AgentMail Console](https://console.agentmail.to/) и задайте `AGENTMAIL_API_KEY` в `.env`.
+Если `config.toml` создан раньше, скопируйте в него блок `[connectors.agentmail]` со всеми операциями
+из примера. Перезапустите MCP-процесс с `--env-file .env`; `connectors_list` покажет операции и наличие ключа.
+
+Сначала проверьте существующие ящики:
+
+```json
+{"connector":"agentmail","operation":"inboxes","parameters":{}}
+```
+
+Это аргументы `connector_read`. Если нужен новый адрес, вызовите `action_draft`:
+
+```json
+{"connector":"agentmail","operation":"create_inbox","payload":{"display_name":"Worklife"},"idempotency_key":"agentmail-primary-inbox"}
+```
+
+Затем `action_approve` и `action_execute` с ID черновика в рамках поручения пользователя.
+Сохраните `email` и `inbox_id` из результата: `email` указывайте на сайтах,
+а `inbox_id` используйте в следующих вызовах. Повторно используйте существующий ящик, если новый не нужен.
+Без своего домена адрес создаётся на `@agentmail.to`.
+
+Чтение через `connector_read`:
+
+```json
+{"connector":"agentmail","operation":"messages","parameters":{"inbox_id":"RETURNED_INBOX_ID","labels":["received"],"limit":20}}
+{"connector":"agentmail","operation":"message","parameters":{"inbox_id":"RETURNED_INBOX_ID","message_id":"RETURNED_MESSAGE_ID"}}
+```
+
+Список возвращает метаданные; полный текст и HTML запрашивайте операцией `message`.
+`text` может отсутствовать у HTML-писем. Для ожидаемого подтверждения передавайте в `messages`
+параметр `after` с временем начала операции и проверяйте отправителя, получателя и тему.
+Следующие страницы доступны через `page_token` из `next_page_token` ответа.
+
+Отправка и ответ используют обычный путь действий: `send` с
+`{inbox_id,to:["recipient@example.org"],subject,text}`, либо `reply` с `{inbox_id,message_id,text}`.
+Здесь тело называется `text`, а не `body`, как у SMTP-коннектора.
+Письма принимаются сервисом постоянно; Worklife читает их при вызове инструмента.
+Автоматическое пробуждение агента по входящему письму требует отдельной настройки harness.
+Контракты: [создание ящика](https://docs.agentmail.to/api-reference/inboxes/create),
+[список писем](https://docs.agentmail.to/api-reference/inboxes/messages/list),
+[чтение письма](https://docs.agentmail.to/api-reference/inboxes/messages/get).
 
 ## Гипотезы и CV
 

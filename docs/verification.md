@@ -31,6 +31,9 @@ MCP Python SDK 1.30.0 и Chromium Playwright. Внешние письма и с�
 Есть одно предупреждение DeprecationWarning внутри установленной Starlette о совместимости alias AnyIO;
 оно не вызвано кодом проекта и не меняет результаты.
 
+GitHub Actions также прошёл на Ubuntu: установка по lock-файлу, Chromium, lint/format,
+20 тестов и сборка пакета. [Запуск проверки](https://github.com/dzenlotus/worklife-agent/actions/runs/40498523545).
+
 ## Ручные проверки поставки
 
 - `uv build`: собраны wheel и sdist.

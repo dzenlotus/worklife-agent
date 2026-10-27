@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f3eb">
+  <meta name="description" content="Worklife — личный инструмент для поиска работы через вашего ИИ-агента. Ваши условия жизни, честное CV, переписка и опыт, которым можно делиться.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Worklife — работа под вашу жизнь">
+  <meta property="og:description" content="Личный агент на вашей стороне. Локальные данные, 37 MCP-инструментов и подписанный общий опыт.">
+  <meta property="og:url" content="https://dzenlotus.github.io/worklife-agent/">
+  <title>Worklife — работа под вашу жизнь</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="site.css">
+  <script src="site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Перейти к содержанию</a>
+  <header class="site-header wrap">
+    <a class="brand" href="#" aria-label="Worklife — на главную">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M4 10v8c0 5 7 5 7 0V7m0 11c0 5 7 5 7 0V7m0 11c0 5 7 5 7 0v-8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="25" cy="6" r="2" fill="currentColor"/></svg>
+      <span>worklife<span class="brand-dot">.</span></span>
+    </a>
+    <nav aria-label="Основная навигация">
+      <a href="#possibilities">Возможности</a>
+      <a href="#shared">Общий опыт</a>
+      <a class="nav-source" href="https://github.com/dzenlotus/worklife-agent">GitHub <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-content">
+        <p class="eyebrow"><span class="small-dot"></span> Личный агент для поиска работы</p>
+        <h1 id="hero-title">Работа —<br>под вашу<br><em>жизнь.</em></h1>
+        <p class="hero-description">Сначала ваши условия. Затем поиск, переписка и&nbsp;отклики. Worklife даёт вашему ИИ-агенту инструменты, чтобы действовать на&nbsp;вашей стороне.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#start">Подключить агента <span aria-hidden="true">↗</span></a>
+          <a class="text-link" href="https://github.com/dzenlotus/worklife-agent/blob/main/README.md">Как это устроено <span aria-hidden="true">→</span></a>
+        </div>
+        <p class="hero-note">Открытый код <span>·</span> Python 3.12+ <span>·</span> Данные у вас</p>
+      </div>
+
+      <figure class="life-map">
+        <div class="map-topline"><span>ТОЧКА ОТСЧЁТА</span><span>01 / ВАШИ УСЛОВИЯ</span></div>
+        <svg class="map-lines" viewBox="0 0 540 520" fill="none" aria-hidden="true">
+          <ellipse cx="270" cy="265" rx="188" ry="180" stroke="#b6bcaa" stroke-dasharray="3 6"/>
+          <ellipse cx="270" cy="265" rx="108" ry="105" stroke="#b6bcaa"/>
+          <path d="M270 265 122 111M270 265 421 147M270 265 417 388M270 265 124 398" stroke="#87947b"/>
+          <path d="M442 83c18 22 32 47 40 75m-3-17 3 17 15-8M88 423c-22-25-38-54-48-87m2 19-2-19-16 9" stroke="#87947b" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <div class="map-center"><span class="map-center-caption">В ЦЕНТРЕ</span><strong>Вы</strong><span class="map-center-plus" aria-hidden="true">✳</span></div>
+        <div class="map-label map-label-time"><span class="map-label-icon" aria-hidden="true">◷</span><div><strong>Ваше время</strong><span>График, который подходит</span></div></div>
+        <div class="map-label map-label-place"><span class="map-label-icon" aria-hidden="true">⌁</span><div><strong>Ваше место</strong><span>Удалёнка или свой город</span></div></div>
+        <div class="map-label map-label-value"><span class="map-label-icon" aria-hidden="true">↗</span><div><strong>Ваш опыт</strong><span>Факты, а не приукрашивание</span></div></div>
+        <div class="map-label map-label-income"><span class="map-label-icon" aria-hidden="true">≈</span><div><strong>Ваш доход</strong><span>Понятные условия оплаты</span></div></div>
+        <figcaption><span class="map-caption-line"></span> Поиск вращается вокруг человека.</figcaption>
+        <span class="map-handnote" aria-hidden="true">не наоборот</span>
+      </figure>
+    </section>
+
+    <div class="facts-bar wrap" aria-label="О проекте">
+      <p><strong>37</strong><span>MCP-инструментов<br>для вашего агента</span></p>
+      <p><strong class="fact-word">local-first</strong><span>Личные данные<br>в вашей локальной базе</span></p>
+      <p><strong class="fact-word">ваша модель</strong><span>Работает в выбранной<br>вами среде агента</span></p>
+    </div>
+
+    <section class="principles wrap section-space" aria-labelledby="principles-title">
+      <div class="section-heading">
+        <p class="section-index">01 / ОТПРАВНАЯ ТОЧКА</p>
+        <h2 id="principles-title">Хорошая работа начинается<br>с&nbsp;хороших вопросов.</h2>
+        <p class="section-intro">Не «куда бы откликнуться», а «как я хочу жить». Агент превращает ваши ответы в&nbsp;условия поиска и&nbsp;вопросы работодателю.</p>
+      </div>
+      <div class="principle-grid">
+        <article><span class="item-number">01</span><h3>Обозначить важное</h3><p>Доход, часы, место работы, этапы найма и&nbsp;допустимое тестовое. Ваши условия становятся точкой отсчёта.</p></article>
+        <article><span class="item-number">02</span><h3>Выяснить неизвестное</h3><p>Нет зарплаты или непонятен график? Это повод уточнить условия, а&nbsp;не&nbsp;принять догадку за&nbsp;факт.</p></article>
+        <article><span class="item-number">03</span><h3>Действовать осмысленно</h3><p>Подготовить подходящее CV, конкретный отклик и&nbsp;следующий шаг. Сохранить результат, чтобы к&nbsp;нему вернуться.</p></article>
+      </div>
+    </section>
+
+    <section class="possibilities wrap section-space" id="possibilities" aria-labelledby="possibilities-title">
+      <div class="section-heading heading-split">
+        <div><p class="section-index">02 / ИНСТРУМЕНТЫ В ДЕЛЕ</p><h2 id="possibilities-title">От поиска<br>до&nbsp;следующего шага.</h2></div>
+        <p class="section-intro">Одна история работы вместо разрозненных вкладок. Worklife хранит факты и&nbsp;действия; ваша модель выбирает следующий шаг.</p>
+      </div>
+      <div class="capability-list">
+        <article class="capability-row"><span class="capability-symbol" aria-hidden="true">⌕</span><div><h3>Найти и разобраться</h3><p>Вакансии HH, Greenhouse и Lever. Условия, источники и неизвестные детали — рядом с&nbsp;предложением.</p></div><span class="capability-tag">Вакансии → условия</span></article>
+        <article class="capability-row"><span class="capability-symbol" aria-hidden="true">↗</span><div><h3>Написать и продолжить</h3><p>Почта SMTP/IMAP, Telegram-бот, HTTP API и браузер. Черновики, история откликов и напоминания о&nbsp;следующем контакте.</p></div><span class="capability-tag">Контакт → диалог</span></article>
+        <article class="capability-row"><span class="capability-symbol symbol-serif" aria-hidden="true">Aa</span><div><h3>Показать настоящий опыт</h3><p>Варианты CV из проверенных фактов с источниками. Markdown, HTML и PDF — под&nbsp;конкретную вакансию.</p></div><span class="capability-tag">Факты → резюме</span></article>
+        <article class="capability-row"><span class="capability-symbol" aria-hidden="true">⇄</span><div><h3>Проверить гипотезу</h3><p>Сравнить варианты CV и подходы к отклику: заранее выбрать метрику, дождаться окна ответа и посмотреть результаты.</p></div><span class="capability-tag">Гипотеза → наблюдение</span></article>
+      </div>
+      <p class="section-footnote">Аккаунты и доступ к площадкам настраивает владелец. Greenhouse и Lever читают вакансии; подача — через браузер или настроенный API. Telegram работает от бота.</p>
+    </section>
+
+    <section class="shared-section" id="shared" aria-labelledby="shared-title">
+      <div class="wrap shared-grid">
+        <div class="shared-copy"><p class="section-index">03 / ОПЫТ, КОТОРЫМ МОЖНО ДЕЛИТЬСЯ</p><h2 id="shared-title">Ваш опыт полезен<br><em>не только вам.</em></h2><p>Какие условия подтвердились? Что выяснилось на интервью? Наблюдения о&nbsp;работодателях можно подписать и&nbsp;передать другим участникам.</p><p>У каждого — своя локальная копия общей истории. Личные данные и&nbsp;CV остаются в&nbsp;личной базе.</p><a class="light-link" href="https://github.com/dzenlotus/worklife-agent/blob/main/README.md#общая-база-без-обязательного-блокчейна">Прочитать о протоколе <span aria-hidden="true">↗</span></a></div>
+        <div class="shared-visual">
+          <div class="peer-diagram" role="img" aria-label="Три независимых участника обмениваются подписанными общими записями; у каждого своя копия.">
+            <svg viewBox="0 0 480 285" fill="none" aria-hidden="true"><path d="M91 78 240 207 389 78H91Z" stroke="#879679" stroke-dasharray="4 6"/><path d="m197 78 7-4v8l-7-4Zm84 0-7-4v8l7-4Zm-129 55 2 8 6-6-8-2Zm171 0-2 8-6-6 8-2Z" fill="#c7d2b6"/></svg>
+            <div class="peer peer-one"><span class="peer-icon" aria-hidden="true">A</span><strong>Ваша копия</strong><span>Подписанный журнал</span></div>
+            <div class="peer peer-two"><span class="peer-icon" aria-hidden="true">Б</span><strong>Участник Б</strong><span>Собственная копия</span></div>
+            <div class="peer peer-three"><span class="peer-icon" aria-hidden="true">В</span><strong>Участник В</strong><span>Собственная копия</span></div>
+          </div>
+          <div class="shared-guarantee"><span aria-hidden="true">↳</span><p><strong>Подпись подтверждает автора.</strong><br>Правдивость наблюдения проверяется по&nbsp;источникам. Ed25519 + SHA-256, без блокчейна.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="status-section wrap section-space" aria-labelledby="status-title">
+      <div class="status-heading"><p class="section-index">04 / ТЕКУЩИЙ СТАТУС</p><h2 id="status-title">Работающий инструмент.<br>Понятные границы.</h2></div>
+      <div class="status-list">
+        <p><span class="status-dot" aria-hidden="true"></span><span><strong>20 тестов пройдено локально и на GitHub.</strong> Проверены основные сценарии, PDF и обмен подписанными записями.</span></p>
+        <p><span class="status-dot" aria-hidden="true"></span><span><strong>Greenhouse и Lever проверены живыми запросами.</strong> Чтение вакансий подтверждено.</span></p>
+        <p><span class="status-dot status-pending" aria-hidden="true"></span><span><strong>Доступ к HH ещё не подтверждён.</strong> Запрос из тестовой среды вернул 403; нужны разрешения площадки.</span></p>
+        <p><span class="status-dot status-pending" aria-hidden="true"></span><span><strong>Репликация проверена локально.</strong> Независимые узлы у реальных участников ещё нужно развернуть.</span></p>
+        <a class="text-link" href="https://github.com/dzenlotus/worklife-agent/blob/main/docs/verification.md">Результаты проверок <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+
+    <section class="start-section" id="start" aria-labelledby="start-title">
+      <div class="wrap start-grid">
+        <div><p class="section-index">05 / ВАШ СЛЕДУЮЩИЙ ШАГ</p><h2 id="start-title">Дайте вашему<br>агенту <em>инструменты.</em></h2><p class="start-description">Нужны Python 3.12+, uv и&nbsp;среда агента с&nbsp;поддержкой MCP. Модель и&nbsp;доступ к&nbsp;нужным аккаунтам выбираете вы.</p><ol class="setup-steps"><li><span>01</span>Установите проект и Chromium.</li><li><span>02</span>Укажите аккаунты в .env,<br>а провайдеры — в config.toml.</li><li><span>03</span>Подключите MCP и передайте<br>агенту свои условия.</li></ol><a class="text-link" href="https://github.com/dzenlotus/worklife-agent/blob/main/examples/mcp.json">Пример подключения MCP <span aria-hidden="true">↗</span></a></div>
+        <div class="terminal-panel"><div class="terminal-heading"><span><span class="terminal-dot" aria-hidden="true"></span> Быстрый старт</span><button class="copy-button" type="button" aria-label="Скопировать команды установки" hidden>Скопировать <span aria-hidden="true">⧉</span></button></div><pre tabindex="0" aria-label="Команды установки и запуска MCP"><code id="install-commands">git clone https://github.com/dzenlotus/worklife-agent.git
+cd worklife-agent
+
+uv sync --extra browser
+uv run playwright install chromium
+
+cp config.example.toml config.toml
+cp .env.example .env
+
+# Настройте .env и config.toml, затем:
+uv run --env-file .env worklife --config config.toml mcp</code></pre><div class="terminal-footer"><span aria-hidden="true">↳</span> Запуск MCP через stdio в вашей среде агента</div><span class="visually-hidden" id="copy-status" role="status" aria-live="polite"></span></div>
+      </div>
+      <div class="wrap agent-prompt"><span class="prompt-label">ПЕРВАЯ КОМАНДА АГЕНТУ</span><blockquote>«Используй Worklife. Начни с&nbsp;agent_brief, уточни мои условия жизни и&nbsp;проверенные факты опыта. Найди подходящие вакансии и&nbsp;подготовь следующие действия».</blockquote><a class="text-link" href="https://github.com/dzenlotus/worklife-agent/blob/main/agent/INSTRUCTIONS.md">Инструкции агента <span aria-hidden="true">↗</span></a></div>
+    </section>
+  </main>
+
+  <footer class="site-footer wrap"><a class="brand footer-brand" href="#">worklife<span class="brand-dot">.</span></a><p>Личный инструмент. Ваш агент. Ваши решения.<br><span>Эта страница знакомит с проектом. Агент запускается у вас.</span></p><a class="text-link" href="https://github.com/dzenlotus/worklife-agent">Исходный код <span aria-hidden="true">↗</span></a></footer>
+</body>
+</html>
