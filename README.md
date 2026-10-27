@@ -7,7 +7,7 @@
 
 [Страница проекта](https://dzenlotus.github.io/worklife-agent/) ·
 [Исходный код](https://github.com/dzenlotus/worklife-agent) ·
-[Инструкции агента](agent/INSTRUCTIONS.md)
+[Инструкции агента](https://github.com/dzenlotus/worklife-agent/blob/main/agent/INSTRUCTIONS.md)
 
 Инструментарий автономного поиска работы. Человек задаёт цель и условия;
 агент ищет подходящие предложения, выясняет условия, ведёт переписку, готовит CV,
@@ -51,7 +51,7 @@ Greenhouse/Lever здесь читают вакансии; подача заяв
 
 ### Одна команда через uv
 
-После публикации `worklife-agent` в PyPI установка и подключение выбранного AI-клиента выполняются так:
+Установка и подключение выбранного AI-клиента из PyPI:
 
 ```sh
 uvx --python 3.12 worklife-agent --target codex
@@ -119,7 +119,7 @@ uv run worklife-recruiter install --target codex --destination ../worklife-caree
 `--config` указывает ту же личную базу, что и приложение; `--env-file` передаёт путь к окружению, без копирования
 секретов в настройки клиента. Без конфигурации и явного `--home` используется стандартная `~/.worklife`.
 `--all` готовит конфигурации из каталога; установки в пользовательские настройки выполняются только явно.
-Подробности, команды для клиентов и границы поддержки: [установка агента](docs/recruiter-agent.md).
+Подробности, команды для клиентов и границы поддержки: [установка агента](https://github.com/dzenlotus/worklife-agent/blob/main/docs/recruiter-agent.md).
 Профиль Recruiter включает карьерные операции, `recruiter_start` и `recruiter_skill`; администрирование сети
 остаётся в полном MCP Worklife. Для клиента без нативных скиллов те же инструкции доступны через MCP.
 
@@ -255,7 +255,7 @@ uv run --env-file .env worklife --config config.toml mcp
 `--env-file /absolute/path/.env` можно добавить в аргументы `uv run`, если harness не передаёт окружение.
 Изолированная установка без uv: `pip install '.[browser]'`, `playwright install chromium`, `worklife mcp`.
 
-Готовые инструкции агента: [agent/INSTRUCTIONS.md](agent/INSTRUCTIONS.md).
+Готовые инструкции агента: [agent/INSTRUCTIONS.md](https://github.com/dzenlotus/worklife-agent/blob/main/agent/INSTRUCTIONS.md).
 Начальная команда агенту:
 
 > Используй Worklife. Начни с agent_brief, уточни мои условия жизни и проверенные факты опыта.

@@ -1,10 +1,12 @@
 import { useRef, useState } from "react";
 import { Tabs } from "@heroui/react";
-import { ArrowDown, ArrowRight, ArrowUpRight, Check, CheckCheck, Copy, GitBranch, Code2, Globe2, LockKeyhole, Search, Terminal as TerminalIcon, UserRound, FileText, MessageSquare, Target, Waves } from "lucide-react";
-import { BlurFade, BorderBeam, NumberTicker } from "./magicui.jsx";
+import { ArrowDown, ArrowRight, ArrowUpRight, Copy, GitBranch, Code2, Globe2, LockKeyhole, Search, Terminal as TerminalIcon, UserRound, FileText, MessageSquare, Target, Waves } from "lucide-react";
+import { BlurFade, NumberTicker } from "./magicui.jsx";
 import { ShimmerLink, Terminal, AnimatedSpan, TypingAnimation, TextAnimate, AnimatedShinyText, Marquee, ScrollProgress, AnimatedBeam, OrbitingCircles, MagicCard, WordRotate, LineShadowText } from "./site-magicui.jsx";
 import heroImage from "./site-assets/worklife-horizon.jpg";
 import manifestoImage from "./site-assets/worklife-coast.jpg";
+import jobsScreenshot from "./site-assets/worklife-jobs.png";
+import messagesScreenshot from "./site-assets/worklife-messages.png";
 import "./site.css";
 
 const github = "https://github.com/dzenlotus/worklife-agent";
@@ -17,10 +19,9 @@ const questions = [
   ["А настройка и локальное приложение?", "Поручите их агенту: он проверит окружение, подготовит подключение и запустит приложение, когда оно понадобится. Если потребуется ваш вход или разрешение, он объяснит конкретный шаг."],
   ["Что остаётся за мной?", "Рассказать о себе, задать условия поиска и предоставить нужные доступы. Вы выбираете, с кем разговаривать и какое предложение принять. Рутину ведёт агент."],
 ];
-const examples = [
-  { id: "logistics", label: "Логистика", goal: "Найди работу руководителем в логистике, от 180 000 ₽, без переезда. Выясни график и размер команды.", jobs: [{ role: "Руководитель отдела логистики", company: "Север", salary: "от 180 000 ₽", tags: "В вашем городе · Полный день", known: "Зарплата и город соответствуют условиям.", question: "Уточнить график работы" }, { role: "Менеджер цепей поставок", company: "Маршрут", salary: "от 200 000 ₽", tags: "В вашем городе · Полный день", known: "Подходит по направлению и зарплате.", question: "Уточнить размер команды" }] },
-  { id: "marketing", label: "Маркетинг", goal: "Найди удалённую работу в контент-маркетинге, от 120 000 ₽. Без неоплачиваемого тестового дольше двух часов.", jobs: [{ role: "Контент-маркетолог", company: "Студия", salary: "от 120 000 ₽", tags: "Удалённо · Полный день", known: "Зарплата и формат соответствуют условиям.", question: "Уточнить объём тестового" }, { role: "Редактор бренд-медиа", company: "Редакция", salary: "от 140 000 ₽", tags: "Удалённо · Полный день", known: "Подходит по направлению и формату.", question: "Уточнить условия тестового" }] },
-  { id: "accounting", label: "Бухгалтерия", goal: "Найди работу бухгалтером на полный день, от 100 000 ₽, с гибридным графиком. Проверь условия в объявлении.", jobs: [{ role: "Бухгалтер", company: "Баланс", salary: "от 100 000 ₽", tags: "Гибрид · Полный день", known: "Указанные условия соответствуют цели.", question: "Подтвердить условия на встрече" }, { role: "Ведущий бухгалтер", company: "Контур", salary: "от 130 000 ₽", tags: "Формат уточняется · Полный день", known: "Подходит по зарплате и направлению.", question: "Уточнить число дней в офисе" }] },
+const screenshots = [
+  { id: "jobs", label: "Вакансии", image: jobsScreenshot, alt: "Worklife: четыре вымышленные вакансии с зарплатами, этапами поиска и основаниями подбора.", caption: "Карточки компаний, зарплаты и основания подбора — рядом с текущим этапом поиска." },
+  { id: "messages", label: "Переписка", image: messagesScreenshot, alt: "Worklife: непрочитанные сообщения от вымышленных работодателей с отправителями, темами и текстом.", caption: "Входящие собраны отдельно: видны отправитель, тема, содержание и отметка прочтения." },
 ];
 const principles = [
   ["Человек в центре.", "Поиск начинается с ваших способностей, интересов и жизненных условий. Задача — найти достойное применение вашему опыту и получать за него деньги."],
@@ -102,20 +103,21 @@ export default function Site() {
       <section className="wl-paradigm wl-container" aria-labelledby="paradigm-heading"><BlurFade inView><p className="wl-eyebrow">Парадигма должна измениться</p><h2 id="paradigm-heading">Компаниям помогают системы.<br /><span>Вам нужен свой агент.</span></h2><p>Не больше часов перед формой отклика. Больше полезных действий: найти подходящие компании, увидеть ценность опыта, уточнить условия и сохранить нить разговора.</p><p>Работодатель — другая сторона сделки. Вы тоже выбираете.</p></BlurFade><HumanCentre /></section>
       <div className="wl-experience-strip"><p>Ваш опыт имеет значение в любой сфере.</p><Marquee duration={45} tabIndex={0} aria-label="Сферы профессионального опыта">{["Логистика", "Бухгалтерия", "Ремонт", "Обучение", "Продажи", "Производство", "Разработка", "Забота о людях"].map(item => <span key={item}>{item}<span aria-hidden="true">✦</span></span>)}</Marquee></div>
 
-      <section id="how" className="wl-section wl-container" aria-labelledby="how-heading">
-        <BlurFade inView className="wl-section-heading"><p className="wl-eyebrow">01 / От поручения к результату</p><h2 id="how-heading">Скажите, что<br /><span>вам подходит.</span></h2><p>Не нужно начинать с десятка вкладок.<br />Начните с разговора со своим агентом.</p></BlurFade>
-        <BlurFade inView delay={0.08} className="wl-demo">
-          <div className="wl-window-bar"><span className="wl-window-dots" aria-hidden="true"><i /><i /><i /></span><span>worklife / пример поиска</span><span className="wl-demo-label">Демо</span></div>
-          <Tabs defaultSelectedKey="logistics" className="wl-example-tabs">
-            <Tabs.ListContainer><Tabs.List aria-label="Выбрать пример поиска">{examples.map(item => <Tabs.Tab id={item.id} key={item.id}>{item.label}<Tabs.Indicator /></Tabs.Tab>)}</Tabs.List></Tabs.ListContainer>
-            {examples.map(item => <Tabs.Panel id={item.id} key={item.id}>
-              <div className="wl-prompt"><span className="wl-person">Вы</span><p>{item.goal}</p></div>
-              <div className="wl-agent-response"><span className="wl-agent-avatar"><Waves aria-hidden="true" /></span><div><p className="wl-response-heading">Есть с чего начать.</p><p>Вот что подходит и что ещё стоит выяснить.</p></div></div>
-              <div className="wl-jobs">{item.jobs.map(job => <article className="wl-job" key={job.role}><div className="wl-job-company"><span>{job.company.slice(0, 1)}</span><p>{job.company}<small>{job.tags}</small></p><ArrowUpRight aria-hidden="true" /></div><h3>{job.role}</h3><p className="wl-salary">{job.salary}</p><p className="wl-job-evidence"><Check aria-hidden="true" />{job.known}</p><p className="wl-job-question"><span />{job.question}</p></article>)}</div>
+      <section id="how" className="wl-section wl-container wl-product-gallery" aria-labelledby="how-heading">
+        <BlurFade inView className="wl-section-heading wl-gallery-heading"><p className="wl-eyebrow">01 / От поручения к результату</p><h2 id="how-heading">Скажите, что<br /><span>вам подходит.</span></h2><p>Агент ведёт поиск, а приложение показывает результат: вакансии, основания подбора и переписку. Ниже — снимки работающего интерфейса.</p></BlurFade>
+        <BlurFade inView delay={0.08} className="wl-demo wl-screenshot-demo">
+          <Tabs defaultSelectedKey="jobs" className="wl-example-tabs">
+            <Tabs.ListContainer><Tabs.List aria-label="Экраны приложения">{screenshots.map(item => <Tabs.Tab id={item.id} key={item.id}>{item.label}<Tabs.Indicator /></Tabs.Tab>)}</Tabs.List></Tabs.ListContainer>
+            {screenshots.map(item => <Tabs.Panel id={item.id} key={item.id}>
+              <figure className="wl-product-shot">
+                <a className="wl-screenshot-link" href={item.image} target="_blank" rel="noreferrer" aria-label={`Открыть снимок «${item.label}» в полном размере`}>
+                  <img src={item.image} alt={item.alt} width="1440" height="1080" loading="lazy" decoding="async" />
+                </a>
+                <figcaption><p>{item.caption}</p><a href={item.image} target="_blank" rel="noreferrer">Открыть в полном размере<ArrowUpRight aria-hidden="true" /></a></figcaption>
+              </figure>
             </Tabs.Panel>)}
           </Tabs>
-          <div className="wl-demo-footer"><CheckCheck aria-hidden="true" />Пример интерфейса. Компании и вакансии вымышлены.</div>
-          <BorderBeam repeat={Infinity} />
+          <p className="wl-demo-footer">Компании, вакансии и сообщения в примере вымышлены.</p>
         </BlurFade>
         <div className="wl-capabilities">{[[Search, "Ищет и уточняет", "Вакансии и условия — с источниками и вопросами к работодателю."], [TerminalIcon, "Готовит и помнит", "CV из подтверждённого опыта. Отклики, ответы и следующий шаг — в истории."], [GitBranch, "Проверяет подходы", "Гипотезы, эксперименты и расписания, чтобы двигаться дальше."]].map(([Glyph, title, text], index) => <BlurFade inView delay={index * 0.06} key={title}><Glyph aria-hidden="true" /><h3>{title}</h3><p>{text}</p></BlurFade>)}</div>
       </section>
