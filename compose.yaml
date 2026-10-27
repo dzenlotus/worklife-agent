@@ -1,0 +1,13 @@
+services:
+  replica:
+    build: .
+    environment:
+      WORKLIFE_HOME: /data
+      WORKLIFE_NETWORK_TOKEN: ${WORKLIFE_NETWORK_TOKEN:?Set a network token}
+    ports:
+      - "127.0.0.1:8765:8765"
+    volumes:
+      - shared-replica:/data
+    restart: unless-stopped
+volumes:
+  shared-replica:

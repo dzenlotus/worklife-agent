@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "worklife": {
+      "command": "uv",
+      "args": ["run", "--directory", "/absolute/path/to/worklife-agent", "worklife", "--config", "/absolute/path/to/worklife-agent/config.toml", "mcp"],
+      "env": {
+        "WORKLIFE_CONFIG": "/absolute/path/to/worklife-agent/config.toml"
+      }
+    }
+  }
+}

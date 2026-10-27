@@ -1,0 +1,25 @@
+{
+  "name": "Your name",
+  "constraints": {
+    "remote": true,
+    "min_salary": 5000,
+    "currency": "EUR",
+    "salary_period": "month",
+    "salary_gross": false,
+    "max_hours": 32,
+    "max_hiring_stages": 3,
+    "max_test_hours": 2
+  },
+  "life_preferences": [
+    "Work should leave energy for life and personal projects",
+    "No unpaid overtime",
+    "Ask whether the stated salary is gross or net before comparing offers"
+  ],
+  "facts": [
+    {
+      "id": "python-apis",
+      "text": "Replace this with a real, verifiable achievement",
+      "source": "Replace with a portfolio link or a private document reference"
+    }
+  ]
+}

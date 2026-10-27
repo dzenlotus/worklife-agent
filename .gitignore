@@ -1,0 +1,16 @@
+.venv/
+.worklife/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+.env
+config.toml
+artifacts/
+examples/mcp.local.json
+.DS_Store
+identity.key
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal

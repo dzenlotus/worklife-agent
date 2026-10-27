@@ -1,0 +1,67 @@
+[worklife]
+home = ".worklife"
+
+[network]
+token_env = "WORKLIFE_NETWORK_TOKEN"
+
+[connectors.hh]
+type = "hh"
+base_url = "https://api.hh.ru"
+user_agent = "Worklife/0.1 (replace-with-your-contact@example.org)"
+token_env = "HH_ACCESS_TOKEN"
+
+[connectors.greenhouse]
+type = "greenhouse"
+board = "greenhouse"
+
+[connectors.lever]
+type = "lever"
+board = "palantir"
+# EU boards: base_url = "https://api.eu.lever.co"
+
+[connectors.mail]
+type = "email"
+smtp_host = "smtp.gmail.com"
+smtp_port = 587
+tls = "starttls"
+imap_host = "imap.gmail.com"
+imap_port = 993
+from_env = "MAIL_FROM"
+username_env = "MAIL_USERNAME"
+password_env = "MAIL_PASSWORD"
+
+[connectors.telegram]
+type = "telegram"
+token_env = "TELEGRAM_BOT_TOKEN"
+
+# Example of another messaging platform through the generic adapter.
+[connectors.slack]
+type = "http"
+base_url = "https://slack.com/api"
+token_env = "SLACK_BOT_TOKEN"
+[connectors.slack.operations.history]
+method = "GET"
+path = "/conversations.history"
+effect = "read"
+[connectors.slack.operations.reply]
+method = "POST"
+path = "/chat.postMessage"
+effect = "write"
+
+# Optional web search: parameters q, count, offset. Requires an account/key.
+[connectors.web_search]
+type = "http"
+base_url = "https://api.search.brave.com"
+[connectors.web_search.headers_env]
+X-Subscription-Token = "BRAVE_SEARCH_API_KEY"
+[connectors.web_search.operations.search]
+method = "GET"
+path = "/res/v1/web/search"
+effect = "read"
+
+# Add actual participants after exchanging fingerprints using a trusted channel.
+# [[peers]]
+# name = "participant-b"
+# url = "https://replica.example.org"
+# author = "64-character-author-fingerprint-from-worklife-identity"
+# token_env = "PARTICIPANT_B_TOKEN"
