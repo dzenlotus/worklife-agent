@@ -199,6 +199,13 @@ def main():
     chain_export.add_argument("destination")
     chain_import = chain_sub.add_parser("import")
     chain_import.add_argument("source")
+    chain_worker = chain_sub.add_parser(
+        "worker", help="Bounded PoW/sync worker with automatic monthly renewal"
+    )
+    chain_worker.add_argument("--cpu-fraction", type=float, default=0.25)
+    chain_worker.add_argument("--batch-attempts", type=int, default=250000)
+    chain_worker.add_argument("--sync-seconds", type=float, default=30)
+    chain_worker.add_argument("--once", action="store_true")
     simulation = chain_sub.add_parser("simulate", help="Real-hash fixed-budget identity-splitting experiment")
     simulation.add_argument("--trials", type=int, default=1_500_000)
     simulation.add_argument("--keys", default="1,1000,10000")
@@ -287,6 +294,34 @@ def main():
                 server.worklife_browser.close()
             return
         w = Workspace(config.home)
+        if args.command == "chain" and args.chain_command == "worker":
+            from .chain_worker import worker_cycles
+
+            def peers():
+                return {
+                    **{p.get("name", p["url"]): p for p in config.peers},
+                    **{p["id"]: p["config"] for p in w.store.list("peer")},
+                }
+
+            last_report = 0.0
+            for packet in worker_cycles(
+                w,
+                peers,
+                cpu_fraction=args.cpu_fraction,
+                batch_attempts=args.batch_attempts,
+                sync_seconds=args.sync_seconds,
+                once=args.once,
+            ):
+                current = time.monotonic()
+                if (
+                    args.once
+                    or packet["mining"]["mined"]
+                    or packet["qualification"]["status"] == "earned"
+                    or current - last_report >= 60
+                ):
+                    emit(packet)
+                    last_report = current
+            return
         if args.command == "chain":
             emit(chain_command(w, args))
         elif args.command in {"identity", "init"}:

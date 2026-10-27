@@ -11,15 +11,14 @@ from datetime import UTC, datetime
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 
+from .chain_profile import NETWORK, QUALIFICATION_BITS
 from .storage import canonical
 
-NETWORK = "worklife-chain-v1"
 QUALIFICATION_VERSION = 1
-QUALIFICATION_BITS = 10
 SCOPE = "confirm-employer"
 MAX_ATTEMPTS = 1_000_000
-WORK_DOMAIN = b"worklife-chain-v1/qualification/v1/work\0"
-SIGN_DOMAIN = b"worklife-chain-v1/qualification/v1/signature\0"
+WORK_DOMAIN = f"{NETWORK}/qualification/v1/work\0".encode()
+SIGN_DOMAIN = f"{NETWORK}/qualification/v1/signature\0".encode()
 BASE_FIELDS = {"network", "version", "public_key", "anchor", "month", "expires_at", "scope"}
 CERTIFICATE_FIELDS = BASE_FIELDS | {"answers", "nonce", "signature"}
 
@@ -179,16 +178,18 @@ def _work(body):
     return int.from_bytes(digest, "big") < 1 << (256 - QUALIFICATION_BITS)
 
 
-def qualify(key, anchor, at=None, max_attempts=100_000):
-    """Solve tasks and do at most max_attempts hashes; return only the signed certificate."""
+def qualify(key, anchor, at=None, max_attempts=100_000, start_nonce=0):
+    """Search a bounded nonce range; return only the signed certificate on success."""
     if not isinstance(key, Ed25519PrivateKey):
         raise ValueError("Qualification requires an Ed25519 private key")
     if type(max_attempts) is not int or not 1 <= max_attempts <= MAX_ATTEMPTS:
         raise ValueError(f"Qualification attempts must be an integer from 1 to {MAX_ATTEMPTS}")
+    if type(start_nonce) is not int or start_nonce < 0 or start_nonce + max_attempts > 2**63:
+        raise ValueError("Invalid qualification nonce range")
     tasks = challenge(key.public_key().public_bytes_raw().hex(), anchor, at)
     body = {field: tasks[field] for field in BASE_FIELDS}
     body["answers"] = solve(tasks)
-    for nonce in range(max_attempts):
+    for nonce in range(start_nonce, start_nonce + max_attempts):
         body["nonce"] = nonce
         if _work(body):
             signature = key.sign(SIGN_DOMAIN + hashlib.sha256(canonical(body)).digest()).hex()

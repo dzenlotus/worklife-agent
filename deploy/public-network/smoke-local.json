@@ -1,0 +1,30 @@
+{
+  "profile": "public-testnet-v1",
+  "rules": {
+    "network": "worklife-public-testnet-v1",
+    "version": 1,
+    "block_bits": 25,
+    "confirmations": 6,
+    "qualification_version": 1,
+    "qualification_bits": 18,
+    "max_events": 100,
+    "max_body_bytes": 524288,
+    "max_future_seconds": 120
+  },
+  "genesis": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+  "qualification_seconds": 0.5578398341313004,
+  "qualification_nonce": 165740,
+  "mining_attempts": 46489962,
+  "elapsed_seconds": 24.690668874885887,
+  "block_id": "0000007357efedc7c98708d6ee15565f20addadb65911dc69dc3af82f6ea2a59",
+  "replica_imported": 1,
+  "same_head": true,
+  "confirmation": {
+    "status": "included",
+    "depth": 1,
+    "block_id": "0000007357efedc7c98708d6ee15565f20addadb65911dc69dc3af82f6ea2a59",
+    "height": 1,
+    "scope": "protocol_validity"
+  },
+  "scope": "isolated localhost storage; no external deployment or historical-attack proof"
+}

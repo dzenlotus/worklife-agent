@@ -1,0 +1,115 @@
+{
+  "benchmark": "verified-history-reads-v1",
+  "measured_at": "2026-10-27T17:55:20.813257+00:00",
+  "chain_profile": "development",
+  "rules": {
+    "network": "worklife-chain-v1",
+    "version": 1,
+    "block_bits": 12,
+    "confirmations": 3,
+    "qualification_version": 1,
+    "qualification_bits": 10,
+    "max_events": 100,
+    "max_body_bytes": 524288,
+    "max_future_seconds": 120
+  },
+  "platform": {
+    "system": "Darwin",
+    "release": "25.2.0",
+    "machine": "arm64",
+    "python": "3.12.12"
+  },
+  "parameters": {
+    "block_cases": [
+      100,
+      200,
+      400
+    ],
+    "events_per_block": 1,
+    "reads_per_operation": 3,
+    "max_blocks": 1000,
+    "max_import_batch": 100,
+    "max_attempts_per_block": 1000000
+  },
+  "fixture": {
+    "base_time": "2026-10-15T00:00:00+00:00",
+    "synthetic_public_key": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+    "qualification_attempts": 511,
+    "block_pow_attempts": 1699811,
+    "last_block_body_bytes": 1821
+  },
+  "measurements": [
+    {
+      "blocks": 100,
+      "events": 100,
+      "status": {
+        "runs_seconds": [
+          0.02053220896050334,
+          0.020670833066105843,
+          0.02097199996933341
+        ],
+        "median_seconds": 0.020670833066105843,
+        "max_seconds": 0.02097199996933341
+      },
+      "empty_terminal_page": {
+        "runs_seconds": [
+          0.020141583401709795,
+          0.01991395791992545,
+          0.01994845876470208
+        ],
+        "median_seconds": 0.01994845876470208,
+        "max_seconds": 0.020141583401709795
+      }
+    },
+    {
+      "blocks": 200,
+      "events": 200,
+      "status": {
+        "runs_seconds": [
+          0.04662899998947978,
+          0.04185883281752467,
+          0.041370916180312634
+        ],
+        "median_seconds": 0.04185883281752467,
+        "max_seconds": 0.04662899998947978
+      },
+      "empty_terminal_page": {
+        "runs_seconds": [
+          0.04105645790696144,
+          0.04103708267211914,
+          0.041654459200799465
+        ],
+        "median_seconds": 0.04105645790696144,
+        "max_seconds": 0.041654459200799465
+      }
+    },
+    {
+      "blocks": 400,
+      "events": 400,
+      "status": {
+        "runs_seconds": [
+          0.08933937503024936,
+          0.08842512499541044,
+          0.08874691696837544
+        ],
+        "median_seconds": 0.08874691696837544,
+        "max_seconds": 0.08933937503024936
+      },
+      "empty_terminal_page": {
+        "runs_seconds": [
+          0.08902716683223844,
+          0.08902379171922803,
+          0.08888483326882124
+        ],
+        "median_seconds": 0.08902379171922803,
+        "max_seconds": 0.08902716683223844
+      }
+    }
+  ],
+  "limits": [
+    "Local cumulative linear DAG; one small event per block; temporary SQLite database.",
+    "Authentic signatures and real proofs; normal import and complete read validation.",
+    "Development proofs reduce setup cost; this does not benchmark public-network mining.",
+    "No HTTP, external nodes, large payloads, hostile forks or security guarantees measured."
+  ]
+}

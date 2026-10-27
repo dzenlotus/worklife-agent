@@ -1,0 +1,13 @@
+{
+	admin off
+}
+
+{$NODE_DOMAIN} {
+	handle /v2/* {
+		reverse_proxy node:8765
+	}
+
+	handle {
+		respond "Not found" 404
+	}
+}

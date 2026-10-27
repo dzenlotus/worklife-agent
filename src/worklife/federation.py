@@ -195,7 +195,7 @@ def sync_chain_peer(workspace, peer):
         "genesis": GENESIS,
         "block_bits": BLOCK_BITS,
     }
-    with httpx.Client(base_url=url, timeout=30, follow_redirects=False) as client:
+    with httpx.Client(base_url=url, timeout=httpx.Timeout(30, connect=5), follow_redirects=False) as client:
         state = _request_json(client, "GET", "/v2/state")
         if type(state) is not dict or any(
             type(state.get(field)) is not type(value) or state[field] != value

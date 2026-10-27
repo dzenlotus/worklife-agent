@@ -1,0 +1,259 @@
+{
+  "benchmark_profile": "pow-digest-and-check-v1",
+  "chain_profile": "public-testnet-v1",
+  "rules": {
+    "network": "worklife-public-testnet-v1",
+    "version": 1,
+    "block_bits": 25,
+    "confirmations": 6,
+    "qualification_version": 1,
+    "qualification_bits": 18,
+    "max_events": 100,
+    "max_body_bytes": 524288,
+    "max_future_seconds": 120
+  },
+  "measured_at": "2026-10-27T17:51:59.786732+00:00",
+  "platform": {
+    "system": "Darwin",
+    "release": "25.2.0",
+    "machine": "arm64",
+    "python": "3.12.12",
+    "logical_cpus": 10
+  },
+  "parameters": {
+    "attempts": 300000,
+    "repeats": 3,
+    "cpu_fraction": 0.25,
+    "target_seconds": 30,
+    "warmup_attempts": 1000
+  },
+  "samples": {
+    "synthetic_public_key": "03a107bff3ce10be1d70dd18e74bc09967e4d6309ba50d5f1ddc8664125531b8",
+    "block_body_bytes": 1886,
+    "qualification_body_bytes": 637
+  },
+  "measurements": {
+    "block_digest": {
+      "runs": [
+        {
+          "attempts": 300000,
+          "seconds": 0.09333158284425735,
+          "hashes_per_second": 3214346.00011671
+        },
+        {
+          "attempts": 300000,
+          "seconds": 0.0933230840601027,
+          "hashes_per_second": 3214638.7254710905
+        },
+        {
+          "attempts": 300000,
+          "seconds": 0.09260016726329923,
+          "hashes_per_second": 3239734.968803893
+        }
+      ],
+      "median_hashes_per_second": 3214638.7254710905,
+      "min_hashes_per_second": 3214346.00011671,
+      "max_hashes_per_second": 3239734.968803893
+    },
+    "block": {
+      "runs": [
+        {
+          "attempts": 300000,
+          "seconds": 0.1602388327009976,
+          "hashes_per_second": 1872205.3508701846
+        },
+        {
+          "attempts": 300000,
+          "seconds": 0.1579764592461288,
+          "hashes_per_second": 1899017.115788101
+        },
+        {
+          "attempts": 300000,
+          "seconds": 0.15679354080930352,
+          "hashes_per_second": 1913344.1240724833
+        }
+      ],
+      "median_hashes_per_second": 1899017.115788101,
+      "min_hashes_per_second": 1872205.3508701846,
+      "max_hashes_per_second": 1913344.1240724833
+    },
+    "qualification": {
+      "runs": [
+        {
+          "attempts": 300000,
+          "seconds": 1.0291469590738416,
+          "hashes_per_second": 291503.5577328805
+        },
+        {
+          "attempts": 300000,
+          "seconds": 1.0483184587210417,
+          "hashes_per_second": 286172.58191370853
+        },
+        {
+          "attempts": 300000,
+          "seconds": 1.0524586248211563,
+          "hashes_per_second": 285046.8350249672
+        }
+      ],
+      "median_hashes_per_second": 286172.58191370853,
+      "min_hashes_per_second": 285046.8350249672,
+      "max_hashes_per_second": 291503.5577328805
+    }
+  },
+  "block_scenarios": [
+    {
+      "nodes": 1,
+      "network_hashes_per_second": 474754.27894702525,
+      "recommended_bits": 24,
+      "candidates": [
+        {
+          "bits": 23,
+          "expected_seconds": 17.669367864583336,
+          "p50_seconds": 12.247472551266476,
+          "p95_seconds": 52.93269405751706,
+          "success_probability": {
+            "100000": 0.01185015688849118,
+            "1000000": 0.11237799499821191
+          }
+        },
+        {
+          "bits": 24,
+          "expected_seconds": 35.33873572916667,
+          "p50_seconds": 24.494945102532952,
+          "p95_seconds": 105.86538811503412,
+          "success_probability": {
+            "100000": 0.005942736326236481,
+            "1000000": 0.057863062949310276
+          }
+        },
+        {
+          "bits": 25,
+          "expected_seconds": 70.67747145833334,
+          "p50_seconds": 48.989890205065905,
+          "p95_seconds": 211.73078044277383,
+          "success_probability": {
+            "100000": 0.002975795799292772,
+            "1000000": 0.029362612564570807
+          }
+        }
+      ]
+    },
+    {
+      "nodes": 3,
+      "network_hashes_per_second": 1424262.8368410757,
+      "recommended_bits": 26,
+      "candidates": [
+        {
+          "bits": 25,
+          "expected_seconds": 23.55915715277778,
+          "p50_seconds": 16.329963401688637,
+          "p95_seconds": 70.57692681425794,
+          "success_probability": {
+            "100000": 0.002975795799292772,
+            "1000000": 0.029362612564570807
+          }
+        },
+        {
+          "bits": 26,
+          "expected_seconds": 47.11831430555556,
+          "p50_seconds": 32.659926803377274,
+          "p95_seconds": 141.1538543306335,
+          "success_probability": {
+            "100000": 0.0014890064586942098,
+            "1000000": 0.01479068840628897
+          }
+        },
+        {
+          "bits": 27,
+          "expected_seconds": 94.23662861111112,
+          "p50_seconds": 65.31985360675455,
+          "p95_seconds": 282.307708661267,
+          "success_probability": {
+            "100000": 0.000744780575628597,
+            "1000000": 0.007422893852371218
+          }
+        }
+      ]
+    },
+    {
+      "nodes": 5,
+      "network_hashes_per_second": 2373771.3947351263,
+      "recommended_bits": 27,
+      "candidates": [
+        {
+          "bits": 26,
+          "expected_seconds": 28.270988583333335,
+          "p50_seconds": 19.595956082026362,
+          "p95_seconds": 84.69231259838008,
+          "success_probability": {
+            "100000": 0.0014890064586942098,
+            "1000000": 0.01479068840628897
+          }
+        },
+        {
+          "bits": 27,
+          "expected_seconds": 56.54197716666667,
+          "p50_seconds": 39.191912164052724,
+          "p95_seconds": 169.38462519676017,
+          "success_probability": {
+            "100000": 0.000744780575628597,
+            "1000000": 0.007422893852371218
+          }
+        },
+        {
+          "bits": 28,
+          "expected_seconds": 113.08395433333334,
+          "p50_seconds": 78.38382432810545,
+          "p95_seconds": 338.76925123606145,
+          "success_probability": {
+            "100000": 0.0003724596502164456,
+            "1000000": 0.0037183600199170806
+          }
+        }
+      ]
+    }
+  ],
+  "qualification_candidates": [
+    {
+      "bits": 14,
+      "expected_seconds": 0.05725216542561849,
+      "p50_seconds": 0.03968584245231624,
+      "p95_seconds": 0.17150839424162484,
+      "success_probability": {
+        "100000": 0.9977654197967775,
+        "1000000": 1.0
+      }
+    },
+    {
+      "bits": 16,
+      "expected_seconds": 0.22900866170247397,
+      "p50_seconds": 0.15873638101954013,
+      "p95_seconds": 0.6860440601510865,
+      "success_probability": {
+        "100000": 0.7825726588407262,
+        "1000000": 0.9999997638752285
+      }
+    },
+    {
+      "bits": 18,
+      "expected_seconds": 0.9160346468098959,
+      "p50_seconds": 0.634949018473023,
+      "p95_seconds": 2.7441902181837956,
+      "success_probability": {
+        "100000": 0.3171434386693266,
+        "1000000": 0.9779557733565344
+      }
+    }
+  ],
+  "assumptions": {
+    "repeated_nonce_range_adds_attempts": false,
+    "timing": "Geometric independent fresh hashes; estimates exclude networking and validation.",
+    "cpu_fraction": "Linear duty-cycle estimate per measured single Python thread; benchmark is unthrottled.",
+    "qualification": "Actual _work canonical-body path; no early stop at its current fixed difficulty.",
+    "block": "Tables use full pow_digest + meets_work attempts; block_digest measures raw hashing only.",
+    "scope": "Local host only; external operators must benchmark their actual VPS and software.",
+    "cost": "No tokens, fees or per-key weight bonus; PoW still costs CPU time and electricity.",
+    "security": "Hash timing and node counts do not establish independence or resistance to optimized miners.",
+    "retry": "Same body and repeated nonce range repeats the same hashes; advance nonce or change valid body."
+  }
+}

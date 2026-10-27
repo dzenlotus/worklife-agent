@@ -131,3 +131,6 @@ class BlockchainNetwork:
             return self._save("offline", "Локальная история доступна. Повторим соединение автоматически.")
         except (ValueError, TypeError, KeyError, OSError, sqlite3.DatabaseError):
             return self._save("attention", "Не удалось завершить обмен блоками. Повторим автоматически.")
+        finally:
+            # A slow peer must not make every mining cycle immediately retry synchronization.
+            self._last_attempt = time.monotonic()

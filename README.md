@@ -1,5 +1,10 @@
 # Worklife
 
+Новая сеть без монет и комиссий: [протокол](docs/blockchain.md) и
+[подготовка публичного испытания](docs/public-network-launch.md).
+Профиль `public-testnet-v1` использует отдельный genesis, PoW 25/18 бит и шесть
+подтверждений. Старые описания GitHub relay ниже относятся к legacy-предложениям.
+
 [Страница проекта](https://dzenlotus.github.io/worklife-agent/) ·
 [Исходный код](https://github.com/dzenlotus/worklife-agent) ·
 [Инструкции агента](agent/INSTRUCTIONS.md)

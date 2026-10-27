@@ -179,6 +179,38 @@ def test_work_is_bounded_and_does_not_change_on_retry(qualification, key, monkey
     assert qualification.qualify(key, ANCHOR, AT) == qualification.qualify(key, ANCHOR, AT)
 
 
+def test_qualification_search_can_resume_a_contiguous_bounded_nonce_range(qualification, key, monkeypatch):
+    attempted = []
+
+    def no_success(body):
+        attempted.append(body["nonce"])
+        return False
+
+    monkeypatch.setattr(qualification, "_work", no_success)
+    for offset in (7, 10):
+        with pytest.raises(ValueError, match="exhausted"):
+            qualification.qualify(key, ANCHOR, AT, max_attempts=3, start_nonce=offset)
+    assert attempted == [7, 8, 9, 10, 11, 12]
+    with pytest.raises(ValueError, match="exhausted"):
+        qualification.qualify(key, ANCHOR, AT, max_attempts=1, start_nonce=2**63 - 1)
+    assert attempted[-1] == 2**63 - 1
+
+
+@pytest.mark.parametrize(
+    "start_nonce,max_attempts", [(-1, 1), (True, 1), (1.0, 1), ("1", 1), (2**63, 1), (2**63 - 1, 2)]
+)
+def test_qualification_rejects_invalid_nonce_ranges(qualification, key, start_nonce, max_attempts):
+    with pytest.raises(ValueError, match="nonce"):
+        qualification.qualify(key, ANCHOR, AT, max_attempts=max_attempts, start_nonce=start_nonce)
+
+
+def test_resumed_proof_uses_absolute_nonce_and_unchanged_certificate_schema(qualification, key):
+    certificate = qualification.qualify(key, ANCHOR, AT)
+    resumed = qualification.qualify(key, ANCHOR, AT, max_attempts=1, start_nonce=certificate["nonce"])
+    assert resumed == certificate
+    assert qualification.verify(resumed, AT)["month"] == "2026-12"
+
+
 def test_strict_types_sizes_and_challenge_rules(qualification, key):
     for invalid in (None, True, "f", "G" * 64, "0" * 65):
         with pytest.raises(ValueError):

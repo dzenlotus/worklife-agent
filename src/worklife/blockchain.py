@@ -16,14 +16,13 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from . import qualification
+from .chain_profile import BLOCK_BITS, CONFIRMATIONS, PROFILE
 from .ledger import GENESIS as EVENT_GENESIS
 from .ledger import Ledger
 from .storage import canonical
 
 NETWORK = qualification.NETWORK
 VERSION = 1
-BLOCK_BITS = 12
-CONFIRMATIONS = 3
 MAX_EVENTS = 100
 MAX_BODY_BYTES = 512 * 1024
 PROTOCOL = {
@@ -105,6 +104,16 @@ class Blockchain:
         return list(reversed(result))
 
     @staticmethod
+    def _event_state(path):
+        """Ancestors have already been fully verified in the topological read/import."""
+        known, heads = {}, {}
+        for ancestor in path:
+            for event in ancestor["events"]:
+                known[event["event_id"]] = event
+                heads[event["author"]] = event
+        return known, heads
+
+    @staticmethod
     def _append_events(events, known, heads):
         for event in events:
             Ledger.check_event(event)
@@ -165,9 +174,7 @@ class Blockchain:
                 raise ValueError("Qualification belongs to another block author")
             if rights["anchor"] not in {GENESIS, *(ancestor["block_id"] for ancestor in path)}:
                 raise ValueError("Qualification anchor is not a block ancestor")
-            known, heads = {}, {}
-            for ancestor in path:
-                self._append_events(ancestor["events"], known, heads)
+            known, heads = self._event_state(path)
             self._append_events(block["events"], known, heads)
         except (KeyError, TypeError, AttributeError, InvalidSignature, OverflowError) as exc:
             raise ValueError("Invalid signed block") from exc
@@ -212,8 +219,46 @@ class Blockchain:
 
     def qualify(self, at=None, max_attempts=100000):
         blocks = self._load()
-        certificate = qualification.qualify(
-            self.ledger.key, self._head(blocks), at=at, max_attempts=max_attempts
+        month = qualification.period(at)
+        ancestors = {GENESIS, *(block["block_id"] for block in self._path(blocks, self._head(blocks)))}
+        try:
+            progress = self.store.get("chain_qualification_progress", self.ledger.author_id)
+        except ValueError:
+            progress = {}
+        if (
+            progress.get("network") != NETWORK
+            or progress.get("month") != month
+            or progress.get("anchor") not in ancestors
+            or progress.get("complete")
+        ):
+            progress = {"network": NETWORK, "month": month, "anchor": self._head(blocks), "next_nonce": 0}
+        start_nonce = progress["next_nonce"]
+        try:
+            certificate = qualification.qualify(
+                self.ledger.key, progress["anchor"], at=at, max_attempts=max_attempts, start_nonce=start_nonce
+            )
+        except ValueError as exc:
+            if str(exc).startswith("Qualification proof exhausted"):
+                self.store.put(
+                    "chain_qualification_progress",
+                    self.ledger.author_id,
+                    {
+                        **progress,
+                        "next_nonce": start_nonce + max_attempts,
+                        "last_attempts": max_attempts,
+                        "complete": False,
+                    },
+                )
+            raise
+        self.store.put(
+            "chain_qualification_progress",
+            self.ledger.author_id,
+            {
+                **progress,
+                "next_nonce": certificate["nonce"] + 1,
+                "last_attempts": certificate["nonce"] - start_nonce + 1,
+                "complete": True,
+            },
         )
         self.store.put("chain_qualification", self.ledger.author_id, certificate)
         return certificate
@@ -241,6 +286,8 @@ class Blockchain:
         return {
             "protocol": VERSION,
             "network": NETWORK,
+            "profile": PROFILE,
+            "rules": dict(PROTOCOL),
             "genesis": GENESIS,
             "height": blocks[head]["height"] if blocks else 0,
             "head": head,
@@ -260,9 +307,7 @@ class Blockchain:
         created_at = _stamp(at)
         certificate, _ = self._rights(blocks, at=created_at)
         path = self._path(blocks, parent)
-        known, heads = {}, {}
-        for ancestor in path:
-            self._append_events(ancestor["events"], known, heads)
+        known, heads = self._event_state(path)
         automatic = events is None
         if automatic:
             events = [event for event in self.ledger.all() if event["event_id"] not in known][:MAX_EVENTS]
