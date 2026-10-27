@@ -15,12 +15,12 @@ export function Panel({ title, action, children, className = "" }) {
 }
 export function PageHeading({ title, description, children }) {
   return <div className="flex flex-wrap items-start justify-between gap-4">
-    <div className="flex flex-col gap-2"><Typography.Heading level={1}>{title}</Typography.Heading>{description ? <p>{description}</p> : null}</div>
+    <div className="flex max-w-3xl flex-col gap-2"><Typography.Heading level={1}>{title}</Typography.Heading>{description ? <Typography.Paragraph color="muted">{description}</Typography.Paragraph> : null}</div>
     <div className="flex flex-wrap gap-2">{children}</div>
   </div>;
 }
 export function Empty({ title, children, action }) {
-  return <div className="flex flex-col gap-3 py-4"><Typography.Heading level={3}>{title}</Typography.Heading><p>{children}</p>{action}</div>;
+  return <div className="flex max-w-2xl flex-col gap-3 py-4"><Typography.Paragraph weight="medium">{title}</Typography.Paragraph><Typography.Paragraph size="sm" color="muted">{children}</Typography.Paragraph>{action}</div>;
 }
 export function PrivateNote() {
   return <Alert><Alert.Content><Alert.Description>Личная база хранится на этом устройстве. Подключённый MCP-агент получает данные для поручения. В общую базу передаются только наблюдения о работодателях.</Alert.Description></Alert.Content></Alert>;
@@ -56,12 +56,12 @@ export function RecordList({ items, render, empty }) {
 }
 export function Timestamp({ value }) { return <time dateTime={value || undefined}>{formatDate(value)}</time>; }
 export function Dialog({ open, onClose, title, children, footer, size = "lg" }) {
-  return <Modal><Modal.Backdrop isOpen={open} onOpenChange={(value) => { if (!value) onClose(); }}>
+  return <Modal.Backdrop isOpen={open} onOpenChange={(value) => { if (!value) onClose(); }}>
     <Modal.Container size={size}><Modal.Dialog>
       <Modal.CloseTrigger aria-label="Закрыть" />
       <Modal.Header><Modal.Heading>{title}</Modal.Heading></Modal.Header>
       <Modal.Body>{children}</Modal.Body>
       {footer ? <Modal.Footer>{footer}</Modal.Footer> : null}
     </Modal.Dialog></Modal.Container>
-  </Modal.Backdrop></Modal>;
+  </Modal.Backdrop>;
 }

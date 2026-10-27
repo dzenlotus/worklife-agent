@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Input, TextArea, Spinner, Link, Label, Typography, Alert, CloseButton, ListBox, Header } from "@heroui/react";
+import { Button, Input, TextArea, Spinner, Link, Label, Typography, Alert, CloseButton, Separator } from "@heroui/react";
 import Overview, { ActivityLog, GoalComposer, RunHistory } from "./Overview.jsx";
 import ModelConnection from "./ModelConnection.jsx";
 import { composeGoal, readDraft, saveDraft } from "./goals.js";
@@ -313,14 +313,23 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
   );
 }
 function Navigation({ state, page, onNavigate }) {
-  const groups = [["Поиск работы", ["overview", "search", "schedules"]], ["Ваши материалы", ["cv", "strengths", "experiments", "repositories", "tactics"]], ["Подключения и база", ["employers", "resources", "accounts", "settings"]]];
-  return <nav aria-label="Разделы Worklife">
-    <ListBox aria-label="Разделы Worklife" selectionMode="single" disallowEmptySelection selectedKeys={[page]} onSelectionChange={(keys) => { const key = [...keys][0]; if (key) onNavigate(String(key)); }}>
-      {groups.map(([title, keys]) => <ListBox.Section key={title}><Header>{title}</Header>{keys.map((key) => {
-        const text = navigation.find(([id]) => id === key)[1], count = state && ["search", "cv", "schedules"].includes(key) ? list(state[key === "search" ? "jobs" : key === "cv" ? "cvs" : key]).length : 0;
-        return <ListBox.Item key={key} id={key} textValue={text} aria-current={page === key ? "page" : undefined}><div className="flex w-full items-center justify-between gap-3"><Label>{text}</Label>{count ? <span>{count}</span> : null}</div><ListBox.ItemIndicator /></ListBox.Item>;
-      })}</ListBox.Section>)}
-    </ListBox>
+  const groups = [
+    ["Работа", ["overview", "search", "schedules"]],
+    ["Материалы", ["cv", "strengths", "resources", "repositories", "tactics"]],
+    ["Анализ и настройки", ["employers", "experiments", "accounts", "settings"]],
+  ];
+  return <nav className="flex flex-col gap-6" aria-label="Разделы Worklife">
+    {groups.map(([title, keys]) => <section className="flex flex-col gap-2" key={title} aria-label={title}>
+      <Typography.Paragraph size="sm" color="muted" className="px-3">{title}</Typography.Paragraph>
+      <div className="flex flex-col gap-1">{keys.map((key) => {
+        const text = navigation.find(([id]) => id === key)[1];
+        const bucket = { search: "jobs", cv: "cvs", schedules: "schedules", resources: "resources" }[key];
+        const count = bucket ? list(state?.[bucket]).length : 0;
+        return <Button key={key} fullWidth size="sm" variant={page === key ? "secondary" : "ghost"} aria-current={page === key ? "page" : undefined} onPress={() => onNavigate(key)}>
+          <span className="flex w-full items-center justify-between gap-3"><span>{text}</span>{count ? <span>{count}</span> : null}</span>
+        </Button>;
+      })}</div>
+    </section>)}
   </nav>;
 }
 export default function App() {
@@ -563,19 +572,24 @@ export default function App() {
                 ? "Вызов MCP"
               : "Подробности действия";
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:flex-row md:p-6">
-      <aside className="hidden w-full flex-col gap-4 md:flex md:w-56 md:shrink-0">
-        <Link href="#overview" aria-label="Worklife — обзор">Worklife</Link>
-        <Typography.Paragraph size="sm" color="muted">Поиск работы через MCP</Typography.Paragraph>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 p-4 md:flex-row md:p-6">
+      <aside className="hidden w-full flex-col gap-8 md:flex md:w-48 md:shrink-0">
+        <div className="flex flex-col gap-2 px-3">
+          <Link href="#overview" aria-label="Worklife — обзор"><Typography.Heading level={3}>Worklife</Typography.Heading></Link>
+          <Typography.Paragraph size="sm" color="muted">Монитор агента</Typography.Paragraph>
+        </div>
         <Navigation state={state} page={page} onNavigate={navigate} />
-        <Link href="#app-main" className="sr-only focus:not-sr-only">К содержанию</Link>
+        <Link className="sr-only focus:not-sr-only" onPress={() => document.getElementById("app-main")?.focus()}>К содержанию</Link>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col gap-6">
-        <header className="flex flex-wrap items-center justify-between gap-3">
+        <header className="flex flex-wrap items-center justify-between gap-3 md:justify-end">
           <Button variant="secondary" className="md:hidden" aria-expanded={navigationOpen} onPress={() => setNavigationOpen(true)}>Меню</Button>
-          <span className={error ? undefined : "hidden md:block"}>{error ? "Нет соединения" : updated ? `Экран обновлён · ${updated.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}` : "Подключение…"}</span>
-          <Button variant="secondary" size="sm" aria-label="Обновить данные" onPress={refresh}>Обновить</Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Typography.Paragraph size="sm" color="muted">{error ? "Нет соединения" : updated ? `Обновлено в ${updated.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}` : "Подключение…"}</Typography.Paragraph>
+            <Button variant="ghost" size="sm" aria-label="Обновить данные" onPress={refresh}>Обновить</Button>
+          </div>
         </header>
+        <Separator />
         {message ? <Alert><Alert.Content><Alert.Description>{message}</Alert.Description></Alert.Content><CloseButton aria-label="Закрыть уведомление" onPress={() => setMessage("")} /></Alert> : null}
         <main id="app-main" className="flex flex-col gap-6" tabIndex={-1}>
           {!state ? (
