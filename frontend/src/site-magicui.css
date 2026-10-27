@@ -1,0 +1,59 @@
+/* Magic UI MIT adaptations. Provenance and license: ../MAGICUI.md. */
+.mui-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.mui-terminal { position: relative; isolation: isolate; overflow: hidden; width: 100%; border: 1px solid #ffffff20; border-radius: 12px; background: #10171f; color: #d4e0e8; box-shadow: 0 24px 80px #03080c25; }
+.mui-terminal-bar { display: flex; align-items: center; gap: 14px; min-height: 52px; padding: 12px 18px; border-bottom: 1px solid #ffffff12; background: #ffffff02; }
+.mui-terminal-dots { display: inline-flex; flex-shrink: 0; gap: 6px; }
+.mui-terminal-dots i { width: 7px; height: 7px; border-radius: 50%; background: #b76566; }
+.mui-terminal-dots i:nth-child(2) { background: #bbab72; }
+.mui-terminal-dots i:nth-child(3) { background: #7fa995; }
+.mui-terminal-title { color: #a3b3be; font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.mui-terminal-label { margin-left: auto; color: #7f94a3; font: 10px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: nowrap; }
+.mui-terminal-actions { display: flex; align-items: center; margin-left: auto; }
+.mui-terminal-body { margin: 0; padding: 24px; font: 12px/1.9 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 2; }
+.mui-terminal-body code { display: grid; align-content: start; gap: 5px; font: inherit; }
+.mui-terminal-line, .mui-typing, .mui-terminal-line-visual { display: block; }
+.mui-terminal-line { white-space: pre-wrap; overflow-wrap: anywhere; }
+.mui-typing { min-height: 1.9em; white-space: pre-wrap; overflow-wrap: anywhere; }
+.mui-typing-caret { display: inline-block; width: 6px; height: 1.05em; margin-left: 3px; vertical-align: -.16em; background: currentColor; animation: mui-caret 1s step-end infinite; }
+.mui-typing-caret[data-complete="true"] { visibility: hidden; animation: none; }
+.mui-text-animate { white-space: pre-wrap; }
+.mui-text-segment { display: inline-block; white-space: pre; }
+.mui-text-line { display: block; }
+.mui-shiny-text { color: #a9bac7b3; background-image: linear-gradient(90deg, transparent, #eff8ff 50%, transparent); background-size: var(--shiny-width) 100%; background-repeat: no-repeat; background-clip: text; -webkit-background-clip: text; animation: mui-shiny-text 6s infinite; }
+.mui-marquee { --gap: 2.5rem; display: flex; gap: var(--gap); overflow: hidden; width: 100%; }
+.mui-marquee-track { display: flex; flex-shrink: 0; align-items: center; justify-content: space-around; gap: var(--gap); min-width: 100%; animation: mui-marquee var(--marquee-duration, 36s) linear infinite; }
+.mui-marquee-vertical { flex-direction: column; }
+.mui-marquee-vertical .mui-marquee-track { flex-direction: column; animation-name: mui-marquee-vertical; }
+.mui-marquee-pausable:hover .mui-marquee-track, .mui-marquee:focus-within .mui-marquee-track { animation-play-state: paused; }
+.mui-scroll-progress { position: fixed; top: 0; left: 0; right: 0; z-index: 90; height: 2px; transform-origin: left; background: linear-gradient(90deg, #688da6, #cadce8); pointer-events: none; }
+.mui-animated-beam { pointer-events: none; position: absolute; inset: 0; z-index: 0; overflow: visible; }
+.mui-orbit-path { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.mui-orbit-path circle { stroke: #9fb4c020; stroke-width: 1; }
+.mui-orbit { position: absolute; left: calc(50% - var(--orbit-size) / 2); top: calc(50% - var(--orbit-size) / 2); display: flex; align-items: center; justify-content: center; width: var(--orbit-size); height: var(--orbit-size); border-radius: 50%; transform: rotate(var(--orbit-angle)) translateY(var(--orbit-radius)) rotate(calc(var(--orbit-angle) * -1)); animation: mui-orbit var(--orbit-duration) linear infinite; }
+.mui-magic-card { position: relative; isolation: isolate; overflow: hidden; border-radius: 12px; }
+.mui-magic-card-border { position: absolute; inset: 0; border: 1px solid transparent; border-radius: inherit; pointer-events: none; }
+.mui-magic-card-glow { position: absolute; inset: 1px; border-radius: inherit; pointer-events: none; transition: opacity .3s; }
+.mui-magic-card-content { position: relative; z-index: 1; height: 100%; }
+.mui-word-rotate { display: inline-flex; vertical-align: bottom; }
+.mui-word-rotate-stage { display: inline-grid; overflow: hidden; }
+.mui-word-rotate-sizer, .mui-word-rotate-word { grid-area: 1 / 1; }
+.mui-word-rotate-sizer { display: grid; visibility: hidden; pointer-events: none; }
+.mui-word-rotate-sizer > span { grid-area: 1 / 1; }
+.mui-word-rotate-word { display: inline-block; }
+.mui-line-shadow { position: relative; z-index: 0; display: inline-flex; isolation: isolate; }
+.mui-line-shadow::after { position: absolute; top: .04em; left: .04em; z-index: -1; content: attr(data-text) / ""; color: transparent; background: linear-gradient(45deg, transparent 45%, var(--shadow-color) 45%, var(--shadow-color) 55%, transparent 0); background-size: .06em .06em; background-clip: text; -webkit-background-clip: text; animation: mui-line-shadow 15s linear infinite; }
+@keyframes mui-caret { 50% { opacity: 0; } }
+@keyframes mui-shiny-text { 0%, 90%, 100% { background-position: calc(-100% - var(--shiny-width)) 0; } 30%, 60% { background-position: calc(100% + var(--shiny-width)) 0; } }
+@keyframes mui-marquee { from { transform: translateX(0); } to { transform: translateX(calc(-100% - var(--gap))); } }
+@keyframes mui-marquee-vertical { from { transform: translateY(0); } to { transform: translateY(calc(-100% - var(--gap))); } }
+@keyframes mui-orbit { from { transform: rotate(var(--orbit-angle)) translateY(var(--orbit-radius)) rotate(calc(var(--orbit-angle) * -1)); } to { transform: rotate(calc(var(--orbit-angle) + 360deg)) translateY(var(--orbit-radius)) rotate(calc(var(--orbit-angle) * -1 - 360deg)); } }
+@keyframes mui-line-shadow { from { background-position: 0 0; } to { background-position: 100% -100%; } }
+@media (max-width: 600px) { .mui-terminal-bar { padding: 12px 14px; gap: 10px; } .mui-terminal-title { font-size: 10px; } .mui-terminal-label { font-size: 9px; } .mui-terminal-body { padding: 20px 16px; font-size: 11px; } }
+@media (prefers-reduced-motion: reduce) {
+  .mui-shiny-text, .mui-marquee-track, .mui-orbit, .mui-line-shadow::after, .mui-typing-caret, .wl-shimmer-slide, .wl-shimmer-spin { animation: none !important; }
+  .mui-marquee { overflow: visible; }
+  .mui-marquee-track { flex-wrap: wrap; min-width: 0; width: 100%; justify-content: center; }
+  .mui-marquee-track[aria-hidden="true"] { display: none; }
+  .mui-typing-caret { display: none; }
+  .mui-magic-card-glow { display: none; }
+}

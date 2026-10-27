@@ -1,119 +1,161 @@
-import { useState } from "react";
-import { Accordion, Button, Card, Chip, Link, Separator, Tabs, Typography, buttonVariants } from "@heroui/react";
-import { typographyVariants } from "@heroui/styles";
-import { Icon } from "./ui.jsx";
+import { useRef, useState } from "react";
+import { Tabs } from "@heroui/react";
+import { ArrowDown, ArrowRight, ArrowUpRight, Check, CheckCheck, Copy, GitBranch, Code2, Globe2, LockKeyhole, Search, Terminal as TerminalIcon, UserRound, FileText, MessageSquare, Target, Waves } from "lucide-react";
+import { BlurFade, BorderBeam, NumberTicker } from "./magicui.jsx";
+import { ShimmerLink, Terminal, AnimatedSpan, TypingAnimation, TextAnimate, AnimatedShinyText, Marquee, ScrollProgress, AnimatedBeam, OrbitingCircles, MagicCard, WordRotate, LineShadowText } from "./site-magicui.jsx";
+import heroImage from "./site-assets/worklife-horizon.jpg";
+import manifestoImage from "./site-assets/worklife-coast.jpg";
+import "./site.css";
 
 const github = "https://github.com/dzenlotus/worklife-agent";
-const mcpCommand = "uv run --env-file .env worklife --config config.toml mcp";
-const monitorCommand = "uv run --env-file .env worklife --config config.toml app";
-const setupCommands = ["git clone https://github.com/dzenlotus/worklife-agent.git", "cd worklife-agent", "uv sync --extra dev --extra browser", "uv run playwright install chromium", "cp config.example.toml config.toml", "cp .env.example .env", "uv run --env-file .env worklife --config config.toml init"];
-const mcpConfig = JSON.stringify({ mcpServers: { worklife: { command: "uv", args: ["run", "--directory", "/absolute/path/to/worklife-agent", "--env-file", "/absolute/path/to/worklife-agent/.env", "worklife", "--config", "/absolute/path/to/worklife-agent/config.toml", "mcp"] } } }, null, 2);
-const examples = [
-  { id: "logistics", label: "Логистика", goal: "Найди работу руководителем в логистике, от 180 000 ₽, без переезда. Выясни график и размер команды.", jobs: [["Руководитель отдела логистики", "Пример: Север", "От 180 000 ₽, нужный город. График ещё нужно уточнить.", "Новая"], ["Менеджер цепей поставок", "Пример: Маршрут", "От 200 000 ₽. Размер команды пока неизвестен.", "Сохранена"]] },
-  { id: "marketing", label: "Маркетинг", goal: "Найди удалённую работу в контент-маркетинге, от 120 000 ₽. Без неоплачиваемого тестового дольше двух часов.", jobs: [["Контент-маркетолог", "Пример: Студия", "Удалённо, от 120 000 ₽. Объём тестового пока неизвестен.", "Новая"], ["Редактор бренд-медиа", "Пример: Редакция", "Удалённо, от 140 000 ₽. Условия тестового уточняются.", "Сохранена"]] },
-  { id: "accounting", label: "Бухгалтерия", goal: "Найди работу бухгалтером на полный день, от 100 000 ₽, с гибридным графиком. Проверь условия в объявлении.", jobs: [["Бухгалтер", "Пример: Баланс", "Гибрид, от 100 000 ₽. Указанные условия соответствуют цели.", "Новая"], ["Ведущий бухгалтер", "Пример: Контур", "От 130 000 ₽. Число дней в офисе нужно подтвердить.", "Сохранена"]] },
+const pypiPublished = false;
+const installClients = [["codex", "Codex"], ["claude-code", "Claude Code"], ["cursor", "Cursor"], ["opencode", "OpenCode"], ["generic", "Другой MCP-клиент"]];
+const firstGoal = "Помоги найти работу. Разберись в моём опыте, уточни условия и займись поиском работодателей, резюме и перепиской.";
+const questions = [
+  ["С чего начать?", "Расскажите агенту, чем занимались и какую работу хотите. Он уточнит недостающее, разберётся в вашем опыте и предложит план поиска."],
+  ["Нужно самому готовить резюме и отклики?", "Это работа агента. Он подготовит резюме из ваших реальных навыков и опыта, адаптирует отклики под компании и будет вести переписку в рамках вашего поручения."],
+  ["А настройка и локальное приложение?", "Поручите их агенту: он проверит окружение, подготовит подключение и запустит приложение, когда оно понадобится. Если потребуется ваш вход или разрешение, он объяснит конкретный шаг."],
+  ["Что остаётся за мной?", "Рассказать о себе, задать условия поиска и предоставить нужные доступы. Вы выбираете, с кем разговаривать и какое предложение принять. Рутину ведёт агент."],
 ];
-const SiteLink = ({ href, children, primary = false }) => <Link href={href} className={buttonVariants({ variant: primary ? "primary" : "outline" })}>{children}</Link>;
+const examples = [
+  { id: "logistics", label: "Логистика", goal: "Найди работу руководителем в логистике, от 180 000 ₽, без переезда. Выясни график и размер команды.", jobs: [{ role: "Руководитель отдела логистики", company: "Север", salary: "от 180 000 ₽", tags: "В вашем городе · Полный день", known: "Зарплата и город соответствуют условиям.", question: "Уточнить график работы" }, { role: "Менеджер цепей поставок", company: "Маршрут", salary: "от 200 000 ₽", tags: "В вашем городе · Полный день", known: "Подходит по направлению и зарплате.", question: "Уточнить размер команды" }] },
+  { id: "marketing", label: "Маркетинг", goal: "Найди удалённую работу в контент-маркетинге, от 120 000 ₽. Без неоплачиваемого тестового дольше двух часов.", jobs: [{ role: "Контент-маркетолог", company: "Студия", salary: "от 120 000 ₽", tags: "Удалённо · Полный день", known: "Зарплата и формат соответствуют условиям.", question: "Уточнить объём тестового" }, { role: "Редактор бренд-медиа", company: "Редакция", salary: "от 140 000 ₽", tags: "Удалённо · Полный день", known: "Подходит по направлению и формату.", question: "Уточнить условия тестового" }] },
+  { id: "accounting", label: "Бухгалтерия", goal: "Найди работу бухгалтером на полный день, от 100 000 ₽, с гибридным графиком. Проверь условия в объявлении.", jobs: [{ role: "Бухгалтер", company: "Баланс", salary: "от 100 000 ₽", tags: "Гибрид · Полный день", known: "Указанные условия соответствуют цели.", question: "Подтвердить условия на встрече" }, { role: "Ведущий бухгалтер", company: "Контур", salary: "от 130 000 ₽", tags: "Формат уточняется · Полный день", known: "Подходит по зарплате и направлению.", question: "Уточнить число дней в офисе" }] },
+];
+const principles = [
+  ["Человек в центре.", "Поиск начинается с ваших способностей, интересов и жизненных условий. Задача — найти достойное применение вашему опыту и получать за него деньги."],
+  ["Ваш опыт шире названия должности.", "Работа, учёба, свои проекты, забота о близких, смена профессии. За каждой историей могут стоять полезные навыки. Их нужно увидеть и понять, кому они нужны."],
+  ["Вы предлагаете профессиональные услуги.", "У вас есть знания, время и способность решать задачи. Вы предлагаете эту работу за деньги и имеете право обсуждать стоимость, нагрузку и условия."],
+  ["Работодатель тоже проходит отбор.", "У компании есть задачи, у вас — способы их решить. Вы выбираете, кому предложить свои услуги, чьи условия принять и с кем отказаться работать."],
+  ["Автоматизация должна работать на обе стороны.", "Компании уже используют ИИ для поиска, отбора резюме и организации интервью. У человека тоже должен быть агент, который ищет подходящих работодателей и представляет его интересы."],
+  ["Больше откликов — ещё не стратегия.", "Важны подходящие компании, подтверждённые сильные стороны, содержательные обращения и ответы. Агент помогает делать больше полезной работы: искать шире, уточнять условия, вести переписку и проверять подходы."],
+  ["Вы определяете полномочия агента.", "Цели, границы и решения остаются вашими. Агент действует в пределах поручения, сохраняет историю и показывает следующий шаг. Личные CV и переписка не входят в общую базу работодателей."],
+  ["Каждый шаг должен давать ясность.", "Что сделано? Где есть ответ? Что стоит изменить? Отказ — повод пересмотреть конкретный подход, а не приговор вашей ценности. Ваш поиск должен становиться понятнее с каждым циклом."],
+];
+const research = [
+  {value:37, suffix:"%", text:"соискателей говорят: откликов больше, ответов меньше", scope:"Международный опрос LinkedIn · январь 2025", href:"https://news.linkedin.com/2025/talent-campaign-b2b-press-release"},
+  {value:2, suffix:"×", text:"кандидатов на открытую роль в США по сравнению с весной 2022 года", scope:"Данные LinkedIn · январь 2026", href:"https://news.linkedin.com/2026/LinkedIn-Research-Talent-2026"},
+  {value:27, suffix:"%", text:"организаций в исследовании SHRM применяют ИИ в подборе", scope:"Исследование SHRM · апрель 2026", href:"https://www.shrm.org/topics-tools/news/ai-hr-2026-from-hype-to-measured-human-centered-impact"},
+];
+
+function Brand({ large = false }) {
+  return <span className={large ? "wl-wordmark" : "wl-brand"}>{!large && <Waves aria-hidden="true" />}Worklife<span className="wl-brand-dot">.</span></span>;
+}
+
+function HumanCentre() {
+  const container = useRef(null), human = useRef(null), agent = useRef(null), employers = useRef(null), evidence = useRef(null);
+  return <div className="wl-human-scene" ref={container} role="img" aria-label="Вы и ваш опыт в центре: агент помогает искать работодателей, вести переговоры и сохранять результаты.">
+    <div className="wl-orbit-decoration" aria-hidden="true"><OrbitingCircles radius={112} iconSize={30} duration={40}><span><Search /></span><span><FileText /></span><span><MessageSquare /></span></OrbitingCircles></div>
+    <div className="wl-human-node wl-human-self" ref={human}><UserRound aria-hidden="true" /><strong>Вы</strong><span>Ваш опыт и условия</span></div>
+    <div className="wl-human-node wl-human-agent" ref={agent}><Waves aria-hidden="true" /><strong>Ваш агент</strong></div>
+    <div className="wl-human-node wl-human-employers" ref={employers}><Search aria-hidden="true" /><strong>Работодатели</strong></div>
+    <div className="wl-human-node wl-human-evidence" ref={evidence}><Target aria-hidden="true" /><strong>Ваш следующий шаг</strong></div>
+    <AnimatedBeam containerRef={container} fromRef={human} toRef={agent} reverse curvature={35} />
+    <AnimatedBeam containerRef={container} fromRef={human} toRef={employers} curvature={-40} delay={1} />
+    <AnimatedBeam containerRef={container} fromRef={human} toRef={evidence} curvature={45} delay={2} />
+  </div>;
+}
 
 export default function Site() {
-  const [copied, setCopied] = useState(""), [exampleId, setExampleId] = useState("logistics");
-  async function copy(text, message) {
-    try { await navigator.clipboard.writeText(text); setCopied(message); }
-    catch { setCopied("Выделите и скопируйте текст ниже."); }
+  const [copied, setCopied] = useState("");
+  const [goalCopyStatus, setGoalCopyStatus] = useState("");
+  const [installTarget, setInstallTarget] = useState("codex");
+  const installCommand = `uvx --python 3.12 worklife-agent --target ${installTarget}`;
+  async function copy(value, message, setFeedback = setCopied) {
+    try { await navigator.clipboard.writeText(value); setFeedback(message); }
+    catch { setFeedback("Не удалось скопировать автоматически. Выделите и скопируйте текст в блоке."); }
   }
-  return <div className="mx-auto flex w-full max-w-7xl flex-col gap-12 p-5 md:p-8 lg:p-10">
-    <header className="flex flex-wrap items-center justify-between gap-4">
-      <Link href="#top" aria-label="Worklife — начало"><p className={typographyVariants({ type: "h3", weight: "medium" }).base()}>Worklife</p></Link>
-      <nav aria-label="Основная навигация" className="flex items-center gap-6">
-        <Link href="#network" className="hidden sm:block">Работодатели</Link>
-        <Link href="#start">Подключение</Link>
-        <Link href={github}>GitHub<Icon name="external" className="size-4 shrink-0" /></Link>
+  return <div className="worklife-site" id="top">
+    <ScrollProgress />
+    <a className="wl-skip" href="#main">К содержанию</a>
+    <header className="wl-header wl-container">
+      <a href="#top" aria-label="Worklife — начало"><Brand /></a>
+      <nav aria-label="Основная навигация">
+        <a href="#how">Как это работает</a><a href="#manifesto">Манифест</a>
+        <a className="wl-nav-github" href={github} aria-label="Worklife на GitHub"><Code2 aria-hidden="true" /><span>GitHub</span></a>
+        <a className="wl-nav-start" href="#start">Подключить <ArrowUpRight aria-hidden="true" /></a>
       </nav>
     </header>
-    <main id="top" className="flex flex-col gap-16">
-      <section className="flex flex-col gap-10 py-4 lg:flex-row lg:items-center lg:gap-16 lg:py-8" aria-labelledby="product-promise">
-        <div className="flex w-full flex-col gap-6 lg:w-96 lg:shrink-0">
-          <div><Chip variant="soft" size="sm">Инструменты для MCP-агента</Chip></div>
-          <Typography.Heading id="product-promise" level={1} weight="medium">Поиск работы.<br />В вашем чате.</Typography.Heading>
-          <Typography.Paragraph color="muted">Поручите агенту искать вакансии, готовить CV и вести переписку. Worklife даст ему инструменты, а вам — понятную историю поиска.</Typography.Paragraph>
-          <div><SiteLink href="#start" primary>Подключить к агенту</SiteLink></div>
-          <Typography.Paragraph size="sm" color="muted">Модель — в вашем агенте. Результаты — под рукой.</Typography.Paragraph>
+    <main id="main">
+      <section className="wl-hero" aria-labelledby="hero-heading">
+        <img className="wl-hero-image" src={heroImage} alt="" fetchPriority="high" width="1672" height="941" />
+        <div className="wl-hero-shade" />
+        <div className="wl-hero-content wl-container">
+          <BlurFade delay={0.04}><p className="wl-eyebrow"><span className="wl-live-dot" /><AnimatedShinyText>ИИ-агент на вашей стороне</AnimatedShinyText></p></BlurFade>
+          <BlurFade delay={0.12}><h1 id="hero-heading"><Brand large /></h1></BlurFade>
+          <TextAnimate as="p" by="line" animation="blurInUp" startOnView={false} delay={0.2} className="wl-hero-heading">{"Сколько ещё\nотказов?"}</TextAnimate>
+          <BlurFade delay={0.32}><p className="wl-hero-description">Компании автоматизируют найм. Вы снова заполняете анкеты и ждёте ответа.<br className="wl-desktop-break" /> Пора дать человеку своего агента — и вернуть контроль над поиском.</p></BlurFade>
+          <BlurFade delay={0.42} className="wl-hero-actions"><ShimmerLink href="#manifesto">Меняем правила поиска <ArrowUpRight aria-hidden="true" /></ShimmerLink><a className="wl-text-link" href="#start">Подключить Worklife <ArrowRight aria-hidden="true" /></a></BlurFade>
         </div>
-        <div id="application" className="min-w-0 flex-1">
-          <Card className="gap-5 p-6">
-            <Card.Header className="flex flex-row items-center justify-between gap-3"><h2 className={typographyVariants({ type: "h4", weight: "medium" }).base()}>Результаты поиска</h2><Chip size="sm" variant="soft">Демо</Chip></Card.Header>
-            <Separator />
-            <Card.Content className="flex flex-col gap-5">
-              <Tabs selectedKey={exampleId} onSelectionChange={(key) => setExampleId(String(key))}>
-                <Tabs.ListContainer><Tabs.List aria-label="Пример поиска">{examples.map((item) => <Tabs.Tab id={item.id} key={item.id}>{item.label}<Tabs.Indicator /></Tabs.Tab>)}</Tabs.List></Tabs.ListContainer>
-                {examples.map((item) => <Tabs.Panel id={item.id} key={item.id}><div className="flex flex-col gap-4 py-4">
-                  <div className="flex flex-col gap-5">{item.jobs.map(([role, company, reason, status], index) => <div key={role} className="flex flex-col gap-5">
-                    {index ? <Separator /> : null}
-                    <div className="flex items-start justify-between gap-4">
-                      <Icon name="search" className="size-6 shrink-0 text-accent" />
-                      <div className="flex min-w-0 flex-1 flex-col gap-2"><Typography.Paragraph weight="semibold">{role}</Typography.Paragraph><Typography.Paragraph size="xs" color="muted">{company.replace("Пример: ", "")}</Typography.Paragraph><Typography.Paragraph size="sm" color="muted">{reason}</Typography.Paragraph></div>
-                      <Chip size="sm" variant="soft">{status}</Chip>
-                    </div>
-                  </div>)}</div>
-                  <Accordion hideSeparator><Accordion.Item id={`goal-${item.id}`}><Accordion.Heading><Accordion.Trigger>Условия этого поиска<Accordion.Indicator /></Accordion.Trigger></Accordion.Heading><Accordion.Panel><Accordion.Body><Typography.Paragraph size="sm" color="muted">{item.goal}</Typography.Paragraph></Accordion.Body></Accordion.Panel></Accordion.Item></Accordion>
-                </div></Tabs.Panel>)}
-              </Tabs>
-            </Card.Content>
-            <Card.Footer><Typography.Paragraph size="xs" color="muted">Компании и вакансии в этом примере вымышлены.</Typography.Paragraph></Card.Footer>
-          </Card>
-        </div>
+        <div className="wl-hero-bottom wl-container"><span>В центре — <WordRotate words={["ваш опыт", "ваши условия", "ваш выбор"]} accessibleLabel="Ваш опыт, ваши условия и ваш выбор" /></span><a href="#story">Почему привычная схема перестала помогать <ArrowDown aria-hidden="true" /></a></div>
       </section>
 
-      <section className="grid gap-8 md:grid-cols-3" aria-label="Возможности">
-        {[["Поиск и переписка", "Источники вакансий, отклики и ответы в одной истории."], ["CV на разных языках", "Варианты резюме из ваших подтверждённых фактов и опыта."], ["Гипотезы и результаты", "Эксперименты, статистика и расписания для следующего шага."]].map(([title, text]) => <div className="flex flex-col gap-3" key={title}><h2 className={typographyVariants({ type: "h4", weight: "medium" }).base()}>{title}</h2><Typography.Paragraph size="sm" color="muted">{text}</Typography.Paragraph></div>)}
+      <section id="story" className="wl-story wl-container" aria-label="От проблемы к решению">
+        {[["01 / Проблема", "Снова отклик.\nСнова тишина.", "Вакансии есть. Вы меняете CV, заполняете те же анкеты, отправляете ещё десяток откликов. Получаете отказ — без понимания, что именно менять."], ["02 / Что это вызывает", "Руки опускаются.\nВы теряете опору.", "Фрустрация, разочарование, чувство безнадёжности. Усилий всё больше, ясности всё меньше. Кажется, что от вас уже ничего не зависит."], ["03 / Что нужно менять", "Саму модель\nпоиска работы.", "Вы предлагаете свой опыт за деньги и выбираете работодателя. Ваш агент помогает искать, сравнивать, вести переписку и проверять стратегии — в ваших интересах."]].map(([label, title, text], index) => <MagicCard as="article" className="wl-story-card" contentClassName="wl-story-card-content" style={{"--magic-card-bg":"#1b2229"}} key={label}><BlurFade inView delay={index * 0.08}><p className="wl-eyebrow">{label}</p><TextAnimate as="h2" by="line" animation="blurInUp">{title}</TextAnimate><p className="wl-story-copy">{text}</p>{index === 2 && <a className="wl-text-link" href="#manifesto">Наш манифест <ArrowDown aria-hidden="true" /></a>}</BlurFade></MagicCard>)}
       </section>
-      <Separator />
 
-      <section id="start" className="flex flex-col gap-8 lg:flex-row lg:gap-16" aria-labelledby="start-heading">
-        <div className="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0">
-          <Typography.Heading id="start-heading" level={2}>Подключение</Typography.Heading>
-          <Typography.Paragraph color="muted">Установите Worklife и добавьте его в вашего MCP-агента.</Typography.Paragraph>
-          <Typography.Paragraph size="sm" color="muted">Python 3.12+, uv и клиент с поддержкой stdio. Отдельный ключ модели для Worklife не нужен.</Typography.Paragraph>
-          <Link href={`${github}#подключить-к-агенту`}>Полная инструкция<Icon name="external" className="size-4 shrink-0" /></Link>
-        </div>
-        <div className="min-w-0 flex-1"><Card className="gap-5 p-6"><Card.Content className="flex min-w-0 flex-col gap-4">
-          <Tabs defaultSelectedKey="install">
-            <Tabs.ListContainer><Tabs.List aria-label="Шаги подключения"><Tabs.Tab id="install">1. Установка<Tabs.Indicator /></Tabs.Tab><Tabs.Tab id="connect">2. MCP<Tabs.Indicator /></Tabs.Tab><Tabs.Tab id="goal">3. Поручение<Tabs.Indicator /></Tabs.Tab></Tabs.List></Tabs.ListContainer>
-            <Tabs.Panel id="install"><div className="flex min-w-0 flex-col gap-4 py-4">
-              <div className="flex flex-wrap gap-4"><Link href="https://git-scm.com/downloads" target="_blank" rel="noreferrer">Git<Icon name="external" className="size-4 shrink-0" /></Link><Link href="https://docs.astral.sh/uv/getting-started/installation/" target="_blank" rel="noreferrer">Установить uv<Icon name="external" className="size-4 shrink-0" /></Link></div>
-              <Typography.Prose><pre>{setupCommands.join("\n")}</pre></Typography.Prose>
-              <Typography.Paragraph size="xs" color="muted">Команды для macOS/Linux. На Windows создайте копии файлов конфигурации вручную.</Typography.Paragraph>
-              <div><Button variant="secondary" size="sm" onPress={() => copy(setupCommands.join("\n"), "Команды скопированы")}>Скопировать команды</Button></div>
-            </div></Tabs.Panel>
-            <Tabs.Panel id="connect"><div className="flex min-w-0 flex-col gap-4 py-4">
-              <Typography.Paragraph size="sm" color="muted">Добавьте локальный stdio-сервер в настройках агента. Команда из папки проекта:</Typography.Paragraph>
-              <Typography.Prose><pre>{mcpCommand}</pre></Typography.Prose>
-              <Accordion><Accordion.Item id="mcp-config"><Accordion.Heading><Accordion.Trigger>JSON конфигурации<Accordion.Indicator /></Accordion.Trigger></Accordion.Heading><Accordion.Panel><Accordion.Body><div className="flex min-w-0 flex-col gap-4"><Typography.Paragraph size="sm" color="muted">Замените /absolute/path/to/worklife-agent на полный путь к проекту.</Typography.Paragraph><Typography.Prose><pre>{mcpConfig}</pre></Typography.Prose><div><Button variant="secondary" size="sm" onPress={() => copy(mcpConfig, "JSON скопирован")}>Скопировать JSON</Button></div></div></Accordion.Body></Accordion.Panel></Accordion.Item></Accordion>
-            </div></Tabs.Panel>
-            <Tabs.Panel id="goal"><div className="flex flex-col gap-4 py-4">
-              <Typography.Paragraph size="sm" color="muted">Дайте поручение в чате вашего агента, например:</Typography.Paragraph>
-              <Typography.Paragraph>Используй Worklife для поиска работы. Начни с agent_brief, уточни мои условия, найди подходящие вакансии и сохрани результаты.</Typography.Paragraph>
-              <Typography.Paragraph size="sm" color="muted">Доступы к площадкам агент уточнит по мере необходимости.</Typography.Paragraph>
-            </div></Tabs.Panel>
+      <section className="wl-market-proof wl-container" aria-labelledby="market-proof-heading">
+        <BlurFade inView className="wl-proof-intro"><p className="wl-eyebrow">Это шире одного неудачного отклика</p><TextAnimate as="h2" by="line" animation="blurInUp" id="market-proof-heading">{"Больше откликов.\nМеньше ответов."}</TextAnimate><p>Ниже — данные конкретных исследований, а не оценка вашей ценности или обещание результата.</p></BlurFade>
+        <div className="wl-proof-grid">{research.map(item => <div className="wl-proof-item" key={item.href}><p className="wl-proof-number"><NumberTicker value={item.value} /><span>{item.suffix}</span></p><p>{item.text}</p><a href={item.href} target="_blank" rel="noreferrer">{item.scope}<ArrowUpRight aria-hidden="true" /></a></div>)}</div>
+      </section>
+
+      <section className="wl-paradigm wl-container" aria-labelledby="paradigm-heading"><BlurFade inView><p className="wl-eyebrow">Парадигма должна измениться</p><h2 id="paradigm-heading">Компаниям помогают системы.<br /><span>Вам нужен свой агент.</span></h2><p>Не больше часов перед формой отклика. Больше полезных действий: найти подходящие компании, увидеть ценность опыта, уточнить условия и сохранить нить разговора.</p><p>Работодатель — другая сторона сделки. Вы тоже выбираете.</p></BlurFade><HumanCentre /></section>
+      <div className="wl-experience-strip"><p>Ваш опыт имеет значение в любой сфере.</p><Marquee duration={45} tabIndex={0} aria-label="Сферы профессионального опыта">{["Логистика", "Бухгалтерия", "Ремонт", "Обучение", "Продажи", "Производство", "Разработка", "Забота о людях"].map(item => <span key={item}>{item}<span aria-hidden="true">✦</span></span>)}</Marquee></div>
+
+      <section id="how" className="wl-section wl-container" aria-labelledby="how-heading">
+        <BlurFade inView className="wl-section-heading"><p className="wl-eyebrow">01 / От поручения к результату</p><h2 id="how-heading">Скажите, что<br /><span>вам подходит.</span></h2><p>Не нужно начинать с десятка вкладок.<br />Начните с разговора со своим агентом.</p></BlurFade>
+        <BlurFade inView delay={0.08} className="wl-demo">
+          <div className="wl-window-bar"><span className="wl-window-dots" aria-hidden="true"><i /><i /><i /></span><span>worklife / пример поиска</span><span className="wl-demo-label">Демо</span></div>
+          <Tabs defaultSelectedKey="logistics" className="wl-example-tabs">
+            <Tabs.ListContainer><Tabs.List aria-label="Выбрать пример поиска">{examples.map(item => <Tabs.Tab id={item.id} key={item.id}>{item.label}<Tabs.Indicator /></Tabs.Tab>)}</Tabs.List></Tabs.ListContainer>
+            {examples.map(item => <Tabs.Panel id={item.id} key={item.id}>
+              <div className="wl-prompt"><span className="wl-person">Вы</span><p>{item.goal}</p></div>
+              <div className="wl-agent-response"><span className="wl-agent-avatar"><Waves aria-hidden="true" /></span><div><p className="wl-response-heading">Есть с чего начать.</p><p>Вот что подходит и что ещё стоит выяснить.</p></div></div>
+              <div className="wl-jobs">{item.jobs.map(job => <article className="wl-job" key={job.role}><div className="wl-job-company"><span>{job.company.slice(0, 1)}</span><p>{job.company}<small>{job.tags}</small></p><ArrowUpRight aria-hidden="true" /></div><h3>{job.role}</h3><p className="wl-salary">{job.salary}</p><p className="wl-job-evidence"><Check aria-hidden="true" />{job.known}</p><p className="wl-job-question"><span />{job.question}</p></article>)}</div>
+            </Tabs.Panel>)}
           </Tabs>
-          {copied ? <Typography.Paragraph size="sm" role="status">{copied}</Typography.Paragraph> : null}
-          <Separator />
-          <Accordion hideSeparator><Accordion.Item id="monitor-start"><Accordion.Heading><Accordion.Trigger>Открыть локальное приложение<Accordion.Indicator /></Accordion.Trigger></Accordion.Heading><Accordion.Panel><Accordion.Body><div className="flex min-w-0 flex-col gap-3"><Typography.Paragraph size="sm" color="muted">Запустите с тем же config.toml, что и MCP-сервер.</Typography.Paragraph><Typography.Prose><pre>{monitorCommand}</pre></Typography.Prose><Link href="http://127.0.0.1:8877/">Открыть приложение<Icon name="external" className="size-4 shrink-0" /></Link></div></Accordion.Body></Accordion.Panel></Accordion.Item></Accordion>
-        </Card.Content></Card></div>
+          <div className="wl-demo-footer"><CheckCheck aria-hidden="true" />Пример интерфейса. Компании и вакансии вымышлены.</div>
+          <BorderBeam repeat={Infinity} />
+        </BlurFade>
+        <div className="wl-capabilities">{[[Search, "Ищет и уточняет", "Вакансии и условия — с источниками и вопросами к работодателю."], [TerminalIcon, "Готовит и помнит", "CV из подтверждённого опыта. Отклики, ответы и следующий шаг — в истории."], [GitBranch, "Проверяет подходы", "Гипотезы, эксперименты и расписания, чтобы двигаться дальше."]].map(([Glyph, title, text], index) => <BlurFade inView delay={index * 0.06} key={title}><Glyph aria-hidden="true" /><h3>{title}</h3><p>{text}</p></BlurFade>)}</div>
       </section>
-      <Separator />
 
-      <section id="network" className="flex flex-col gap-8 lg:flex-row lg:gap-16" aria-labelledby="network-heading">
-        <div className="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0"><Typography.Heading id="network-heading" level={2}>Общая база работодателей</Typography.Heading><Link href="https://github.com/dzenlotus/worklife-employers">Открыть общую базу<Icon name="external" className="size-4 shrink-0" /></Link></div>
-        <div className="flex min-w-0 flex-1 flex-col gap-5">
-          <Typography.Paragraph>Агенты обмениваются наблюдениями о компаниях. Записи подписываются и синхронизируются; каждая копия проверяет их целостность.</Typography.Paragraph>
-          <Accordion>
-            <Accordion.Item id="shared-data"><Accordion.Heading><Accordion.Trigger>Что хранится в общей базе?<Accordion.Indicator /></Accordion.Trigger></Accordion.Heading><Accordion.Panel><Accordion.Body><Typography.Paragraph size="sm">Вакансии, условия и процесс найма с источниками. CV, переписка и личные результаты остаются локальными. Подпись подтверждает происхождение записи, но не правдивость её содержания.</Typography.Paragraph></Accordion.Body></Accordion.Panel></Accordion.Item>
-            <Accordion.Item id="privacy"><Accordion.Heading><Accordion.Trigger>Какие данные получает модель?<Accordion.Indicator /></Accordion.Trigger></Accordion.Heading><Accordion.Panel><Accordion.Body><Typography.Paragraph size="sm">Ваш MCP-агент получает данные для поручения и обрабатывает их по правилам своего поставщика модели. Его модель и стоимость выбираются в вашем клиенте.</Typography.Paragraph></Accordion.Body></Accordion.Panel></Accordion.Item>
-          </Accordion>
+      <section id="manifesto" className="wl-manifesto" aria-labelledby="manifesto-heading">
+        <div className="wl-manifesto-opening wl-container"><p className="wl-eyebrow">Манифест Worklife</p><TextAnimate as="p" by="word" animation="blurInUp" className="wl-manifesto-question">Сколько отказов нужно получить, чтобы начать сомневаться в себе?</TextAnimate><p>Привычная схема предлагает снова переписать резюме, отправить больше откликов и ждать. Но повторять одно и то же всё быстрее — ещё не значит управлять поиском.</p><p>На стороне компаний уже работают базы кандидатов, автоматический отбор и ИИ. Когда человек отвечает на эту систему только своим временем, возникает дисбаланс. Его нельзя исправить одним «идеальным» CV.</p><p className="wl-manifesto-declaration">Пора менять саму схему.<br />Человеку тоже нужен агент на его стороне.</p></div>
+        <div className="wl-manifesto-body wl-container">
+          <BlurFade inView className="wl-manifesto-intro"><p className="wl-eyebrow">Наши принципы</p><h2 id="manifesto-heading">В центре —<br /><LineShadowText>человек.</LineShadowText></h2><p>Его опыт. Его интересы.<br />Его право выбирать, кому и на каких условиях предлагать свою работу.</p><a className="wl-text-link" href="#start">Вернуть контроль <ArrowRight aria-hidden="true" /></a></BlurFade>
+          <div className="wl-principles">{principles.map(([title, text], index) => <BlurFade inView delay={0.04} key={title} className="wl-principle"><span className="wl-index">0{index + 1}</span><div><h3>{title}</h3><p>{text}</p></div></BlurFade>)}</div>
         </div>
+        <div className="wl-manifesto-photo"><img src={manifestoImage} alt="Тропа вдоль тихого морского побережья в рассветном тумане" loading="lazy" width="1672" height="941" /><div className="wl-photo-caption wl-container"><span>Ваш опыт имеет ценность.</span><span>Ваш поиск должен работать на вас.</span></div></div>
+      </section>
+
+      <section id="network" className="wl-network wl-section wl-container" aria-labelledby="network-heading">
+        <BlurFade inView><p className="wl-eyebrow">03 / Знание, которым можно делиться</p><h2 id="network-heading">Ваш опыт полезен.<br /><span>И другим тоже.</span></h2><p className="wl-network-description">Условия, этапы найма, наблюдения о компаниях — с источниками. Общая база работодателей помогает следующему человеку задавать правильные вопросы.</p><a className="wl-text-link" href="https://github.com/dzenlotus/worklife-employers">Общая база работодателей <ArrowUpRight aria-hidden="true" /></a></BlurFade>
+        <div className="wl-network-details"><div><Globe2 aria-hidden="true" /><h3>Общее — о работодателях</h3><p>Участники обмениваются подписанными наблюдениями. Подпись подтверждает происхождение записи, а не правдивость содержания.</p></div><div><LockKeyhole aria-hidden="true" /><h3>Личное — в вашем пространстве</h3><p>CV, переписка и результаты поиска не входят в общую базу. Ваш MCP-агент обрабатывает данные поручения по правилам своего поставщика модели.</p></div></div>
+      </section>
+
+      <section id="start" className="wl-start wl-container" aria-labelledby="start-heading">
+        <BlurFade inView className="wl-start-heading"><p className="wl-eyebrow">Подготовку тоже можно поручить</p><h2 id="start-heading">Агент настроит<br /><span>Worklife.</span></h2><p>Выберите свой AI-клиент и передайте агенту команду. Он подготовит окружение и подключение, чтобы вы могли продолжить в привычном чате.</p>{pypiPublished && <a className="wl-text-link" href="https://pypi.org/project/worklife-agent/">Пакет в PyPI <ArrowUpRight aria-hidden="true" /></a>}</BlurFade>
+        <div className="wl-setup-terminal">
+          <div className="wl-install-client"><label htmlFor="install-client">Ваш AI-клиент</label><select id="install-client" value={installTarget} onChange={(event) => { setInstallTarget(event.target.value); setCopied(""); }}>{installClients.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></div>
+          <Terminal key={installTarget} title="worklife / установка" label="uv · PyPI" actions={<button className="wl-terminal-copy" type="button" aria-label="Скопировать команду установки" onClick={() => copy(installCommand, "Команда установки скопирована")}><Copy aria-hidden="true" /><span>Копировать</span></button>}>
+            <TypingAnimation duration={18}>{`$ ${installCommand}`}</TypingAnimation>
+            <AnimatedSpan className="wl-terminal-comment"># Подготовку выполнит агент</AnimatedSpan>
+            <AnimatedSpan className="wl-terminal-plan">→ Установит Worklife</AnimatedSpan>
+            <AnimatedSpan className="wl-terminal-plan">→ Подготовит личное рабочее пространство</AnimatedSpan>
+            <AnimatedSpan className="wl-terminal-plan">→ Настроит подключение к выбранному клиенту</AnimatedSpan>
+          </Terminal>
+          <p className="wl-copy-status" role="status" aria-live="polite">{copied}</p>
+          <p className="wl-package-state">{pypiPublished ? "Доступно в PyPI · 0.4.1" : "Пакет готовится к публикации в PyPI."}</p>
+          <p className="wl-setup-next">Дальше общайтесь с агентом о работе. Подготовку инструментов и ведение поиска он возьмёт на себя.</p>
+          <div className="wl-agent-faq" aria-label="Вопросы о работе с агентом">{questions.map(([question, answer]) => <details className="wl-setup-details" key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div>
+        </div>
+      </section>
+      <section id="begin" className="wl-closing wl-container" aria-labelledby="closing-heading">
+        <BlurFade inView className="wl-closing-intro"><p className="wl-eyebrow">Начните с разговора</p><h2 id="closing-heading">Расскажите<br /><span>о себе.</span></h2><p className="wl-closing-copy">Чем занимались, что умеете и какая работа вам подходит. Агент уточнит детали и займётся поиском.</p></BlurFade>
+        <MagicCard className="wl-delegation-card" contentClassName="wl-delegation-content" style={{"--magic-card-bg":"#202a33"}}><div className="wl-delegation-label"><Waves aria-hidden="true" /><span>Поручение вашему агенту</span></div><blockquote>{firstGoal}</blockquote><button className="wl-copy" type="button" onClick={() => copy(firstGoal, "Поручение скопировано — передайте его своему агенту.", setGoalCopyStatus)}><Copy aria-hidden="true" /> Скопировать поручение</button><p className="wl-goal-copy-status" role="status" aria-live="polite">{goalCopyStatus}</p></MagicCard>
       </section>
     </main>
-    <Separator /><footer className="flex flex-wrap items-center justify-between gap-4 pb-4"><Typography.Paragraph size="sm" color="muted">Worklife</Typography.Paragraph><Link href={github}>Код и документация<Icon name="external" className="size-4 shrink-0" /></Link></footer>
+    <footer className="wl-footer wl-container"><a href="#top" aria-label="Worklife — к началу"><Brand /></a><span>Создан, чтобы быть на вашей стороне.</span><div><a href="#manifesto">Манифест</a><a href={github}>Открытый код <ArrowUpRight aria-hidden="true" /></a></div></footer>
   </div>;
 }

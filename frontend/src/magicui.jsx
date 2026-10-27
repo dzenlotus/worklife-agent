@@ -80,7 +80,7 @@ export function NumberTicker({ value, className = "" }) {
   );
 }
 
-export function BorderBeam() {
+export function BorderBeam({ repeat = 0 }) {
   const reducedMotion = useReducedMotion();
   if (reducedMotion) return null;
   return (
@@ -94,7 +94,7 @@ export function BorderBeam() {
         style={{ width: 120, offsetPath: "rect(0 auto auto 0 round 12px)" }}
         initial={{ offsetDistance: "0%", opacity: 0 }}
         animate={{ offsetDistance: "100%", opacity: [0, 0.8, 0.8, 0] }}
-        transition={{ duration: 4, ease: "linear" }}
+        transition={{ duration: 4, ease: "linear", repeat }}
       />
     </div>
   );

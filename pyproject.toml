@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "worklife-agent"
-version = "0.4.0"
+version = "0.4.1"
 description = "Local-first job-search tools and a signed, replicated employer knowledge network for personal agents"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -27,6 +27,7 @@ browser = ["playwright>=1.50,<2"]
 dev = ["pytest>=8,<10", "pytest-asyncio>=0.24,<2", "ruff>=0.9"]
 
 [project.scripts]
+worklife-agent = "worklife.setup_cli:main"
 worklife = "worklife.cli:main"
 worklife-recruiter = "worklife.recruiter_cli:main"
 

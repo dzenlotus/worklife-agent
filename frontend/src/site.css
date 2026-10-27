@@ -1,0 +1,407 @@
+.worklife-site {
+  --wl-muted: #a9b4bf;
+  --wl-line: #ffffff1c;
+  background: #181c20;
+  color: #e5e9e9;
+  font: 15px/1.6 "Golos Text", "Golos Fallback", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: clip;
+}
+.worklife-site *, .worklife-site *::before, .worklife-site *::after { box-sizing: border-box; }
+.worklife-site a { text-decoration: none; transition: color .2s, background .2s; }
+.worklife-site a:hover { color: #c9e2f7; }
+.worklife-site svg { width: 20px; height: 20px; flex: 0 0 auto; stroke-width: 1.6; }
+.worklife-site h1, .worklife-site h2, .worklife-site h3 { font-weight: 450; }
+.worklife-site h2 { font-size: clamp(36px, 4.2vw, 60px); line-height: 1.1; letter-spacing: -.045em; }
+.worklife-site h2 span { color: var(--wl-muted); }
+.worklife-site section[id] { scroll-margin-top: 24px; }
+.wl-container { width: min(1280px, calc(100% - 112px)); margin-inline: auto; }
+.wl-skip { position: fixed; top: -70px; left: 20px; z-index: 20; padding: 10px 16px; background: #b8d2e7; color: #18202a; }
+.wl-skip:focus { top: 12px; }
+.wl-header { height: 94px; display: flex; justify-content: space-between; align-items: center; position: absolute; inset: 0 0 auto; z-index: 5; }
+.wl-brand { display: inline-flex; gap: 9px; align-items: center; font-size: 25px; font-weight: 600; letter-spacing: -1.2px; }
+.wl-brand > svg { width: 27px; height: 27px; }
+.wl-brand-dot { color: #abc9e1; margin-left: -7px; }
+.wl-header nav { display: flex; align-items: center; gap: 34px; font-size: 13px; }
+.wl-header nav a { display: inline-flex; gap: 8px; align-items: center; min-height: 44px; }
+.wl-nav-start { border: 1px solid #ffffff40; padding: 0 16px; border-radius: 6px; }
+.wl-header nav svg { width: 16px; height: 16px; }
+.wl-nav-start:hover { background: #ffffff10; }
+.wl-hero { position: relative; min-height: min(900px, 100svh); display: flex; flex-direction: column; justify-content: center; padding: 140px 0 95px; isolation: isolate; }
+.wl-hero-image, .wl-hero-shade { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+.wl-hero-image { object-position: center 60%; animation: wl-horizon-enter 2.5s ease-out both; }
+.wl-hero-shade { z-index: -1; background: linear-gradient(90deg, #111920b8 0%, #11192074 43%, #11192008 76%), linear-gradient(0deg, #181c20 0%, #181c2010 28%, #11192030 85%); }
+.wl-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: .13em; text-transform: uppercase; color: var(--wl-muted); display: flex; align-items: center; gap: 9px; }
+.wl-hero .wl-eyebrow { color: #c7d4df; }
+.wl-live-dot { width: 5px; height: 5px; border-radius: 50%; background: #b9d9ee; box-shadow: 0 0 12px #b9d9ee70; }
+.wl-wordmark { display: block; font-size: clamp(88px, 11.9vw, 166px); font-weight: 500; letter-spacing: -.075em; line-height: 1.12; margin: 9px 0 23px -7px; }
+.wl-wordmark .wl-brand-dot { margin: 0; }
+.wl-hero-heading { font-size: clamp(30px, 3.3vw, 47px); letter-spacing: -.035em; line-height: 1.18; }
+.wl-hero-heading > span { color: #bacbd9; }
+.wl-hero-description { color: #bdc8d1; margin-top: 24px; max-width: 510px; font-size: 15px; line-height: 1.75; }
+.wl-hero-actions { display: flex; gap: 28px; align-items: center; margin-top: 32px; }
+.wl-text-link { display: inline-flex; gap: 13px; align-items: center; font-size: 13px; font-weight: 500; min-height: 44px; }
+.wl-text-link svg { transition: transform .2s; width: 17px; height: 17px; }
+.wl-text-link:hover svg { transform: translate(3px, -2px); }
+.wl-hero-bottom { display: flex; align-items: center; justify-content: space-between; gap: 20px; position: absolute; bottom: 28px; inset-inline: 0; border-top: 1px solid #ffffff24; padding-top: 18px; font-size: 11px; color: #acbcc9; }
+.wl-hero-bottom a { display: inline-flex; align-items: center; gap: 18px; }
+.wl-hero-bottom svg { width: 15px; height: 15px; }
+.wl-story { display: grid; grid-template-columns: repeat(3, 1fr); gap: 60px; padding-block: 85px 20px; }
+.wl-story > div { padding-top: 20px; border-top: 1px solid var(--wl-line); }
+.worklife-site .wl-story h2 { font-size: 30px; line-height: 1.2; margin-top: 25px; letter-spacing: -.035em; }
+.wl-story h2 span:first-child { color: #e5e9e9; }
+.wl-story-copy { color: var(--wl-muted); font-size: 13px; max-width: 330px; margin-top: 20px; }
+.wl-story .wl-text-link { margin-top: 14px; }
+.wl-section { padding-block: 110px; }
+#how { display: grid; grid-template-columns: .8fr 1.35fr; gap: 80px; }
+.wl-section-heading { padding-top: 14px; }
+.wl-section-heading h2, .wl-network h2, .wl-start h2 { margin-top: 23px; }
+.wl-section-heading > p:last-child, .wl-start-heading > p:not(.wl-eyebrow) { color: var(--wl-muted); margin-top: 25px; }
+.wl-demo { position: relative; overflow: hidden; align-self: start; border: 1px solid #ffffff1f; border-radius: 12px; background: #20262c; box-shadow: 0 30px 65px #080c1028; }
+.wl-window-bar { display: flex; align-items: center; gap: 11px; height: 51px; border-bottom: 1px solid var(--wl-line); padding-inline: 22px; font-size: 11px; color: #aab6c1; }
+.wl-window-dots { display: flex; gap: 5px; margin-right: 9px; }
+.wl-window-dots i { width: 5px; height: 5px; border-radius: 50%; background: #5e6b77; }
+.wl-demo-label { margin-left: auto; font-size: 10px; color: #c0ccd5; }
+.wl-example-tabs { gap: 0; }
+.worklife-site [data-slot="tabs-list-container"] { padding: 15px 22px 0; background: transparent; border-radius: 0; }
+.worklife-site [role="tablist"] { background: transparent; gap: 8px; padding: 0; }
+.worklife-site [role="tab"] { min-height: 38px; border-radius: 5px; font-size: 12px; color: #b7c2cb; padding: 8px 13px; }
+.worklife-site [role="tab"][aria-selected="true"] { color: #e3ebf2; }
+.worklife-site [data-slot="tabs-indicator"] { background: #33414e; box-shadow: none; border: 1px solid #ffffff09; border-radius: 5px; }
+.worklife-site [role="tabpanel"] { padding: 0; min-width: 0; }
+.wl-prompt { display: flex; gap: 12px; margin: 21px 22px 22px; font-size: 12px; }
+.wl-person { display: flex; align-items: center; justify-content: center; width: 25px; height: 25px; flex-shrink: 0; background: #3c4a58; color: #d9e4ed; border-radius: 50%; font-size: 9px; }
+.wl-prompt p { padding: 11px 15px; background: #2c353e; border: 1px solid #ffffff08; border-radius: 0 8px 8px; color: #d2dce4; }
+.wl-agent-response { display: flex; gap: 12px; margin: 0 22px 17px; }
+.wl-agent-avatar { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: #b2ccdf; color: #263542; }
+.wl-agent-avatar svg { width: 15px; height: 15px; }
+.wl-agent-response p { font-size: 11px; color: #aab8c5; }
+.wl-agent-response .wl-response-heading { color: #e1e8ed; font-size: 12px; margin-bottom: 3px; }
+.wl-jobs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0 22px 20px 59px; }
+.wl-job { min-width: 0; padding: 15px; border: 1px solid #ffffff14; border-radius: 6px; background: #242d35; }
+.wl-job-company { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.wl-job-company > span { display: grid; place-items: center; width: 27px; height: 27px; background: #354451; border: 1px solid #ffffff0e; border-radius: 5px; font-size: 12px; }
+.wl-job-company p { font-size: 11px; flex: 1; }
+.wl-job-company small { display: block; font-size: 10px; color: #b0bdc8; }
+.wl-job-company svg { width: 12px; height: 12px; color: #98aabb; }
+.wl-job h3 { font-size: 14px; line-height: 1.4; min-height: 40px; }
+.wl-salary { margin-top: 9px; font-size: 13px; color: #c3dbed; }
+.wl-job-evidence, .wl-job-question { display: flex; gap: 5px; align-items: flex-start; font-size: 11px; line-height: 1.5; color: #acbdcb; margin-top: 13px; }
+.wl-job-evidence svg { width: 12px; height: 12px; color: #adc9ba; margin-top: 1px; }
+.wl-job-question { color: #c8baa2; margin-top: 7px; }
+.wl-job-question span { width: 4px; height: 4px; border-radius: 50%; background: #c8baa2; margin: 5px 4px 0; flex-shrink: 0; }
+.wl-demo-footer { border-top: 1px solid var(--wl-line); padding: 12px 22px; display: flex; gap: 8px; align-items: center; font-size: 9px; color: #a6b4c1; }
+.wl-demo-footer svg { width: 13px; height: 13px; }
+.wl-capabilities { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 60px; padding-top: 5px; }
+.wl-capabilities > div { border-top: 1px solid var(--wl-line); padding-top: 27px; }
+.wl-capabilities svg { color: #b3cddd; width: 23px; height: 23px; margin-bottom: 20px; }
+.wl-capabilities h3 { font-size: 19px; letter-spacing: -.025em; margin-bottom: 10px; }
+.wl-capabilities p { color: var(--wl-muted); max-width: 300px; font-size: 13px; }
+.wl-manifesto { background: #20262b; border-block: 1px solid var(--wl-line); }
+.wl-manifesto > .wl-container { padding-block: 100px 80px; display: grid; grid-template-columns: .8fr 1.35fr; gap: 80px; }
+.wl-manifesto-intro { align-self: start; position: sticky; top: 50px; }
+.wl-manifesto h2 { margin-top: 26px; font-size: clamp(45px, 5.4vw, 76px); }
+.wl-manifesto h2 em { color: #b9cbd9; font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif; font-weight: 400; }
+.wl-manifesto-intro > p:last-child { color: var(--wl-muted); margin-top: 27px; font-size: 14px; }
+.wl-principle { display: flex; gap: 28px; padding-block: 25px; border-bottom: 1px solid var(--wl-line); }
+.wl-principle:first-child { padding-top: 0; }
+.wl-principle:last-child { border-bottom: 0; }
+.wl-index { color: #8c9caa; font-family: ui-monospace, monospace; font-size: 11px; padding-top: 4px; }
+.wl-principle h3 { font-size: 21px; letter-spacing: -.025em; margin-bottom: 10px; }
+.wl-principle p { font-size: 13px; color: #b2bdc7; max-width: 490px; }
+.wl-manifesto-photo { height: 375px; position: relative; isolation: isolate; }
+.wl-manifesto-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 56%; position: absolute; z-index: -2; }
+.wl-manifesto-photo::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, #141c27ba, #1b283c08 75%); }
+.wl-photo-caption { height: 100%; display: flex; flex-direction: column; justify-content: end; padding-bottom: 40px; font-size: 22px; letter-spacing: -.025em; }
+.wl-photo-caption span:last-child { color: #bccddb; }
+.wl-network { display: grid; grid-template-columns: 1fr 1fr; gap: 100px; }
+.wl-network-description { color: var(--wl-muted); margin-top: 24px; font-size: 14px; max-width: 440px; }
+.wl-network .wl-text-link { margin-top: 20px; }
+.wl-network-details { padding-top: 12px; }
+.wl-network-details > div { position: relative; padding: 0 0 30px 44px; }
+.wl-network-details > div + div { border-top: 1px solid var(--wl-line); padding-top: 30px; }
+.wl-network-details svg { position: absolute; left: 0; top: 5px; color: #afc6d8; }
+.wl-network-details > div + div svg { top: 35px; }
+.wl-network-details h3 { font-size: 18px; margin-bottom: 12px; letter-spacing: -.02em; }
+.wl-network-details p { color: var(--wl-muted); font-size: 13px; }
+.wl-start { display: grid; grid-template-columns: .8fr 1.35fr; gap: 80px; padding-block: 100px 110px; border-top: 1px solid var(--wl-line); }
+.wl-start-heading .wl-text-link { margin-top: 23px; }
+.wl-install { min-width: 0; align-self: start; background: #20262c; border: 1px solid var(--wl-line); border-radius: 10px; overflow: hidden; }
+.wl-window-bar > svg { width: 15px; height: 15px; }
+.wl-install-panel { padding: 20px 22px; color: #b8c4cf; font-size: 12px; }
+.wl-install-client { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 20px; color: #d4dfe8; }
+.wl-install-client select { padding: 9px 32px 9px 12px; border: 1px solid #ffffff26; border-radius: 5px; background: #2d3843; color: #d9e4ee; min-height: 42px; min-width: 170px; cursor: pointer; }
+.wl-install-explanation { margin-top: 20px; color: #b8c4cf; font-size: 12px; }
+.wl-install-panel > p:first-child { margin-bottom: 15px; }
+.wl-install-panel p a { color: #c6dff1; text-decoration: underline; text-underline-offset: 3px; }
+.worklife-site pre { max-width: 100%; overflow: auto; background: #171d23; border: 1px solid #ffffff0d; color: #c7d9e7; padding: 17px; border-radius: 5px; font-size: 11px; line-height: 1.9; scrollbar-width: thin; margin: 0; }
+.wl-code-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-block: 13px 5px; color: #a3b2c0; font-size: 10px; }
+.wl-code-actions button, .wl-copy { display: inline-flex; align-items: center; gap: 7px; border: 1px solid #ffffff26; border-radius: 5px; background: #2d3843; padding: 10px 13px; min-height: 40px; color: #d9e4ee; font-size: 11px; cursor: pointer; }
+.wl-code-actions button:hover, .wl-copy:hover { background: #3a4957; }
+.wl-code-actions svg, .wl-copy svg { width: 13px; height: 13px; }
+.wl-copy { margin-top: 14px; }
+.worklife-site .wl-small { color: #a5b3c0; font-size: 10px; margin-top: 12px; }
+.wl-install details { margin-top: 20px; }
+.wl-install summary { cursor: pointer; color: #d0dce6; font-size: 12px; padding-block: 10px; }
+.wl-install details pre { margin-top: 12px; }
+.wl-install blockquote { padding: 20px; margin: 0; border-left: 2px solid #a6c6df; background: #28323c; color: #d1e1ed; font-size: 14px; line-height: 1.8; }
+.wl-copy-status { font-size: 11px; color: #c0d9ce; padding-inline: 22px; }
+.wl-copy-status:not(:empty) { padding-bottom: 15px; }
+.wl-install .wl-local-app { border-top: 1px solid var(--wl-line); padding: 8px 22px; margin: 0; }
+.wl-local-app summary svg { display: inline-block; vertical-align: middle; width: 14px; height: 14px; margin-left: 8px; }
+.wl-local-app > p { color: var(--wl-muted); font-size: 12px; padding-block: 8px; }
+.wl-local-app > a { margin-top: 10px; }
+.wl-closing { border-top: 1px solid var(--wl-line); padding-block: 85px 95px; display: grid; grid-template-columns: .8fr 1.35fr; gap: 80px; align-items: center; }
+.wl-closing-intro h2 { margin-top: 23px; }
+.wl-closing-copy { margin-top: 24px; max-width: 380px; font-size: 15px; line-height: 1.8; color: #a9b9c6; }
+.wl-delegation-content { padding: 30px; }
+.wl-delegation-label { display: flex; align-items: center; gap: 10px; color: #a9c0d0; font-size: 11px; }
+.wl-delegation-label svg { color: #bed4e7; width: 23px; height: 23px; }
+.wl-delegation-content blockquote { margin-top: 24px; font-size: 21px; line-height: 1.65; letter-spacing: -.02em; color: #dce7ef; }
+.wl-delegation-content .wl-copy { margin-top: 25px; padding: 12px 16px; font-size: 12px; min-height: 46px; }
+.wl-goal-copy-status { color: #b5d8c8; font-size: 11px; margin-top: 12px; }
+.wl-goal-copy-status:empty { margin-top: 0; }
+.wl-footer { border-top: 1px solid var(--wl-line); padding-block: 25px; display: flex; align-items: center; justify-content: space-between; gap: 30px; }
+.wl-footer > span { color: #a5b4c1; font-size: 11px; }
+.wl-footer > div { display: flex; gap: 23px; font-size: 11px; }
+.wl-footer > div a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+.wl-footer > div svg { width: 12px; height: 12px; }
+/* Magic UI Shimmer Button: spark, rotating conic light, inset backdrop. */
+.wl-shimmer { --speed: 3s; --spread: 90deg; --shimmer-color: #d6edfd; position: relative; z-index: 0; display: inline-flex; align-items: center; justify-content: center; isolation: isolate; border-radius: 6px; border: 1px solid #a7cbe76b; overflow: hidden; padding: 14px 22px; color: #e1edf7; background: #314658; white-space: nowrap; }
+.wl-shimmer-content { display: inline-flex; align-items: center; gap: 20px; z-index: 1; font-size: 13px; }
+.wl-shimmer-content svg { width: 17px; height: 17px; transition: transform .2s; }
+.wl-shimmer:hover .wl-shimmer-content svg { transform: translate(2px, -2px); }
+.wl-shimmer-spark-container { position: absolute; inset: 0; z-index: -3; container-type: size; filter: blur(2px); }
+.wl-shimmer-slide { position: absolute; inset: 0; height: 100cqh; aspect-ratio: 1; animation: wl-shimmer-slide var(--speed) ease-in-out infinite alternate; }
+.wl-shimmer-spin { position: absolute; inset: -100%; background: conic-gradient(from calc(270deg - var(--spread) * .5), transparent 0, var(--shimmer-color) var(--spread), transparent var(--spread)); animation: wl-spin calc(var(--speed) * 2) linear infinite; }
+.wl-shimmer-backdrop { position: absolute; inset: 1px; z-index: -2; border-radius: 5px; background: #314658; }
+.wl-shimmer-highlight { position: absolute; inset: 0; z-index: 0; border-radius: inherit; box-shadow: inset 0 -8px 10px #d3eaff0d; transition: box-shadow .3s; }
+.wl-shimmer:hover .wl-shimmer-highlight { box-shadow: inset 0 -6px 15px #d3eaff20; }
+@keyframes wl-shimmer-slide { to { transform: translateX(calc(100cqw - 100%)); } }
+@keyframes wl-spin { to { transform: rotate(360deg); } }
+@keyframes wl-horizon-enter { from { opacity: .5; transform: scale(1.035); } to { opacity: 1; transform: scale(1); } }
+@media (min-width: 1600px) { .wl-hero { min-height: 900px; } }
+@media (max-width: 1100px) {
+  .wl-container { width: calc(100% - 72px); }
+  .wl-header nav { gap: 22px; }
+  #how, .wl-manifesto > .wl-container, .wl-start, .wl-closing { grid-template-columns: .8fr 1.2fr; gap: 45px; }
+  .wl-network { gap: 55px; }
+  .wl-jobs { margin-left: 22px; }
+  .wl-job { padding: 12px; }
+  .wl-job-company > svg { display: none; }
+  .wl-capabilities, .wl-story { gap: 35px; }
+  .worklife-site .wl-story h2 { font-size: 26px; }
+}
+@media (max-width: 760px) {
+  .wl-container { width: calc(100% - 40px); }
+  .wl-header { height: 78px; }
+  .wl-brand { font-size: 22px; }
+  .wl-brand > svg { width: 22px; height: 22px; }
+  .wl-header nav { gap: 17px; font-size: 12px; }
+  .wl-header nav > a:first-child, .wl-nav-github { display: none !important; }
+  .wl-nav-start { padding-inline: 11px; }
+  .wl-hero { min-height: 100svh; padding: 120px 0 105px; }
+  .wl-hero-image { object-position: 62% center; }
+  .wl-hero-shade { background: linear-gradient(90deg, #111920a8, #11192038), linear-gradient(0deg, #181c20 0%, #181c2008 40%); }
+  .wl-hero .wl-eyebrow { font-size: 9px; letter-spacing: .09em; }
+  .wl-wordmark { font-size: clamp(83px, 21vw, 145px); margin-left: -4px; margin-block: 15px 23px; }
+  .wl-hero-heading { font-size: clamp(29px, 6.8vw, 45px); }
+  .wl-hero-description { font-size: 13px; max-width: 330px; margin-top: 22px; }
+  .wl-desktop-break { display: none; }
+  .wl-hero-actions { flex-wrap: wrap; gap: 12px 22px; margin-top: 25px; }
+  .wl-shimmer { padding: 13px 16px; }
+  .wl-shimmer-content { font-size: 12px; gap: 14px; }
+  .wl-hero-actions > .wl-text-link { font-size: 11px; gap: 7px; }
+  .wl-hero-bottom { display: block; bottom: 22px; font-size: 10px; }
+  .wl-hero-bottom > a { display: none; }
+  .wl-story { grid-template-columns: 1fr; gap: 32px; padding-block: 60px 0; }
+  .wl-story > div { padding-top: 20px; }
+  .worklife-site .wl-story h2 { font-size: 30px; margin-top: 18px; }
+  .wl-story-copy { font-size: 12px; margin-top: 15px; max-width: none; }
+  .wl-section { padding-block: 75px; }
+  #how, .wl-manifesto > .wl-container, .wl-start, .wl-network { grid-template-columns: 1fr; gap: 36px; }
+  .wl-section-heading { padding: 0; }
+  .wl-section-heading h2, .wl-network h2, .wl-start h2 { margin-top: 17px; }
+  .wl-section-heading > p:last-child { margin-top: 19px; font-size: 13px; }
+  .wl-eyebrow { font-size: 9px; letter-spacing: .1em; }
+  .wl-capabilities { grid-template-columns: 1fr; gap: 25px; margin-top: 5px; }
+  .wl-capabilities > div { padding: 24px 0 0 42px; position: relative; }
+  .wl-capabilities svg { position: absolute; left: 0; top: 26px; width: 20px; height: 20px; }
+  .wl-capabilities h3 { font-size: 18px; margin-bottom: 6px; }
+  .wl-capabilities p { max-width: none; font-size: 12px; }
+  .wl-window-bar { padding-inline: 15px; font-size: 10px; }
+  .worklife-site [data-slot="tabs-list-container"] { padding: 12px 12px 0; }
+  .worklife-site [role="tablist"] { gap: 2px; }
+  .worklife-site [role="tab"] { padding-inline: 9px; font-size: 11px; min-height: 40px; }
+  .wl-prompt, .wl-agent-response { margin-inline: 15px; }
+  .wl-prompt { gap: 8px; }
+  .wl-prompt p { font-size: 11px; padding: 10px 12px; }
+  .wl-jobs { margin-inline: 15px; gap: 12px; grid-template-columns: 1fr; }
+  .wl-job { padding: 16px; }
+  .wl-job-company { gap: 6px; }
+  .wl-job-company small { font-size: 10px; }
+  .wl-job-company > span { width: 21px; height: 24px; font-size: 10px; }
+  .wl-job h3 { font-size: 14px; min-height: 0; }
+  .wl-salary { font-size: 13px; }
+  .wl-job-evidence, .wl-job-question { font-size: 11px; }
+  .wl-demo-footer { padding-inline: 15px; font-size: 10px; }
+  .wl-manifesto > .wl-container { padding-block: 70px 40px; }
+  .wl-manifesto-intro { position: static; }
+  .wl-manifesto h2 { font-size: 56px; margin-top: 20px; }
+  .wl-manifesto-intro > p:last-child { font-size: 13px; margin-top: 20px; }
+  .wl-principle { gap: 20px; padding-block: 23px; }
+  .wl-principle h3 { font-size: 19px; }
+  .wl-principle p { font-size: 12px; }
+  .wl-manifesto-photo { height: 310px; }
+  .wl-manifesto-photo img { object-position: 64% center; }
+  .wl-photo-caption { font-size: 16px; padding-bottom: 25px; }
+  .wl-network-details { padding: 0; }
+  .wl-network-details > div { padding-left: 38px; }
+  .wl-network-description { font-size: 13px; }
+  .wl-start { padding-block: 70px; }
+  .wl-start-heading > p:not(.wl-eyebrow) { font-size: 13px; margin-top: 20px; }
+  .wl-install-panel { padding: 18px 15px; font-size: 11px; }
+  .wl-install-client { flex-wrap: wrap; gap: 8px; }
+  .wl-install-client select { width: 100%; }
+  .worklife-site pre { font-size: 10px; padding: 13px; }
+  .wl-copy-status { padding-inline: 15px; }
+  .wl-install .wl-local-app { padding-inline: 15px; }
+  .wl-closing { padding-block: 60px; grid-template-columns: 1fr; gap: 28px; }
+  .wl-closing-copy { font-size: 13px; margin-top: 20px; }
+  .wl-delegation-content { padding: 23px; }
+  .wl-delegation-content blockquote { font-size: 17px; }
+  .wl-footer { flex-wrap: wrap; gap: 10px 20px; padding-block: 25px; }
+  .wl-footer > span { order: 3; width: 100%; font-size: 10px; }
+  .wl-footer > div { margin-left: auto; gap: 15px; font-size: 10px; }
+}
+@media (max-height: 700px) and (min-width: 761px) { .wl-hero { min-height: 720px; } }
+@media (max-width: 380px) {
+  .wl-header .wl-brand { font-size: 20px; gap: 5px; letter-spacing: -1px; }
+  .wl-header .wl-brand svg { width: 18px; height: 18px; }
+  .wl-header nav { gap: 12px; font-size: 11px; }
+  .wl-nav-start { padding-inline: 8px; }
+  .wl-header .wl-nav-start svg { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .worklife-site *, .worklife-site *::before, .worklife-site *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* The problem, the imbalance and a human-centred alternative. */
+.worklife-site .mui-text-segment, .worklife-site .mui-text-line { color: inherit; }
+.wl-hero-heading .mui-text-line:last-child { color: #b6cddd; }
+.wl-hero-bottom > span { display: inline-flex; gap: 6px; }
+.wl-story { gap: 22px; padding-block: 70px 25px; }
+.wl-story-card-content { padding: 28px; }
+.worklife-site .wl-story h2 { font-size: 29px; margin-top: 23px; }
+.wl-story-card .wl-story-copy { max-width: none; }
+.wl-story-card .mui-text-line:last-child { color: #aab9c5; }
+.wl-market-proof { padding-block: 75px 100px; }
+.wl-proof-intro { display: grid; grid-template-columns: 1fr 1fr; column-gap: 80px; align-items: end; }
+.wl-proof-intro .wl-eyebrow { grid-column: 1 / -1; margin-bottom: 22px; }
+.wl-proof-intro h2 { font-size: clamp(34px, 4.2vw, 58px); }
+.wl-proof-intro > p:last-child { max-width: 360px; color: #a9b9c6; font-size: 13px; padding-bottom: 4px; }
+.wl-proof-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 55px; margin-top: 55px; }
+.wl-proof-item { border-top: 1px solid #ffffff26; padding-top: 24px; }
+.wl-proof-number { font-size: 88px; line-height: 1; letter-spacing: -.06em; font-weight: 400; color: #c4dce9; margin-bottom: 20px; }
+.wl-proof-number > span:last-child { font-size: 46px; margin-left: 5px; }
+.wl-proof-item > p:not(.wl-proof-number) { max-width: 300px; font-size: 14px; color: #cbd5dd; min-height: 68px; }
+.wl-proof-item > a { display: inline-flex; gap: 7px; align-items: center; margin-top: 14px; font-size: 10px; color: #9baebd; }
+.wl-proof-item > a svg { width: 12px; height: 12px; }
+.wl-paradigm { padding-block: 75px 65px; border-top: 1px solid #ffffff20; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+.wl-paradigm h2 { font-size: clamp(33px, 3.5vw, 49px); margin-top: 22px; }
+.wl-paradigm > div > p:not(.wl-eyebrow) { max-width: 480px; margin-top: 24px; font-size: 14px; color: #a9b9c6; }
+.wl-paradigm > div > p:last-child { color: #d4e0e8; }
+.wl-human-scene { position: relative; width: 100%; height: 410px; isolation: isolate; }
+.wl-human-node { position: absolute; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; min-width: 115px; min-height: 72px; color: #c5d4df; border: 1px solid #8fa7b42b; border-radius: 8px; background: #202a33; padding: 12px; }
+.wl-human-node strong { font-size: 11px; font-weight: 450; }
+.wl-human-node > svg { width: 20px; height: 20px; }
+.wl-human-self { width: 130px; height: 130px; min-width: 0; border-radius: 50%; left: calc(50% - 65px); top: calc(50% - 65px); background: #b1cbdd; border-color: #d1e7f4; color: #1d303f; box-shadow: 0 0 80px #9cbdd21c; }
+.wl-human-self strong { font-size: 25px; font-weight: 500; line-height: 1; }
+.wl-human-self > span { font-size: 8px; }
+.wl-human-agent { top: 32px; left: 0; }
+.wl-human-employers { right: 0; top: 60px; }
+.wl-human-evidence { right: 10px; bottom: 26px; min-width: 150px; }
+.wl-orbit-decoration { position: absolute; inset: 0; z-index: 0; }
+.wl-orbit-decoration > .mui-orbit-path { width: 100%; height: 100%; }
+.wl-orbit-decoration .mui-orbit > span { display: grid; place-items: center; background: #202a33; border: 1px solid #9cb3c137; width: 30px; height: 30px; border-radius: 50%; }
+.wl-orbit-decoration .mui-orbit svg { width: 13px; height: 13px; color: #92aab9; }
+.wl-human-scene > .mui-animated-beam { width: 100%; height: 100%; }
+.wl-experience-strip { border-block: 1px solid #ffffff16; padding-block: 27px 32px; }
+.wl-experience-strip > p { text-align: center; color: #9fb2c0; font-size: 11px; margin-bottom: 22px; }
+.wl-experience-strip .mui-marquee-track > span { display: flex; align-items: center; gap: 40px; font-size: 21px; color: #bfccd5; letter-spacing: -.03em; }
+.wl-experience-strip .mui-marquee-track > span > span { font-size: 11px; color: #7192a8; }
+.wl-experience-strip .mui-marquee:focus-visible { outline: 2px solid #a8cde5; outline-offset: 5px; }
+.wl-manifesto > .wl-manifesto-opening { display: block; padding-block: 100px 75px; border-bottom: 1px solid #ffffff1c; }
+.wl-manifesto-question { margin-top: 28px; font-size: clamp(34px, 4.4vw, 62px); line-height: 1.15; letter-spacing: -.045em; max-width: 990px; }
+.wl-manifesto-opening > p:not(.wl-eyebrow):not(.wl-manifesto-question):not(.wl-manifesto-declaration) { max-width: 860px; margin-top: 28px; font-size: 17px; line-height: 1.8; color: #b7c4ce; }
+.wl-manifesto-opening .wl-manifesto-declaration { font-size: clamp(27px, 3vw, 42px); line-height: 1.25; letter-spacing: -.03em; margin-top: 38px; color: #c8e0ee; }
+.wl-manifesto > .wl-manifesto-body { padding-block: 90px 85px; }
+.wl-manifesto .mui-line-shadow { color: #b9d2e2; font-family: "Iowan Old Style", Georgia, serif; font-style: italic; }
+.wl-manifesto-intro .wl-text-link { margin-top: 24px; }
+.wl-setup-terminal { min-width: 0; align-self: start; }
+.wl-setup-terminal .wl-install-client { font-size: 12px; margin-bottom: 16px; }
+.worklife-site .mui-terminal-body { border: 0; background: transparent; border-radius: 0; padding: 26px 24px; font-size: 12px; min-height: 235px; }
+.worklife-site .mui-terminal-body code { white-space: normal; }
+.wl-terminal-copy { display: inline-flex; gap: 6px; align-items: center; background: #2c3d4b; border: 1px solid #abc5d536; color: #d2e4ef; border-radius: 5px; padding: 7px 9px; font-size: 10px; min-height: 34px; cursor: pointer; }
+.wl-terminal-copy svg { width: 12px; height: 12px; }
+.wl-terminal-comment { color: #8a9fad; margin-top: 14px; }
+.wl-terminal-plan { color: #b3d2c3; font-size: 11px; }
+.wl-setup-terminal .wl-copy-status { padding: 0; margin-top: 10px; }
+.wl-package-state { color: #bccbda; font-size: 10px; margin-top: 15px; }
+.wl-setup-next { color: #abbfcd; font-size: 12px; margin-top: 12px; }
+.wl-setup-details { border-top: 1px solid #ffffff1c; margin-top: 20px; padding-top: 7px; }
+.wl-setup-details summary { padding-block: 8px; font-size: 11px; color: #c8d7e2; cursor: pointer; }
+.wl-setup-details > p { font-size: 11px; color: #a9bdca; margin-block: 12px; }
+.wl-setup-details > p a { color: #cee5f5; text-decoration: underline; text-underline-offset: 3px; }
+.wl-setup-details blockquote { background: #26343f; color: #cadde9; border-left: 2px solid #a9cde3; padding: 18px; font-size: 12px; line-height: 1.8; }
+.wl-agent-faq summary { font-size: 13px; padding-block: 13px; }
+.wl-agent-faq .wl-setup-details > p { font-size: 12px; line-height: 1.8; margin-block: 6px 16px; }
+@media (max-width: 1100px) {
+  .wl-story { gap: 16px; }
+  .wl-story-card-content { padding: 23px; }
+  .worklife-site .wl-story h2 { font-size: 24px; }
+  .wl-proof-grid { gap: 35px; }
+  .wl-proof-number { font-size: 76px; }
+  .wl-paradigm { gap: 38px; }
+  .wl-human-node { min-width: 100px; }
+  .wl-human-self { min-width: 0; }
+  .wl-human-evidence { min-width: 130px; }
+  .mui-terminal-label { display: none; }
+}
+@media (max-width: 760px) {
+  .wl-story { grid-template-columns: 1fr; padding-block: 55px 0; gap: 18px; }
+  .wl-story-card-content { padding: 25px; }
+  .worklife-site .wl-story h2 { font-size: 29px; }
+  .wl-market-proof { padding-block: 70px; }
+  .wl-proof-intro { grid-template-columns: 1fr; gap: 0; }
+  .wl-proof-intro > p:last-child { margin-top: 22px; }
+  .wl-proof-grid { grid-template-columns: 1fr; gap: 35px; margin-top: 35px; }
+  .wl-proof-item { display: grid; grid-template-columns: 105px 1fr; gap: 4px 22px; }
+  .wl-proof-number { grid-row: 1 / 3; font-size: 61px; margin-bottom: 0; }
+  .wl-proof-number > span:last-child { font-size: 29px; margin-left: 3px; }
+  .wl-proof-item > p:not(.wl-proof-number) { min-height: 0; font-size: 12px; }
+  .wl-proof-item > a { align-items: flex-start; font-size: 9px; margin-top: 10px; }
+  .wl-proof-item > a svg { margin-top: 2px; }
+  .wl-paradigm { grid-template-columns: 1fr; gap: 20px; padding-block: 65px 20px; }
+  .wl-paradigm > div > p:not(.wl-eyebrow) { font-size: 13px; }
+  .wl-human-scene { height: 350px; }
+  .wl-human-self { width: 112px; height: 112px; left: calc(50% - 56px); top: calc(50% - 56px); }
+  .wl-human-node { min-width: 90px; min-height: 66px; padding: 10px; }
+  .wl-human-node strong { font-size: 10px; }
+  .wl-human-self strong { font-size: 24px; }
+  .wl-human-self { min-width: 0; }
+  .wl-human-agent { top: 15px; }
+  .wl-human-employers { top: 35px; }
+  .wl-human-evidence { bottom: 13px; right: 0; min-width: 130px; }
+  .wl-experience-strip .mui-marquee-track > span { font-size: 17px; }
+  .wl-manifesto > .wl-manifesto-opening { padding-block: 65px 50px; }
+  .wl-manifesto-opening > p:not(.wl-eyebrow):not(.wl-manifesto-question):not(.wl-manifesto-declaration) { font-size: 14px; line-height: 1.8; }
+  .wl-manifesto > .wl-manifesto-body { padding-block: 50px; }
+  .wl-manifesto-body .wl-manifesto-intro h2 { font-size: 53px; }
+  .worklife-site .mui-terminal-body { padding: 22px 16px; font-size: 11px; min-height: 260px; }
+  .wl-terminal-copy span { display: none; }
+  .wl-terminal-copy { padding: 8px; }
+  .wl-terminal-plan { font-size: 10px; }
+  .wl-setup-terminal .mui-terminal-title { font-size: 10px; }
+  .wl-setup-terminal .wl-install-client select { width: 100%; }
+}
