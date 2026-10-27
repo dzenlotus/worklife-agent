@@ -17,6 +17,7 @@ import { typographyVariants } from "@heroui/styles";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import {
   SearchBoard,
+  ConversationBoard,
   MarketBoard,
   ResumeBoard,
   JobDetails,
@@ -62,6 +63,7 @@ const navigation = [
   ["overview", "Обзор"],
   ["market", "Рынок"],
   ["search", "Вакансии"],
+  ["messages", "Переписка"],
   ["schedules", "Расписание"],
   ["experiments", "Эксперименты"],
   ["strengths", "Сильные стороны"],
@@ -74,6 +76,7 @@ const navigation = [
   ["settings", "Настройки"],
 ];
 const pageFromHash = () => {
+  if (location.hash === "#search/inbox") return "messages";
   const page = location.hash.slice(1).split("/")[0];
   return navigation.some(([key]) => key === page) ? page : "overview";
 };
@@ -486,7 +489,7 @@ function Navigation({
   onExpand,
   id = "sidebar-navigation",
 }) {
-  const primary = ["overview", "search", "market", "cv", "employers", "schedules"];
+  const primary = ["overview", "search", "messages", "market", "cv", "employers", "schedules"];
   const secondary = [
     "strengths",
     "repositories",
@@ -640,9 +643,7 @@ export default function App() {
     const change = () => {
       setPage(pageFromHash());
       setNavigationOpen(false);
-      if (location.hash !== "#search/inbox") {
-        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-      }
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     };
     window.addEventListener("hashchange", change);
     return () => window.removeEventListener("hashchange", change);
@@ -863,6 +864,7 @@ export default function App() {
   const views = {
     market: MarketBoard,
     search: SearchBoard,
+    messages: ConversationBoard,
     schedules: SchedulesView,
     experiments: ExperimentsView,
     strengths: StrengthsView,
@@ -959,6 +961,12 @@ export default function App() {
           </div>
         </aside>
         <div className="app-content">
+          {state?.demo ? (
+            <div className="demo-notice" role="note">
+              <span>Демонстрация</span>
+              Вымышленные вакансии и переписка · отдельная база
+            </div>
+          ) : null}
           <header className="mobile-header">
             <Button
               variant="secondary"

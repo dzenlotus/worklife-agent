@@ -515,7 +515,7 @@ export default function Overview({ state, pending, onInspect, onCommand, onCondi
                 <div className="overview-section-heading"><h2 id="overview-attention-title">Следующие шаги</h2></div>
                 <div className="overview-attention-list">
                   {unread ? (
-                    <a className="overview-attention-item" href="#search/inbox">
+                    <a className="overview-attention-item" href="#messages">
                       <Icon name="activity" /><span><strong>Входящие сообщения · {unread}</strong><span>Откройте переписку по вакансиям</span></span><Icon name="next" />
                     </a>
                   ) : null}

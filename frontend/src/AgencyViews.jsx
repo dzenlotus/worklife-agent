@@ -89,6 +89,37 @@ function EvidenceList({ items, empty = "Пока нет подтверждённ
 }
 const unique = (values) => [...new Set(values)].sort();
 
+const companyTone = (name) => {
+  let value = 0;
+  for (const letter of String(name)) value = (value * 31 + letter.codePointAt(0)) >>> 0;
+  return ["blue", "teal", "violet", "amber", "rose"][value % 5];
+};
+const initials = (name) => {
+  const words = String(name).match(/[\p{L}\p{N}]+/gu) || [];
+  return (words.length > 1
+    ? `${Array.from(words[0])[0]}${Array.from(words.at(-1))[0]}`
+    : Array.from(words[0] || "?").slice(0, 2).join("")
+  ).toLocaleUpperCase("ru-RU");
+};
+function CompanyAvatar({ name, className = "", tone = companyTone(name) }) {
+  return (
+    <span className={`company-avatar ${className}`} data-tone={tone} aria-hidden="true">
+      {initials(name)}
+    </span>
+  );
+}
+const messageChannel = (message) => ({ email: "Почта", telegram: "Telegram", phone: "Телефон" }[message.channel] || message.channel || "Канал не указан");
+const messageSender = (message, job) => {
+  const sender = message.source?.sender;
+  if (typeof sender === "string" && sender.trim()) return sender;
+  if (sender && typeof sender === "object") {
+    const name = sender.name || [sender.first_name, sender.last_name].filter(Boolean).join(" ") || sender.username;
+    if (name) return name;
+  }
+  if (message.direction === "outbound") return "Вы";
+  return job ? employerName(job) : "Сообщение без вакансии";
+};
+
 function JobCard({
   job,
   state,
@@ -98,64 +129,54 @@ function JobCard({
   compact = false,
 }) {
   const stage = jobStage(job, state.applications),
+    company = employerName(job),
     recommendation = list(state.advisor?.recommendations).find(
       (r) => r.job_id === job.id,
-    );
+    ),
+    fit = recommendation?.assessment_status === "stale" ? "stale" : recommendation?.decision,
+    reason = fit === "stale"
+      ? "Анализ нужно обновить"
+      : fit === "reject"
+        ? "Не соответствует вашим условиям"
+        : fit === "clarify"
+          ? list(recommendation?.questions)[0] || "Есть условия для уточнения"
+          : (recommendation?.assessment_status === "fresh" && list(recommendation.agent_assessment?.reasons)[0]) || list(recommendation?.reasons)[0] || "Откройте условия вакансии";
   return (
-    <BlurFade className={`job-card ${compact ? "compact" : "job-row"}`}>
-      <div className="job-card-main">
-        {compact ? (
-          <div className="job-company">
-            <Icon name="employers" />
-            {employerName(job)}
-          </div>
-        ) : null}
+    <BlurFade className={`job-card ${compact ? "compact" : "job-row"}`} data-tone={companyTone(company)}>
+      <div className="job-card-heading">
+        <CompanyAvatar name={company} />
+        <div className="job-card-identity">
+          <p className="job-company">{company}</p>
+          <p className="job-source">{jobSource(job)}</p>
+        </div>
+        <Status value={job.blocked ? "blocked" : stage} />
+      </div>
+      <div className="job-card-body">
         <button className="job-title" onClick={() => onInspect("job", job.id)}>
           {job.title || "Вакансия без названия"}
         </button>
-        {compact ? <p className="job-salary">{salaryLabel(job)}</p> : null}
-        <p className="muted job-meta">
-          {!compact ? (
-            <>
-              <span className="job-company">{employerName(job)}</span> ·{" "}
-            </>
-          ) : null}
-          {jobLocation(job)} · {jobSource(job)}
-        </p>
-        {recommendation ? (
-          <p className="job-reason">
-            <Icon
-              name={recommendation.decision === "reject" ? "activity" : "check"}
-            />
-            {list(recommendation.reasons)[0] || "Нужны уточнения"}
-          </p>
-        ) : null}
+        <p className="job-salary">{salaryLabel(job)}</p>
+        <div className="job-attributes">
+          <span><Icon name={jobLocation(job) === "Удалённо" ? "remote" : "location"} />{jobLocation(job)}</span>
+          {job.remote === true && jobLocation(job) !== "Удалённо" ? <span><Icon name="remote" />Удалённо</span> : null}
+        </div>
       </div>
-      <div className="job-actions">
-        {!compact ? <p className="job-salary">{salaryLabel(job)}</p> : null}
-        <Status value={job.blocked ? "blocked" : stage} />
-        {compact ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onPress={() => onInspect("job", job.id)}
-          >
-            Подробнее
-            <Icon name="next" />
-          </Button>
-        ) : null}
+      {!compact && recommendation ? (
+        <div className="job-fit" data-fit={fit || "unknown"} data-verdict={fit || "unknown"}>
+          <Icon name={fit === "consider" ? "check" : fit === "stale" ? "refresh" : "activity"} />
+          <p>{reason}</p>
+        </div>
+      ) : null}
+      <div className="job-card-footer">
+        <Button variant="ghost" size="sm" onPress={() => onInspect("job", job.id)}>
+          Открыть вакансию<Icon name="next" />
+        </Button>
         {stage === "new" ? (
           <Button
             variant="secondary"
             size="sm"
             isPending={pending === `save:${job.id}`}
-            onPress={() =>
-              onCommand(
-                "pipeline_update",
-                { job_id: job.id, stage: "saved" },
-                `save:${job.id}`,
-              )
-            }
+            onPress={() => onCommand("pipeline_update", { job_id: job.id, stage: "saved" }, `save:${job.id}`)}
           >
             Сохранить
           </Button>
@@ -171,17 +192,6 @@ export function SearchBoard({
   pending,
   onConditions,
 }) {
-  useEffect(() => {
-    const focusInbox = () => {
-      if (location.hash !== "#search/inbox") return;
-      const inbox = document.getElementById("search-inbox");
-      inbox?.scrollIntoView({ block: "start" });
-      inbox?.focus({ preventScroll: true });
-    };
-    focusInbox();
-    window.addEventListener("hashchange", focusInbox);
-    return () => window.removeEventListener("hashchange", focusInbox);
-  }, []);
   const [filters, setFilters] = useState({
       query: "",
       stage: "",
@@ -189,7 +199,9 @@ export function SearchBoard({
       source: "",
       remote: false,
     }),
-    [mode, setMode] = useState("list");
+    [mode, setMode] = useState("list"),
+    [filtersOpen, setFiltersOpen] = useState(false);
+  const filterCount = [filters.stage, filters.location, filters.source, filters.remote].filter(Boolean).length;
   const jobs = selectJobs(state, filters),
     all = list(state.jobs),
     set = (key, value) =>
@@ -205,7 +217,7 @@ export function SearchBoard({
       >
         <div className="view-switch" role="group" aria-label="Вид вакансий">
           {[
-            ["list", "Список"],
+            ["list", "Карточки"],
             ["board", "Воронка"],
           ].map(([key, title]) => (
             <Button
@@ -235,6 +247,20 @@ export function SearchBoard({
               onChange={(e) => set("query", e.target.value)}
             />
           </div>
+          <Button
+            className="filter-toggle"
+            variant={filterCount ? "secondary" : "outline"}
+            size="sm"
+            aria-label="Фильтры"
+            aria-expanded={filtersOpen}
+            aria-controls="job-search-filters"
+            onPress={() => setFiltersOpen(!filtersOpen)}
+          >
+            <Icon name="settings" />Фильтры
+            {filterCount ? <span className="filter-count">{filterCount}</span> : null}
+          </Button>
+        </div>
+        {filtersOpen ? <div className="advanced-filters" id="job-search-filters">
           <SelectField
             label="Этап"
             value={filters.stage}
@@ -275,7 +301,8 @@ export function SearchBoard({
             />
             Удалённо
           </label>
-        </div>
+          {filterCount ? <Button variant="ghost" size="sm" onPress={() => setFilters((previous) => ({ ...previous, stage: "", location: "", source: "", remote: false }))}>Сбросить</Button> : null}
+        </div> : null}
         <p className="muted small board-result-count" aria-live="polite">
           Показано {jobs.length} из {all.length}
         </p>
@@ -288,10 +315,8 @@ export function SearchBoard({
                 : "Начнём с вашей цели"
             }
             action={
-              <Button variant="outline" onPress={onConditions}>
-                {all.length
-                  ? "Изменить условия поиска"
-                  : "Указать, какую работу ищу"}
+              <Button variant="outline" onPress={all.length ? () => setFilters({ query: "", stage: "", location: "", source: "", remote: false }) : onConditions}>
+                {all.length ? "Сбросить фильтры" : "Указать, какую работу ищу"}
               </Button>
             }
           >
@@ -347,18 +372,35 @@ export function SearchBoard({
           </div>
         )}
       </Panel>
-      <ConversationPanel {...{ state, onInspect, onCommand, pending }} />
+      {list(state.messages).length ? (
+        <a className="inbox-shortcut" href="#messages">
+          <Icon name="activity" />
+          <span>Переписка <span className="muted">{list(state.messages).length} сообщений</span></span>
+          <Icon name="next" />
+        </a>
+      ) : null}
     </>
   );
 }
-function ConversationPanel({ state, onInspect, onCommand, pending }) {
+export function ConversationBoard(props) {
+  return (
+    <>
+      <PageHeading title={<span>Переписка <span className="count-badge">{list(props.state.messages).length}</span></span>} />
+      <ConversationPanel {...props} standalone />
+    </>
+  );
+}
+function ConversationPanel({ state, onInspect, onCommand, pending, standalone = false }) {
   const [scope, setScope] = useState("all"),
     [selected, setSelected] = useState(null),
     [jobId, setJobId] = useState(""),
     [read, setRead] = useState("");
   const messages = list(state.messages);
   const unassigned = messages.filter((message) => !message.job_id);
-  const visible = scope === "unassigned" ? unassigned : messages;
+  const unread = messages.filter((message) => message.unread === true);
+  const visible = scope === "unassigned" ? unassigned : scope === "unread" ? unread : messages;
+  const selectedJob = selected && list(state.jobs).find((job) => job.id === selected.job_id);
+  const selectedSender = selected ? messageSender(selected, selectedJob) : "";
   const update = async (changes) => {
     const result = await onCommand("conversation_update", {
       message_id: selected.id,
@@ -368,11 +410,11 @@ function ConversationPanel({ state, onInspect, onCommand, pending }) {
   };
   return (
     <Panel
-      className="conversation-panel"
+      className={`conversation-panel${standalone ? " is-standalone" : ""}`}
       id="search-inbox"
       tabIndex={-1}
       title={
-        <span>
+        standalone ? undefined : <span>
           Переписка <span className="count-badge">{messages.length}</span>
         </span>
       }
@@ -383,6 +425,12 @@ function ConversationPanel({ state, onInspect, onCommand, pending }) {
             onClick={() => setScope("all")}
           >
             Все сообщения
+          </button>
+          <button
+            aria-pressed={scope === "unread"}
+            onClick={() => setScope("unread")}
+          >
+            Непрочитанные · {unread.length}
           </button>
           <button
             aria-pressed={scope === "unassigned"}
@@ -396,64 +444,36 @@ function ConversationPanel({ state, onInspect, onCommand, pending }) {
       {visible.length ? (
         <div className="event-list conversation-list">
           {visible.map((message) => {
-            const job = list(state.jobs).find(
-              (entry) => entry.id === message.job_id,
-            );
+            const job = list(state.jobs).find((entry) => entry.id === message.job_id),
+              sender = messageSender(message, job),
+              tone = companyTone(job ? employerName(job) : sender),
+              subject = message.source?.subject || job?.title || (message.job_id ? "Вакансия недоступна" : "Без привязки к вакансии");
             return (
-              <article className="event-row conversation-row" key={message.id}>
+              <article className="event-row conversation-row conversation-card" key={message.id} data-unread={message.unread === true} data-tone={tone}>
+                <CompanyAvatar name={sender} tone={tone} className="conversation-avatar" />
                 <div className="conversation-main">
-                  <div className="conversation-heading">
-                    {job ? (
-                      <button onClick={() => onInspect("job", job.id)}>
-                        {job.title}
-                      </button>
-                    ) : (
-                      <span className="conversation-subject">
-                        {message.job_id
-                          ? "Вакансия недоступна"
-                          : "Без вакансии"}
-                      </span>
-                    )}
-                    <span className="muted small conversation-time">
-                      <Timestamp
-                        value={message.occurred_at || message.created_at}
-                      />
-                    </span>
+                  <div className="conversation-card-header">
+                    <p className="conversation-sender">{sender}</p>
+                    <span className="conversation-time"><Timestamp value={message.occurred_at || message.created_at} /></span>
                   </div>
-                  <p className="preserve-lines conversation-preview">
-                    {message.text || "Текст сообщения отсутствует"}
-                  </p>
-                  <p className="muted small conversation-meta">
-                    {{
-                      email: "Почта",
-                      telegram: "Telegram",
-                      phone: "Телефон",
-                    }[message.channel] || message.channel || "Канал не указан"}
-                    {message.direction === "inbound"
-                      ? " · Входящее"
-                      : message.direction === "outbound"
-                        ? " · Исходящее"
-                        : ""}
-                    {message.unread
-                      ? " · Не прочитано"
-                      : message.read_at
-                        ? " · Прочитано"
-                        : null}
-                  </p>
+                  <div className="conversation-subject-line">
+                    {message.unread ? <span className="unread-dot" aria-label="Не прочитано" /> : null}
+                    <button className="conversation-subject" onClick={() => { setSelected(message); setJobId(""); setRead(""); }}>
+                      {subject}
+                    </button>
+                  </div>
+                  <p className="preserve-lines conversation-preview">{message.text || "Текст сообщения отсутствует"}</p>
+                  <div className="conversation-card-footer">
+                    <p className="conversation-meta">
+                      <span className="channel-label" data-channel={message.channel}>{messageChannel(message)}</span>
+                      <span>{message.direction === "inbound" ? "Входящее" : message.direction === "outbound" ? "Исходящее" : "Направление не указано"}</span>
+                      {message.unread ? <span>Не прочитано</span> : message.read_at ? <span>Прочитано</span> : null}
+                    </p>
+                    <Button className="conversation-open" variant="ghost" size="sm" aria-label="Управлять сообщением" onPress={() => { setSelected(message); setJobId(""); setRead(""); }}>
+                      Открыть<Icon name="next" />
+                    </Button>
+                  </div>
                 </div>
-                <Button
-                  className="conversation-open"
-                  variant="ghost"
-                  size="sm"
-                  aria-label="Управлять сообщением"
-                  onPress={() => {
-                    setSelected(message);
-                    setJobId("");
-                    setRead("");
-                  }}
-                >
-                  Открыть <Icon name="next" />
-                </Button>
               </article>
             );
           })}
@@ -463,21 +483,44 @@ function ConversationPanel({ state, onInspect, onCommand, pending }) {
           title={
             scope === "unassigned"
               ? "Непривязанных сообщений нет"
+              : scope === "unread"
+                ? "Непрочитанных сообщений нет"
               : "Сообщений пока нет"
           }
         >
           {scope === "unassigned"
             ? "Все сообщения связаны с вакансиями."
+            : scope === "unread"
+              ? "Нет сообщений с отметкой «Не прочитано»."
             : "Ответы компаний и другая переписка появятся здесь после проверки агентом."}
         </Empty>
       )}
       <Dialog
         open={!!selected}
         onClose={() => setSelected(null)}
-        title="Сохранённое сообщение"
+        title={selected?.source?.subject || selectedJob?.title || "Сообщение"}
         size="md"
       >
         {selected ? (
+          <>
+          <div className="message-reader-header">
+            <CompanyAvatar name={selectedSender} tone={companyTone(selectedJob ? employerName(selectedJob) : selectedSender)} />
+            <div>
+              <strong>{selectedSender}</strong>
+              <p><Timestamp value={selected.occurred_at || selected.created_at} /> · {messageChannel(selected)}</p>
+            </div>
+          </div>
+          <p className="message-reader-body preserve-lines">
+            {selected.text || "Текст сообщения отсутствует"}
+          </p>
+          <div className="message-reader-actions">
+            {selected.job_id ? <Button variant="outline" size="sm" onPress={() => { setSelected(null); onInspect("job", selected.job_id); }}>Открыть вакансию<Icon name="next" /></Button> : null}
+            {selected.unread ? <Button variant="secondary" size="sm" isPending={pending === "conversation_update"} onPress={async () => {
+              const result = await onCommand("conversation_update", { message_id: selected.id, read: true });
+              if (result) setSelected(result);
+            }}>Отметить прочитанным</Button> : <span className="muted small">{selected.read_at ? "Прочитано" : "Сохранено"}</span>}
+          </div>
+          <DetailAccordion title="Связь и отметка прочтения">
           <form
             className="resume-form"
             onSubmit={(event) => {
@@ -488,9 +531,6 @@ function ConversationPanel({ state, onInspect, onCommand, pending }) {
               });
             }}
           >
-            <p className="small preserve-lines break-words">
-              {selected.text || "Текст сообщения отсутствует"}
-            </p>
             <p className="muted small">
               {selected.job_id
                 ? `Связано с вакансией: ${list(state.jobs).find((job) => job.id === selected.job_id)?.title || "Вакансия недоступна"}`
@@ -542,6 +582,8 @@ function ConversationPanel({ state, onInspect, onCommand, pending }) {
               ) : null}
             </div>
           </form>
+          </DetailAccordion>
+          </>
         ) : null}
       </Dialog>
     </Panel>
