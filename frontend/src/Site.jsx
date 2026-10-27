@@ -10,7 +10,7 @@ import messagesScreenshot from "./site-assets/worklife-messages.png";
 import "./site.css";
 
 const github = "https://github.com/dzenlotus/worklife-agent";
-const pypiPublished = false;
+const pypiPublished = true;
 const installClients = [["codex", "Codex"], ["claude-code", "Claude Code"], ["cursor", "Cursor"], ["opencode", "OpenCode"], ["generic", "Другой MCP-клиент"]];
 const firstGoal = "Помоги найти работу. Разберись в моём опыте, уточни условия и займись поиском работодателей, резюме и перепиской.";
 const questions = [
