@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Input, TextArea, Spinner, Link, Label, Typography, Alert, CloseButton } from "@heroui/react";
-import Overview from "./Overview.jsx";
+import { Button, Input, TextArea, Spinner, Link, Label, Typography, Alert, CloseButton, ListBox, Header } from "@heroui/react";
+import Overview, { ActivityLog, GoalComposer, RunHistory } from "./Overview.jsx";
 import ModelConnection from "./ModelConnection.jsx";
 import { composeGoal, readDraft, saveDraft } from "./goals.js";
+import { documentBlocks } from "./document.js";
+import { resultTarget } from "./activity.js";
 import {
   Panel,
   Status,
@@ -11,7 +13,7 @@ import {
   Timestamp,
   Dialog,
 } from "./ui.jsx";
-import { list, label, formatDate, safeURL, topicGoals, activitySummary, scheduleResult } from "./model.js";
+import { list, label, formatDate, safeURL, scheduleResult } from "./model.js";
 import {
   SearchView,
   SchedulesView,
@@ -122,7 +124,7 @@ function RunDetails({ run }) {
     </>
   );
 }
-function DetailContent({ detail, state, ask, onDownload, pending, onInspect }) {
+function DetailContent({ detail, state, onDownload, pending, onInspect }) {
   if (!detail) return null;
   if (detail.kind === "run")
     return (
@@ -131,28 +133,37 @@ function DetailContent({ detail, state, ask, onDownload, pending, onInspect }) {
       />
     );
   if (detail.kind === "activity")
-    return (
-      <DataTable
-        headers={["Событие", "Время", ""]}
-        rows={list(state.activity)
-          .slice()
-          .sort((a, b) => (b.at || "").localeCompare(a.at || ""))
-          .map((event) => [
-            activitySummary(event, state).text,
-            <Timestamp value={event.at} />,
-            activitySummary(event, state).target ? <Button variant="ghost" size="sm" onPress={() => {
-              const target = activitySummary(event, state).target;
-              onInspect(target.kind, target.id);
-            }}>Результат</Button> : null,
-          ])}
-      />
-    );
+    return <ActivityLog state={state} onInspect={onInspect} />;
+  if (detail.kind === "resource") {
+    const resource = list(state.resources).find((entry) => entry.id === detail.id);
+    if (!resource) return <p>Ресурс не найден.</p>;
+    return <>
+      <Typography.Heading level={2}>{resource.name}</Typography.Heading>
+      {resource.notes ? <p>{resource.notes}</p> : null}
+      {safeURL(resource.url) ? <Link href={resource.url} target="_blank" rel="noreferrer">Открыть источник ↗</Link> : null}
+    </>;
+  }
+  if (detail.kind === "tool_call") {
+    const call = list(state.tool_calls).find((entry) => entry.id === detail.id);
+    if (!call) return <p>Вызов не найден.</p>;
+    const target = resultTarget(call.related_id, state);
+    return <>
+      <Typography.Heading level={2}>{call.tool}</Typography.Heading>
+      <div className="flex flex-wrap items-center gap-3"><Status value={call.status} /><Timestamp value={call.started_at} />{Number.isFinite(call.duration_seconds) ? <span>{call.duration_seconds.toLocaleString("ru-RU", { maximumFractionDigits: 2 })} с</span> : null}</div>
+      {call.summary ? <p>{call.summary}</p> : null}
+      {call.error ? <Alert status="danger"><Alert.Content><Alert.Description>{call.error}</Alert.Description></Alert.Content></Alert> : null}
+      {call.finished_at ? <Typography.Paragraph size="sm" color="muted">Завершён: <Timestamp value={call.finished_at} /></Typography.Paragraph> : null}
+      {target ? <Button variant="outline" onPress={() => onInspect(target.kind, target.id)}>Открыть сохранённый результат</Button> : null}
+    </>;
+  }
   if (detail.kind === "cv") {
     const cv = list(state.cvs).find((cv) => cv.id === detail.id);
     if (!cv) return null;
     return (
       <>
-        <pre className="overflow-x-auto">{cv.markdown}</pre>
+        <Typography.Paragraph size="sm" color="muted">{cv.name || cv.headline}{cv.language ? ` · ${cv.language}` : ""}</Typography.Paragraph>
+        <Typography.Prose>{documentBlocks(cv.markdown).map((block, index) => block.type === "heading" ? <Typography.Heading key={index} level={Math.min(block.level + 1, 6)}>{block.text}</Typography.Heading> : block.type === "list" ? <ul key={index}>{block.items.map((text, itemIndex) => <li key={itemIndex}>{text}</li>)}</ul> : <Typography.Paragraph key={index}>{block.text}</Typography.Paragraph>)}</Typography.Prose>
+        <DetailAccordion title="Исходный Markdown" id="cv-source"><div className="overflow-x-auto"><pre>{cv.markdown}</pre></div></DetailAccordion>
         <div className="flex flex-wrap gap-2">
           {["pdf", "md", "html"].map((format) => (
             <Button
@@ -166,19 +177,6 @@ function DetailContent({ detail, state, ask, onDownload, pending, onInspect }) {
             </Button>
           ))}
         </div>
-        <Button
-          variant="tertiary"
-          onPress={() =>
-            ask(
-              "cv",
-              `Создай версию CV «${cv.name || cv.headline}» на нужном мне языке. Уточни язык, переведи исходные факты, сохрани источники и не добавляй новый опыт.`,
-              { kind: "cv", id: cv.id },
-            )
-          }
-        >
-          Поручить перевод агенту
-
-        </Button>
       </>
     );
   }
@@ -223,6 +221,9 @@ function DetailContent({ detail, state, ask, onDownload, pending, onInspect }) {
   if (detail.kind === "job") {
     const job = list(state.jobs).find((job) => job.id === detail.id);
     if (!job) return null;
+    const application = list(state.applications).find((entry) => entry.job_id === job.id),
+      actions = list(state.actions).filter((entry) => entry.payload?._job_id === job.id),
+      cv = list(state.cvs).find((entry) => entry.id === application?.cv_id);
     const fields = {
       employer: "Компания",
       remote: "Удалённо",
@@ -238,7 +239,9 @@ function DetailContent({ detail, state, ask, onDownload, pending, onInspect }) {
     };
     return (
       <>
-        <p >{job.description || job.title}</p>
+        <Typography.Heading level={2}>{job.title}</Typography.Heading>
+        <div className="flex flex-wrap items-center gap-3"><Status value={job.blocked ? "blocked" : application?.stage || "new"} /><Timestamp value={job.fetched_at} /></div>
+        {job.description ? <p>{job.description}</p> : null}
         <dl className="grid gap-3">
           {Object.entries(fields)
             .filter(([key]) => job[key] != null)
@@ -257,6 +260,11 @@ function DetailContent({ detail, state, ask, onDownload, pending, onInspect }) {
               </div>
             ))}
         </dl>
+        {application ? <section className="flex flex-col gap-3"><Typography.Heading level={3}>Ваш отклик</Typography.Heading>
+          {cv ? <Button variant="ghost" size="sm" onPress={() => onInspect("cv", cv.id)}>CV: {cv.name || cv.headline}</Button> : null}
+          {list(application.history).length ? <ol className="flex flex-col gap-3">{list(application.history).map((event, index) => <li className="flex flex-col gap-2" key={index}><div className="flex flex-wrap items-center gap-3"><Status value={event.stage} /><Timestamp value={event.at} /></div>{event.note ? <p>{event.note}</p> : null}</li>)}</ol> : null}
+          {actions.length ? actions.map((action) => <Button variant="outline" size="sm" key={action.id} onPress={() => onInspect("action", action.id)}>Открыть действие · {label(action.status)}</Button>) : <Typography.Paragraph size="sm" color="muted">Показана сохранённая история отклика. Связанного журнала отправки в локальных данных нет; содержание сообщения здесь не подтверждено.</Typography.Paragraph>}
+        </section> : null}
         {safeURL(job.url) ? (
           <Link
 
@@ -267,21 +275,6 @@ function DetailContent({ detail, state, ask, onDownload, pending, onInspect }) {
             Открыть источник ↗
           </Link>
         ) : null}
-        <div className="flex flex-col gap-4">
-          <Button
-            variant="outline"
-            onPress={() =>
-              ask(
-                "search",
-                `Разберись с вакансией «${job.title}». Сопоставь с моими условиями, уточни неизвестное и предложи следующий шаг.`,
-                { kind: "job", id: job.id },
-              )
-            }
-          >
-            Обсудить с агентом
-
-          </Button>
-        </div>
       </>
     );
   }
@@ -320,11 +313,14 @@ function DetailContent({ detail, state, ask, onDownload, pending, onInspect }) {
   );
 }
 function Navigation({ state, page, onNavigate }) {
-  return <nav aria-label="Разделы Worklife" className="flex flex-col gap-2">
-    {navigation.map(([key, text]) => <Button key={key} variant={page === key ? "secondary" : "ghost"} className="justify-start" aria-current={page === key ? "page" : undefined} onPress={() => onNavigate(key)}>
-      {text}
-      {state && ["search", "cv", "schedules"].includes(key) && list(state[key === "search" ? "jobs" : key === "cv" ? "cvs" : key]).length ? <span>{list(state[key === "search" ? "jobs" : key === "cv" ? "cvs" : key]).length}</span> : null}
-    </Button>)}
+  const groups = [["Поиск работы", ["overview", "search", "schedules"]], ["Ваши материалы", ["cv", "strengths", "experiments", "repositories", "tactics"]], ["Подключения и база", ["employers", "resources", "accounts", "settings"]]];
+  return <nav aria-label="Разделы Worklife">
+    <ListBox aria-label="Разделы Worklife" selectionMode="single" disallowEmptySelection selectedKeys={[page]} onSelectionChange={(keys) => { const key = [...keys][0]; if (key) onNavigate(String(key)); }}>
+      {groups.map(([title, keys]) => <ListBox.Section key={title}><Header>{title}</Header>{keys.map((key) => {
+        const text = navigation.find(([id]) => id === key)[1], count = state && ["search", "cv", "schedules"].includes(key) ? list(state[key === "search" ? "jobs" : key === "cv" ? "cvs" : key]).length : 0;
+        return <ListBox.Item key={key} id={key} textValue={text} aria-current={page === key ? "page" : undefined}><div className="flex w-full items-center justify-between gap-3"><Label>{text}</Label>{count ? <span>{count}</span> : null}</div><ListBox.ItemIndicator /></ListBox.Item>;
+      })}</ListBox.Section>)}
+    </ListBox>
   </nav>;
 }
 export default function App() {
@@ -447,13 +443,6 @@ export default function App() {
       setPending("");
     }
   }
-  function ask(topic, text, record) {
-    setDetail(null);
-    setContext({ topic, text: text || topicGoals[topic] || "", ...(record ? { record } : {}) });
-    location.hash = "overview";
-    setPage("overview");
-    requestAnimationFrame(() => inputRef.current?.focus());
-  }
   function openConditions() {
     setConditions(list(state?.profile?.life_preferences).join("\n"));
     setConditionsOpen(true);
@@ -526,13 +515,18 @@ export default function App() {
   const onInspect = (kind, id) => setDetail({ kind, id });
   const props = {
     state,
-    ask,
     onInspect,
     onCommand: safeCommand,
     pending,
     onConditions: openConditions,
     onBlock: openBlock,
     onModel: () => openModel(false),
+    runtime: <div className="flex flex-col gap-4">
+      <Typography.Paragraph>Необязательный автономный исполнитель Worklife. Его подключение не требуется для работы через вашего MCP-агента.</Typography.Paragraph>
+      <div className="flex flex-wrap items-center gap-3"><Status value={state?.agent?.configured ? "success" : "planned"}>{state?.agent?.configured ? "Модель настроена" : "Модель не подключена"}</Status>{state?.agent?.configured ? <Button variant="outline" size="sm" onPress={() => openModel(false)}>Изменить модель исполнителя</Button> : null}</div>
+      <GoalComposer goal={goal} setGoal={setGoal} onRun={runGoal} pending={pending === "agent"} configured={state?.agent?.configured} inputRef={inputRef} context={context} setContext={setContext} profile={state?.profile} onConditions={openConditions} />
+      <RunHistory runs={list(state?.agent?.runs)} onInspect={onInspect} />
+    </div>,
   };
   const views = {
     search: SearchView,
@@ -564,21 +558,21 @@ export default function App() {
           : detail?.kind === "experiment"
             ? "Результаты эксперимента"
             : detail?.kind === "activity"
-              ? "Активность агента"
+              ? "Журнал работы"
+              : detail?.kind === "tool_call"
+                ? "Вызов MCP"
               : "Подробности действия";
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:flex-row md:p-6">
       <aside className="hidden w-full flex-col gap-4 md:flex md:w-56 md:shrink-0">
         <Link href="#overview" aria-label="Worklife — обзор">Worklife</Link>
-        <p>Агент поиска работы</p>
+        <Typography.Paragraph size="sm" color="muted">Поиск работы через MCP</Typography.Paragraph>
         <Navigation state={state} page={page} onNavigate={navigate} />
-        <p>Ваши данные на вашем устройстве</p>
-        <Link href="#app-main">К содержанию</Link>
+        <Link href="#app-main" className="sr-only focus:not-sr-only">К содержанию</Link>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col gap-6">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <Button variant="secondary" className="md:hidden" aria-expanded={navigationOpen} onPress={() => setNavigationOpen(true)}>Меню</Button>
-          <span>{title}</span>
           <span className={error ? undefined : "hidden md:block"}>{error ? "Нет соединения" : updated ? `Экран обновлён · ${updated.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}` : "Подключение…"}</span>
           <Button variant="secondary" size="sm" aria-label="Обновить данные" onPress={refresh}>Обновить</Button>
         </header>
@@ -729,7 +723,6 @@ export default function App() {
             <DetailContent
               detail={detail}
               state={state}
-              ask={ask}
               onDownload={downloadCV}
               pending={pending}
               onInspect={onInspect}

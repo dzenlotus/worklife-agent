@@ -68,8 +68,17 @@ def snapshot(server):
         "employer_blocks": "employer_block",
     }
     result = {name: w.store.list(bucket) for name, bucket in buckets.items()}
+    tool_calls = sorted(w.store.list("tool_call"), key=lambda call: call["started_at"], reverse=True)
     return {
         **result,
+        "tool_calls": tool_calls,
+        "mcp": {
+            "last_activity": max(
+                (call["finished_at"] or call["started_at"] for call in tool_calls), default=None
+            ),
+            "active_calls": sum(call["status"] == "running" for call in tool_calls),
+            "tool_calls": len(tool_calls),
+        },
         "profile": profile,
         "actions": w.actions(),
         "employers": employers,

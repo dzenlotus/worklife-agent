@@ -50,17 +50,12 @@ function EmployerObservation({ entry }) {
     </div>
   </div>;
 }
-const TopicHeading = ({ title, description, topic, ask }) => (
-  <PageHeading title={title} description={description}>
-    <AgentButton onPress={() => ask(topic)} />
-  </PageHeading>
-);
+const TopicHeading = ({ title, description }) => <PageHeading title={title} description={description} />;
 export function SearchView({ state, ask, onInspect }) {
   return (
     <>
       <TopicHeading
         title="Поиск"
-        description="Предложения, которые изучил агент, и ход ваших откликов."
         topic="search"
         ask={ask}
       />
@@ -154,11 +149,6 @@ export function SchedulesView({ state, ask, onCommand, pending, onInspect }) {
           <Empty
             icon="schedules"
             title="Расписание ещё не задано"
-            action={
-              <AgentButton onPress={() => ask("schedules")}>
-                Поручить организовать расписание
-              </AgentButton>
-            }
           >
             Расскажите агенту, как часто стоит возвращаться к поиску.
           </Empty>
@@ -222,11 +212,10 @@ export function ExperimentsView({ state, ask, onInspect }) {
         topic="experiments"
         ask={ask}
       />
-      <PrivateNote />
       <Panel title="Гипотезы и результаты">
         <RecordList
           items={list(state.experiments)}
-          empty="Пока нет экспериментов. Агент может сравнить варианты CV или подходы к поиску и заранее задать метрику."
+          empty="Экспериментов пока нет."
           render={(experiment) => {
             const report = list(state.experiment_reports).find(
               (r) => r.experiment?.id === experiment.id,
@@ -268,7 +257,6 @@ export function StrengthsView({ state, ask }) {
         topic="strengths"
         ask={ask}
       />
-      <PrivateNote />
       <Panel title="Факты и подтверждения">
         <RecordList
           items={list(state.strengths)}
@@ -305,7 +293,6 @@ export function CVView({ state, ask, onInspect }) {
         topic="cv"
         ask={ask}
       />
-      <PrivateNote />
       <Panel title="Варианты резюме">
         <RecordList
           items={list(state.cvs)}
@@ -349,30 +336,25 @@ export function EmployersView({ state, ask, onBlock, onCommand, pending }) {
         <Button variant="outline" size="sm" onPress={() => onBlock("")}>
           Блокировать компанию
         </Button>
-        <AgentButton onPress={() => ask("employers")} />
       </PageHeading>
-      <Alert status={summary.status === "healthy" ? "success" : ["attention", "recovering"].includes(summary.status) ? "warning" : "default"}>
+      <div>{summary.status === "healthy" ? <div className="flex flex-wrap items-center gap-3"><Status value="success">{summary.label}</Status><Typography.Paragraph size="sm" color="muted">Синхронизация: <Timestamp value={summary.last_sync} />{summary.employers !== undefined ? ` · Компаний: ${summary.employers}` : ""}</Typography.Paragraph></div> : <Alert status={["attention", "recovering"].includes(summary.status) ? "warning" : "default"}>
         <Alert.Indicator />
         <Alert.Content>
           <Alert.Title>{summary.label}</Alert.Title>
           <Alert.Description><div className="flex flex-col gap-2">
             <p>{summary.detail}</p>
             <p>{summary.last_sync ? <>Последняя успешная синхронизация: <Timestamp value={summary.last_sync} /></> : "Успешных синхронизаций ещё не было"}</p>
-            <p>Подпись защищает запись от подмены. Содержание независимо не проверено — оценивайте его по источнику.</p>
-            <p>{summary.auto ? "Обмен работает автоматически." : "Автоматический обмен отключён."}{summary.employers !== undefined ? ` Компаний в базе: ${summary.employers}.` : ""}</p>
+            {summary.employers !== undefined ? <p>Компаний в базе: {summary.employers}</p> : null}
           </div></Alert.Description>
         </Alert.Content>
-      </Alert>
-      <Panel title="Компании и наблюдения">
+      </Alert>}</div>
+      <Panel>
         <RecordList
           items={groups}
           empty="Общая база пока пуста. Агент будет собирать наблюдения о работодателях и обновлять их автоматически."
           render={(company) => (
-            <>
-
-              <div className="flex min-w-0 flex-1 flex-col gap-3">
-                <Typography.Heading level={3}>{company.name}</Typography.Heading>
-                <span className="block">{company.domain}</span>
+              <div className="flex w-full min-w-0 flex-col gap-3">
+                <div className="flex flex-wrap items-start justify-between gap-3"><div className="flex flex-col gap-2"><Typography.Heading level={3}>{company.name}</Typography.Heading><Typography.Paragraph size="sm" color="muted">{company.domain}</Typography.Paragraph></div><Button variant="ghost" size="sm" onPress={() => onBlock(company.domain)}>Блокировать</Button></div>
                 {company.observations.slice(0, 2).map((entry, index) => (
                   <EmployerObservation key={entry.event_id || index} entry={entry} />
                 ))}
@@ -387,22 +369,14 @@ export function EmployersView({ state, ask, onBlock, onCommand, pending }) {
                   </DetailAccordion>
                 ) : null}
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onPress={() => onBlock(company.domain)}
-              >
-                Блокировать
-              </Button>
-            </>
           )}
         />
       </Panel>
-      <p >
-        Обмен касается только компаний: вакансий, условий, этапов найма и
-        поведения работодателя. CV, личные результаты откликов, имена и контакты
-        людей не публикуются. Перед публикацией агент проверяет, что текст касается только работодателя.
-      </p>
+      <DetailAccordion title="Обмен и защита данных" id="employer-protection">
+        <p>{summary.auto ? "Обмен работает автоматически." : "Автоматический обмен отключён."}{summary.protected_copies !== undefined ? ` Последних подтверждённых копий: ${summary.protected_copies}.` : ""}</p>
+        <p>Подпись защищает запись от подмены. Содержание независимо не проверено — оценивайте его по источнику.</p>
+        <p>Обмен касается только компаний: вакансий, условий и процесса найма. CV, личные результаты откликов, имена и контакты людей не публикуются. Перед публикацией агент проверяет, что текст касается только работодателя.</p>
+      </DetailAccordion>
       <div className="flex flex-col gap-4">
         <Panel title="Ваши исключения">
           <RecordList
@@ -451,7 +425,7 @@ export function ResourcesView({ state, ask }) {
         topic="resources"
         ask={ask}
       />
-      <Panel title="Что использует агент">
+      <Panel>
         <RecordList
           items={list(state.resources)}
           empty="Агент выберет полезные источники и ресурсы под вашу задачу."
@@ -468,7 +442,6 @@ export function ResourcesView({ state, ask }) {
                     <span>Бюджет: {resource.budget}{resource.currency ? ` ${resource.currency}` : " · валюта не указана"}</span>
                   ) : null}
                 </div>
-                <Button variant="ghost" size="sm" onPress={() => ask("resources", `Используй ресурс «${resource.name}» (${resource.url || "без ссылки"}) для моей цели. Учитывай его заметки, бюджет и мои ограничения.`, { kind: "resource", id: resource.id })}>Поручить по этому ресурсу</Button>
               </div>
             </>
           )}
@@ -499,7 +472,6 @@ export function AccountsView({ state, ask }) {
         topic="accounts"
         ask={ask}
       />
-      <PrivateNote />
       <Panel title="Аккаунты для поиска">
         <RecordList
           items={list(state.accounts)}
@@ -517,7 +489,7 @@ export function AccountsView({ state, ask }) {
                   {account.email ? " · " + account.email : ""}
                 </p>
                 {account.notes ? <p>{account.notes}</p> : null}
-                <Button variant="ghost" size="sm" onPress={() => ask("accounts", `Продолжи работу с аккаунтом «${account.identifier}» на площадке «${platforms.get(account.platform_id)?.name || "выбранная площадка"}». Текущее состояние: ${label(account.status)}. Разберись, что требуется для продолжения, и сообщи, если нужно моё действие.`, { kind: "account", id: account.id, status: account.status })}>{account.status === "verification_required" ? "Продолжить подтверждение" : "Поручить по этому аккаунту"}</Button>
+                {account.status === "verification_required" ? <Typography.Paragraph size="sm" color="muted">Попросите вашего агента проверить, какой шаг подтверждения требуется. Он сообщит, если необходимо ваше участие.</Typography.Paragraph> : null}
               </div>
               <Status value={account.status} />
             </>
@@ -536,6 +508,7 @@ export function AccountsView({ state, ask }) {
                   <Typography.Heading level={3}>{platform.name}</Typography.Heading>
                   <Source value={platform.url} />
                   <p>{platform.notes}</p>
+                  <Typography.Paragraph size="sm" color="muted">Проверку доступа ведёт ваш агент. Если потребуется ваше участие, продолжите в его чате. Открытие ссылки не подтверждает доступ в сеансе агента.</Typography.Paragraph>
                   <div className="flex flex-wrap gap-3">
                     {list(platform.capabilities).map((capability) => (
                       <span key={capability}>{humanLabel(capability)}</span>
@@ -559,7 +532,6 @@ export function RepositoriesView({ state, ask }) {
         topic="repositories"
         ask={ask}
       />
-      <PrivateNote />
       <Panel title="Изученные проекты">
         <RecordList
           items={list(state.repositories)}
@@ -594,7 +566,6 @@ export function RepositoriesView({ state, ask }) {
                     </div>
                   ))}
                 </DetailAccordion>
-                <Button variant="ghost" size="sm" onPress={() => ask("repositories", `Продолжи разбор проекта «${repository.name || repository.path}» по пути ${repository.path}. Уточни мою роль и результаты, сохрани только подтверждённые сильные стороны.`, { kind: "repository", id: repository.id })}>Разобрать с агентом</Button>
               </div>
             </>
           )}
@@ -612,7 +583,6 @@ export function TacticsView({ state, ask }) {
         topic="tactics"
         ask={ask}
       />
-      <PrivateNote />
       <Panel title="Гипотезы и действия">
         <RecordList
           items={list(state.tactics)}
@@ -631,7 +601,6 @@ export function TacticsView({ state, ask }) {
                 <p >
                   Признак успеха: {tactic.success_metric}
                 </p>
-                <Button variant="ghost" size="sm" onPress={() => ask("tactics", `Оцени и продолжи тактику «${tactic.name}». Проверь её действия и фактические результаты по метрике «${tactic.success_metric}», сохраняя мою цель и ограничения.`, { kind: "tactic", id: tactic.id, status: tactic.status })}>Продолжить тактику</Button>
               </div>
               <Status value={tactic.status} />
             </>
@@ -674,19 +643,14 @@ export function TacticsView({ state, ask }) {
     </>
   );
 }
-export function SettingsView({ state, onConditions, ask, onModel }) {
-  const profile = state.profile || {},
-    configured = state.agent?.configured;
+export function SettingsView({ state, onConditions, runtime }) {
+  const profile = state.profile || {};
   return (
     <>
       <PageHeading
         title="Настройки"
-        description="Ваши условия и подключение агента."
-      >
-        <Button variant="outline" size="sm" onPress={onConditions}>
-          Мои условия
-        </Button>
-      </PageHeading>
+        description="Условия поиска и дополнительные параметры Worklife."
+      />
       <Panel title="Что важно в работе">
         <div className="flex flex-col gap-4">
           {list(profile.life_preferences).length ? (
@@ -720,16 +684,6 @@ export function SettingsView({ state, onConditions, ask, onModel }) {
                   </div>
                 ))}
               </dl>
-              <AgentButton
-                onPress={() =>
-                  ask(
-                    "search",
-                    "Уточни мои условия поиска. Сопоставь мои последние предпочтения с ранее сохранёнными условиями, задай нужные вопросы и обнови профиль.",
-                  )
-                }
-              >
-                Поручить уточнение агенту
-              </AgentButton>
             </DetailAccordion>
           ) : null}
           <Button variant="outline" size="sm" onPress={onConditions}>
@@ -737,25 +691,7 @@ export function SettingsView({ state, onConditions, ask, onModel }) {
           </Button>
         </div>
       </Panel>
-      <div className="flex flex-col gap-4">
-        <Panel
-          title="Модель агента"
-          action={
-            <Status value={configured ? "success" : "planned"}>
-              {configured ? "Настроена" : "Не подключена"}
-            </Status>
-          }
-        >
-          <div className="flex flex-col gap-4">
-            <p>
-              {configured
-                ? `Модель ${state.agent?.connection?.model || ""} настроена. Запуски и доступность сервиса видны в журнале поручений.`
-                : "Подключите модель один раз, чтобы агент мог самостоятельно искать, общаться и проверять гипотезы."}
-            </p>
-            <Button variant="outline" onPress={onModel}>{configured ? "Изменить подключение" : "Подключить модель"}</Button>
-          </div>
-        </Panel>
-      </div>
+      <DetailAccordion title="Дополнительно: встроенный исполнитель" id="embedded-runtime">{runtime}</DetailAccordion>
       <div className="flex flex-col gap-4">
         <Panel title="Данные и подключения">
           <div className="flex flex-col gap-4">

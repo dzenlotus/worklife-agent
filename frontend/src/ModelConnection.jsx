@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Input, Label, Checkbox, Alert, Select, ListBox } from "@heroui/react";
+import { Button, Input, Label, Checkbox, Alert, Select, ListBox, Accordion, Link, Typography } from "@heroui/react";
 import { Dialog } from "./ui.jsx";
 import { connectionPayload, modelRequest } from "./model-api.js";
 
@@ -52,9 +52,17 @@ export default function ModelConnection({ initial, runAfter, onClose, onSaved })
       </Button>
     </>}>
       <form id="model-connection-form" className="flex flex-col gap-3" onSubmit={save}>
-        <p >Нужны адрес сервиса, название модели и, для внешнего сервиса, ваш API-ключ. Подойдёт совместимый с OpenAI сервис или локальная модель. Стоимость запросов определяет ваш поставщик.</p>
+        <Typography.Paragraph>Модель читает поручение и выбирает действия агента. Подключите локальный сервер или внешний сервис с совместимым API и поддержкой инструментов.</Typography.Paragraph>
+        <Accordion>
+          <Accordion.Item id="model-guide"><Accordion.Heading><Accordion.Trigger>Где взять адрес, ключ и название модели?<Accordion.Indicator /></Accordion.Trigger></Accordion.Heading><Accordion.Panel><Accordion.Body><div className="flex flex-col gap-4">
+            <Typography.Paragraph>Сначала выберите, где будет работать модель. Ни один сервис не выбран автоматически.</Typography.Paragraph>
+            <div className="flex flex-col gap-3"><Typography.Heading level={3}>На своём компьютере</Typography.Heading><Typography.Paragraph>Например, в LM Studio загрузите подходящую для компьютера модель и включите сервер во вкладке Developer. Нужна модель с поддержкой вызова инструментов.</Typography.Paragraph><div className="flex flex-wrap gap-3"><Link href="https://lmstudio.ai/docs/developer/core/server" target="_blank" rel="noreferrer">Инструкция LM Studio ↗</Link><Link href="https://docs.ollama.com/api/openai-compatibility" target="_blank" rel="noreferrer">Альтернатива: Ollama ↗</Link></div><Typography.Paragraph size="sm" color="muted">Обычный адрес LM Studio: http://127.0.0.1:1234/v1. У Ollama: http://localhost:11434/v1. Проверьте адрес в настройках своего сервера; ключ зависит от его настроек.</Typography.Paragraph><Button variant="outline" size="sm" onPress={() => { setBase("http://127.0.0.1:1234/v1"); setModels([]); }} isDisabled={busy}>Вставить адрес LM Studio</Button></div>
+            <div className="flex flex-col gap-3"><Typography.Heading level={3}>У внешнего поставщика</Typography.Heading><Typography.Paragraph>В кабинете выбранного сервиса создайте API-ключ. Адрес API и идентификатор модели возьмите из его документации. Например, у OpenRouter адрес https://openrouter.ai/api/v1; название и стоимость модели указаны в каталоге.</Typography.Paragraph><div className="flex flex-wrap gap-3"><Link href="https://openrouter.ai/docs/quickstart" target="_blank" rel="noreferrer">Пример настройки API ↗</Link><Link href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer">Ключи OpenRouter ↗</Link><Link href="https://openrouter.ai/models" target="_blank" rel="noreferrer">Модели и тарифы ↗</Link></div><Typography.Paragraph size="sm" color="muted">Это пример поставщика, а не готовое подключение. Запросы могут быть платными. При внешнем API поручение и нужный контекст передаются выбранному сервису.</Typography.Paragraph></div>
+            <Typography.Paragraph>Введите адрес и ключ ниже, нажмите «Получить список моделей» и выберите модель. Если список недоступен, введите её точное имя из настроек сервера или документации.</Typography.Paragraph>
+          </div></Accordion.Body></Accordion.Panel></Accordion.Item>
+        </Accordion>
         <Label htmlFor="model-base">Адрес сервиса модели</Label>
-        <Input id="model-base" type="url" value={base} onChange={(event) => { setBase(event.target.value); setModels([]); }} placeholder="https://api.example.com/v1" required disabled={busy} autoComplete="off" />
+        <Input id="model-base" type="url" value={base} onChange={(event) => { setBase(event.target.value); setModels([]); }} placeholder="Адрес из настроек сервера или документации" required disabled={busy} autoComplete="off" />
         <Label htmlFor="model-key">API-ключ · для локальной модели обычно не нужен</Label>
         <Input id="model-key" type="password" value={key} onChange={(event) => setKey(event.target.value)} placeholder={connection.has_key ? "Ключ уже настроен" : "Ключ от вашего поставщика"} disabled={busy} autoComplete="new-password" />
         {connection.has_key ? <p >Ключ настроен. Оставьте поле пустым, чтобы использовать его для прежнего адреса сервиса.</p> : null}
@@ -65,6 +73,7 @@ export default function ModelConnection({ initial, runAfter, onClose, onSaved })
           <Label>Доступные модели</Label><Select.Trigger><Select.Value /><Select.Indicator /></Select.Trigger>
           <Select.Popover><ListBox>{models.map((id) => <ListBox.Item key={id} id={id} textValue={id}>{id}<ListBox.ItemIndicator /></ListBox.Item>)}</ListBox></Select.Popover>
         </Select> : null}
+        <Typography.Paragraph size="sm" color="muted">Расходы и лимиты определяет поставщик модели. Проверьте тариф до запуска; локальная модель использует ресурсы вашего компьютера.</Typography.Paragraph>
         <Checkbox isSelected={persist} onChange={setPersist} isDisabled={busy}><Checkbox.Content><Checkbox.Control><Checkbox.Indicator /></Checkbox.Control>Сохранить на этом устройстве для следующих запусков</Checkbox.Content></Checkbox>
         <p >{persist ? "Параметры и ключ сохраняет локальное приложение Worklife. В хранилище браузера и общую базу ключ не попадает." : "Подключение будет действовать до остановки Worklife. После перезапуска введите его снова."}</p>
         <p >{runAfter ? "После сохранения запустится ваша основная цель с выбранным уточнением. Текст поручения сохранён." : "Сохранение параметров не запускает агента. Доступность сервиса будет видна при запросе списка моделей или запуске поручения."}</p>

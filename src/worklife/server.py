@@ -4,13 +4,13 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
 from .automatic_network import NetworkManager
 from .browser import Browser
 from .connectors import Connectors
 from .federation import sync_peer
+from .observability import ObservedMCP
 from .storage import now
 from .workspace import Workspace, uid
 
@@ -64,7 +64,7 @@ def create_server(config):
             mcp.worklife_runtime.close()
             browser.close()
 
-    mcp = FastMCP("Worklife", instructions=INSTRUCTIONS, lifespan=lifespan, log_level="WARNING")
+    mcp = ObservedMCP(w, "Worklife", instructions=INSTRUCTIONS, lifespan=lifespan, log_level="WARNING")
     read = ToolAnnotations(readOnlyHint=True, destructiveHint=False)
     write = ToolAnnotations(readOnlyHint=False, destructiveHint=False)
     external = ToolAnnotations(readOnlyHint=False, destructiveHint=False, openWorldHint=True)

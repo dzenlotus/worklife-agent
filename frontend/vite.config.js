@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
         transformIndexHtml: (html) =>
           html.replace(
             "<title>Worklife — управление поиском</title>",
-            `<title>${site ? "Worklife — поиск работы под вашим контролем" : "Worklife — управление поиском"}</title>`,
+            `<title>${site ? "Worklife — MCP-инструменты поиска работы" : "Worklife — монитор работы агента"}</title>`,
           ),
       },
     ],

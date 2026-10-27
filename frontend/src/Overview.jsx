@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, TextArea, Tabs, Link, Label, Typography } from "@heroui/react";
+import { Button, TextArea, Tabs, Link, Label, Typography, Select, ListBox, Separator } from "@heroui/react";
 import {
   Panel,
   PageHeading,
@@ -10,7 +10,8 @@ import {
   Timestamp,
   DetailAccordion,
 } from "./ui.jsx";
-import { list, statistics, filterJobs, formatDate, safeURL, currentConditions, activitySummary, goalExcerpt } from "./model.js";
+import { list, statistics, filterJobs, safeURL, currentConditions, goalExcerpt } from "./model.js";
+import { monitorActivity } from "./activity.js";
 
 function JobTable({ state, filter, limit, onInspect }) {
   const applications = new Map(
@@ -86,22 +87,17 @@ export function Pipeline({ state, onInspect, limit }) {
     ["reply", "Ответ получен"],
   ];
   return (
-    <Panel title="Конвейер вакансий" >
-      <Tabs
-        selectedKey={filter}
-        onSelectionChange={setFilter}
-
-      >
-        <Tabs.ListContainer>
+    <section className="flex flex-col gap-4" aria-label="Вакансии"><div className="flex flex-wrap items-center justify-between gap-3"><Typography.Heading level={3}>Вакансии</Typography.Heading><Typography.Paragraph size="sm" color="muted">{list(state.jobs).length} в вашей истории</Typography.Paragraph></div>
+      <div className="sm:hidden"><Select aria-label="Состояние вакансий" value={filter} onChange={(value) => { if (typeof value === "string") setFilter(value); }}>
+        <Select.Trigger><Select.Value /><Select.Indicator /></Select.Trigger>
+        <Select.Popover><ListBox>{filters.map(([key, title]) => <ListBox.Item id={key} key={key} textValue={title}>{title}<ListBox.ItemIndicator /></ListBox.Item>)}</ListBox></Select.Popover>
+      </Select></div>
+      <Tabs selectedKey={filter} onSelectionChange={setFilter}>
+        <Tabs.ListContainer className="hidden sm:block">
           <Tabs.List aria-label="Состояние вакансий">
             {filters.map(([key, title]) => (
               <Tabs.Tab id={key} key={key}>
                 {title}
-                {key === "all" ? (
-                  <span >
-                    {list(state.jobs).length}
-                  </span>
-                ) : null}
                 <Tabs.Indicator />
               </Tabs.Tab>
             ))}
@@ -118,7 +114,7 @@ export function Pipeline({ state, onInspect, limit }) {
           </Tabs.Panel>
         ))}
       </Tabs>
-    </Panel>
+    </section>
   );
 }
 export function GoalComposer({
@@ -142,16 +138,12 @@ export function GoalComposer({
         onRun();
       }}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-
-        <Label htmlFor="agent-goal">Основная цель поиска</Label>
-        <span>ПОИСК РАБОТЫ</span>
-      </div>
+      <Label htmlFor="agent-goal">Поручение встроенному исполнителю</Label>
       <TextArea
         id="agent-goal"
-        ref={inputRef}
+        ref={context ? undefined : inputRef}
         aria-label="Поручение агенту"
-        placeholder="Найди удалённую работу под мои условия. Изучи подходящие компании и подготовь следующие шаги…"
+        placeholder="Например: найди работу руководителем в логистике, от 180 000 ₽, без переезда. Изучи компании и сохрани подходящие вакансии."
         rows={3}
         maxLength={16000}
         value={goal}
@@ -159,34 +151,27 @@ export function GoalComposer({
         className="w-full"
       />
       <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-3"><strong>Учитывать в каждом поручении</strong><Button variant="ghost" size="sm" onPress={onConditions}>{conditions.length ? "Изменить условия" : "Добавить условия"}</Button></div>
-        {conditions.length ? <ul className="flex flex-col gap-2">{conditions.slice(0, 3).map((condition, index) => <li key={index}>{condition}</li>)}</ul> : <p>Укажите доход, график и ограничения, которые важны для вас.</p>}
-        {conditions.length > 3 ? <DetailAccordion title={`Все условия (${conditions.length})`}><ul className="flex flex-col gap-2">{conditions.slice(3).map((condition, index) => <li key={index}>{condition}</li>)}</ul></DetailAccordion> : null}
+        <div className="flex flex-wrap items-center gap-3"><strong>Условия поиска</strong><Button variant="ghost" size="sm" onPress={onConditions}>{conditions.length ? "Изменить условия" : "Добавить условия"}</Button></div>
+        {conditions.length ? <ul className="flex flex-col gap-2">{conditions.slice(0, 2).map((condition, index) => <li key={index}>{condition}</li>)}</ul> : <Typography.Paragraph size="sm" color="muted">Доход, график и ограничения сохраняются для всех поручений.</Typography.Paragraph>}
+        {conditions.length > 2 ? <DetailAccordion title={`Ещё условий: ${conditions.length - 2}`}><ul className="flex flex-col gap-2">{conditions.slice(2).map((condition, index) => <li key={index}>{condition}</li>)}</ul></DetailAccordion> : null}
       </div>
       {context ? <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-3"><Label htmlFor="agent-context">Текущее уточнение</Label><Button variant="ghost" size="sm" onPress={() => setContext(null)}>Убрать уточнение</Button></div>
-        <TextArea id="agent-context" aria-label="Уточнение поручения" rows={3} maxLength={16000} value={context.text} onChange={(event) => setContext({ ...context, text: event.target.value })} />
+        <TextArea id="agent-context" ref={inputRef} aria-label="Уточнение поручения" rows={3} maxLength={16000} value={context.text} onChange={(event) => setContext({ ...context, text: event.target.value })} />
         <p>Выполнится вместе с основной целью и её ограничениями.</p>
       </div> : null}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <p>
-          Цель и уточнение сохраняются на этом устройстве. Агент сам организует источники и сохраняет ход работы.
-        </p>
+      <div className="flex flex-wrap items-center gap-3">
         <Button
           type="submit"
           isPending={pending}
           isDisabled={configured !== false && !goal.trim() && !context?.text?.trim()}
 
         >
-          {configured === false ? "Подключить модель" : "Запустить поручение"}
+          {configured === false ? "Подключить модель исполнителя" : "Запустить поручение"}
 
         </Button>
+        <Typography.Paragraph size="sm" color="muted">Черновик сохраняется локально.</Typography.Paragraph>
       </div>
-      {configured === false ? (
-        <p >
-          Перед первым запуском укажите сервис и модель. Поручение сохранится.
-        </p>
-      ) : null}
     </form>
   );
 }
@@ -213,193 +198,34 @@ export function RunHistory({ runs, onInspect }) {
     </Panel>
   );
 }
-export default function Overview({
-  state,
-  goal,
-  setGoal,
-  onRun,
-  pending,
-  onInspect,
-  onConditions,
-  onCommand,
-  inputRef,
-  context,
-  setContext,
-}) {
-  const stats = statistics(state),
-    runs = list(state.agent?.runs),
-    active = runs.find((run) =>
-      ["running", "queued", "cancelling"].includes(run.status),
-    );
-  const activity = list(state.activity)
-    .slice()
-    .sort((a, b) => (b.at || "").localeCompare(a.at || ""))
-    .slice(0, 5);
-  const schedules = list(state.schedules),
-    paused = schedules.filter((s) => !s.enabled),
-    next = schedules
-      .filter((s) => s.enabled)
-      .sort((a, b) =>
-        (a.next_run_at || "").localeCompare(b.next_run_at || ""),
-      )[0];
-  const hasStatistics = stats.jobs > 0 || stats.applied > 0 || stats.replies > 0,
-    firstUse = !runs.length && !activity.length && !schedules.length && !hasStatistics;
-  return (
-    <>
-      <PageHeading
-        title="Обзор"
-        description="Ваша цель, действия агента и результаты поиска."
-      >
-        <Button variant="outline" size="sm" onPress={onConditions}>
-          Мои условия
-        </Button>
-      </PageHeading>
-      <GoalComposer
-        goal={goal}
-        setGoal={setGoal}
-        onRun={onRun}
-        pending={pending === "agent"}
-        configured={state.agent?.configured}
-        inputRef={inputRef}
-        context={context}
-        setContext={setContext}
-        profile={state.profile}
-        onConditions={onConditions}
-      />
-      {active ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <Status value={active.status} />
-          <span>{goalExcerpt(active.goal)}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onPress={() => onInspect("run", active.id)}
-          >
-            Ход работы
-          </Button>
-          <Button
-            variant="danger-soft"
-            size="sm"
-            isPending={pending === "cancel:" + active.id}
-            onPress={() =>
-              onCommand(
-                "agent_cancel",
-                { run_id: active.id },
-                "cancel:" + active.id,
-              )
-            }
-          >
-            Остановить
-          </Button>
-        </div>
-      ) : null}
-      {firstUse ? <div className="flex flex-col gap-3 py-4">
+export function ActivityLog({ state, onInspect, limit }) {
+  let rows = monitorActivity(state);
+  if (limit) rows = rows.slice(0, limit);
+  if (!rows.length) return <Empty title="Вызовов MCP пока нет">Дайте поручение в чате вашего агента.</Empty>;
+  if (!list(state.tool_calls).length) {
+    const hasStatus = rows.some((row) => row.status), hasTarget = rows.some((row) => row.target);
+    return <DataTable headers={["Событие", ...(hasStatus ? ["Состояние"] : []), "Время", ...(hasTarget ? [""] : [])]} rows={rows.map((row) => [row.error || row.summary, ...(hasStatus ? [row.status ? <Status value={row.status} /> : "—"] : []), <Timestamp value={row.at} />, ...(hasTarget ? [row.target ? <Button variant="ghost" size="sm" onPress={() => onInspect(row.target.kind, row.target.id)}>Результат</Button> : null] : [])])} />;
+  }
+  return <DataTable headers={["Инструмент", "Что произошло", "Состояние", "Время", ""]} rows={rows.map((row) => [
+    <Typography.Code>{row.tool}</Typography.Code>, row.error || row.summary || "Результат ещё не сохранён", row.status ? <Status value={row.status} /> : "—", <div className="flex flex-col gap-2"><Timestamp value={row.at} />{Number.isFinite(row.duration_seconds) ? <Typography.Paragraph size="sm" color="muted">{row.duration_seconds.toLocaleString("ru-RU", { maximumFractionDigits: 2 })} с</Typography.Paragraph> : null}</div>,
+    row.source === "mcp" ? <Button variant="ghost" size="sm" onPress={() => onInspect("tool_call", row.id)}>Подробнее</Button> : row.target ? <Button variant="ghost" size="sm" onPress={() => onInspect(row.target.kind, row.target.id)}>Результат</Button> : null,
+  ])} />;
+}
 
-        <div><Typography.Heading level={2}>Поручений пока не было</Typography.Heading><p>{state.agent?.configured ? "Запустите цель выше. Здесь появятся действия агента и фактические результаты." : "Подключите модель, чтобы начать. Ваша цель и условия останутся на месте."}</p></div>
-      </div> : <div className={!hasStatistics && !schedules.length ? "flex flex-col gap-6" : "grid gap-6 lg:grid-cols-2"}>
-        <Panel
-          title="Активность агента"
-
-          action={
-            <Button
-              variant="ghost"
-              size="sm"
-              onPress={() => onInspect("activity")}
-            >
-              Все события ↗
-            </Button>
-          }
-        >
-          {activity.length ? (
-            <ol className="flex flex-col gap-4">
-              {activity.map((event) => (
-                <li key={event.id}>
-                  <time>{formatDate(event.at, true)}</time>
-                  <span >
-
-                  </span>
-                  <div>
-                    <strong>{activitySummary(event, state).text}</strong>
-                    {activitySummary(event, state).target ? <Button variant="ghost" size="sm" onPress={() => {
-                      const target = activitySummary(event, state).target;
-                      onInspect(target.kind, target.id);
-                    }}>Открыть результат</Button> : null}
-                  </div>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <Empty icon="activity" title="Агент ещё не запускался">
-              Задайте цель. Здесь появятся его действия и фактические
-              результаты.
-            </Empty>
-          )}
-        </Panel>
-        {hasStatistics || schedules.length ? <div className="flex flex-col gap-4">
-          {hasStatistics ? <Panel
-            title="Статистика поиска"
-            action={<span >Ваша история</span>}
-          >
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="flex flex-col gap-2">
-                <span>Найдено вакансий</span>
-                <strong>{stats.jobs}</strong>
-              </div>
-              <div className="flex flex-col gap-2">
-                <span>Отправлено откликов</span>
-                <strong>{stats.applied}</strong>
-              </div>
-              <div className="flex flex-col gap-2">
-                <span>Получено ответов</span>
-                <strong>{stats.replies}</strong>
-              </div>
-            </div>
-          </Panel> : null}
-          {schedules.length ? <Panel >
-
-            <div>
-              <Typography.Heading level={2}>Следующий запуск</Typography.Heading>
-              <p>
-                {next
-                  ? formatDate(next.next_run_at)
-                  : "Расписание на паузе"}
-              </p>
-              <span>
-                {next ? next.name : `Заданий на паузе: ${paused.length}. Можно продолжить в расписании.`}
-              </span>
-            </div>
-            {next ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onPress={() =>
-                  onCommand(
-                    "schedule_toggle",
-                    { schedule_id: next.id, enabled: false },
-                    "pause:" + next.id,
-                  )
-                }
-              >
-                Пауза
-              </Button>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                onPress={() => {
-                  location.hash = "schedules";
-                }}
-              >
-                Расписание ↗
-              </Button>
-            )}
-          </Panel> : null}
-        </div> : null}
-      </div>}
-      {hasStatistics ? <Pipeline state={state} onInspect={onInspect} limit={6} /> : null}
-      <div className="flex flex-col gap-4">
-        <RunHistory runs={runs} onInspect={onInspect} />
-      </div>
-    </>
-  );
+export default function Overview({ state, pending, onInspect, onCommand }) {
+  const stats = statistics(state), calls = list(state.tool_calls), running = calls.filter((call) => call.status === "running"),
+    schedules = list(state.schedules), next = schedules.filter((schedule) => schedule.enabled).sort((a, b) => (a.next_run_at || "").localeCompare(b.next_run_at || ""))[0];
+  const activeRuntime = list(state.agent?.runs).find((run) => ["running", "queued", "cancelling"].includes(run.status));
+  return <>
+    <PageHeading title="Работа агента">
+      {running.length ? <Status value="running">В работе: {running.length}</Status> : null}
+    </PageHeading>
+    {stats.jobs || stats.applied || stats.replies ? <dl className="grid grid-cols-3 gap-4" aria-label="Результаты поиска">{[["Вакансий", stats.jobs], ["Откликов", stats.applied], ["Ответов", stats.replies]].map(([title, value]) => <div className="flex flex-col gap-2" key={title}><dt><Typography.Paragraph size="sm" color="muted">{title}</Typography.Paragraph></dt><dd><Typography.Heading level={2}>{value}</Typography.Heading></dd></div>)}</dl> : null}
+    <section className="flex flex-col gap-4" aria-label="Журнал работы"><div className="flex flex-wrap items-center justify-between gap-3"><Typography.Heading level={3}>{calls.length ? "Последние вызовы MCP" : "Последние события"}</Typography.Heading>{monitorActivity(state).length ? <Button variant="ghost" size="sm" onPress={() => onInspect("activity")}>Весь журнал</Button> : null}</div>
+      <ActivityLog state={state} onInspect={onInspect} limit={8} />
+    </section>
+    {activeRuntime ? <div className="flex flex-wrap items-center justify-between gap-3"><p>Встроенный исполнитель: {goalExcerpt(activeRuntime.goal)}</p><div className="flex flex-wrap gap-2"><Status value={activeRuntime.status} /><Button variant="ghost" size="sm" onPress={() => onInspect("run", activeRuntime.id)}>Журнал</Button><Button variant="danger-soft" size="sm" isPending={pending === "cancel:" + activeRuntime.id} onPress={() => onCommand("agent_cancel", { run_id: activeRuntime.id }, "cancel:" + activeRuntime.id)}>Остановить</Button></div></div> : null}
+    {schedules.length ? <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex flex-wrap items-center gap-3"><Status value={next ? "planned" : "paused"} /><p>{next ? <>Следующий запуск: {next.name} · <Timestamp value={next.next_run_at} /></> : `Заданий на паузе: ${schedules.length}`}</p></div>{next ? <Button variant="ghost" size="sm" isPending={pending === "pause:" + next.id} onPress={() => onCommand("schedule_toggle", { schedule_id: next.id, enabled: false }, "pause:" + next.id)}>Пауза</Button> : <Button variant="ghost" size="sm" onPress={() => { location.hash = "schedules"; }}>Открыть расписание</Button>}</div> : null}
+    {stats.jobs > 0 ? <Pipeline state={state} onInspect={onInspect} limit={6} /> : null}
+  </>;
 }

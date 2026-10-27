@@ -1,2 +1,37 @@
 @import "tailwindcss";
 @import "@heroui/styles";
+
+@layer base {
+  .dark {
+    --background: #1d232b;
+    --foreground: #bdc7d4;
+    --surface: #242c36;
+    --surface-foreground: var(--foreground);
+    --surface-secondary: #29333f;
+    --surface-secondary-foreground: var(--foreground);
+    --surface-tertiary: #303b48;
+    --surface-tertiary-foreground: var(--foreground);
+    --overlay: #29333f;
+    --overlay-foreground: var(--foreground);
+    --muted: #9caaba;
+    --default: #303c4a;
+    --default-foreground: #c3ccd8;
+    --field-background: #202831;
+    --field-foreground: #c7d0dc;
+    --field-placeholder: #8f9cab;
+    --border: #394554;
+    --separator: #303b48;
+    --accent: #7d9fc8;
+    --accent-foreground: #172332;
+    --focus: #8ba7cd;
+    --link: #9cb9dc;
+    --segment: #435266;
+    --segment-foreground: #c7d0dc;
+    --success: #84b39a;
+    --success-foreground: #16261f;
+    --warning: #c2aa7d;
+    --warning-foreground: #2a2419;
+    --danger: #c48c8e;
+    --danger-foreground: #301d22;
+  }
+}
