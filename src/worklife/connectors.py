@@ -195,7 +195,23 @@ class Connectors:
             ]
         # Qualify board IDs too: two different companies can share provider-local IDs.
         platform = name + (":" + board if kind in {"greenhouse", "lever"} else "")
-        return [self.workspace.save_job({**j, "platform": platform}) for j in jobs]
+        saved = [
+            self.workspace.save_job(
+                {
+                    **j,
+                    "platform": platform,
+                    **({"employer_domain": c["employer_domain"]} if c.get("employer_domain") else {}),
+                }
+            )
+            for j in jobs
+        ]
+        return [
+            j
+            for j in saved
+            if not (
+                self.workspace.job_domain(j) and self.workspace.employer_blocked(self.workspace.job_domain(j))
+            )
+        ]
 
     def read(self, name, operation, parameters):
         c = self.config(name)
@@ -222,6 +238,8 @@ class Connectors:
         raise ValueError("Unsupported read operation; writes require draft_action")
 
     def execute(self, name, operation, payload):
+        self.workspace.guard_employer_contact(payload)
+        payload = {k: v for k, v in payload.items() if k not in {"_employer_domain", "_job_id"}}
         c = self.config(name)
         kind = c["type"]
         if kind == "http":

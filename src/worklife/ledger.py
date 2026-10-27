@@ -1,4 +1,4 @@
-"""Per-author signed chains. No global order, consensus, or claim of factual truth."""
+"""Employer-only signed chains. No global order, consensus, or claim of factual truth."""
 
 import hashlib
 import json
@@ -11,14 +11,41 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 from .storage import canonical, now
 
 GENESIS = "0" * 64
-KINDS = {"employer", "experience", "lesson", "retraction"}
+KINDS = {"employer", "retraction"}
 EVIDENCE = {"advertised", "confirmed", "observed", "hypothesis"}
 FIELDS = {"name", "claim", "source_url", "observed_at", "evidence_kind", "tags", "metrics", "supersedes"}
+EMPLOYER_METRICS = {"response_days", "hiring_stages", "test_hours", "weekly_hours", "salary_delay_days"}
+EMPLOYER_TAGS = {
+    "organization",
+    "vacancy",
+    "salary",
+    "remote",
+    "schedule",
+    "hiring_process",
+    "test_task",
+    "communication",
+    "payment",
+    "working_conditions",
+    "benefits",
+}
+
+
+def employer_domain(value):
+    if not isinstance(value, str):
+        raise ValueError("Shared subject must be an employer domain")
+    domain = value.strip().rstrip(".").lower().encode("idna").decode("ascii")
+    if len(domain) > 253 or not re.fullmatch(
+        r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?", domain
+    ):
+        raise ValueError("Shared subject must be an employer domain, e.g. acme.example")
+    return domain
 
 
 def validate_payload(kind, payload):
     if kind not in KINDS or not isinstance(payload, dict) or set(payload) - FIELDS:
-        raise ValueError("Unknown shared kind/fields; private documents must stay local")
+        raise ValueError(
+            "Shared records are employer/retraction only; worker data and general lessons stay local"
+        )
     if len(canonical(payload)) > 65536:
         raise ValueError("Shared record exceeds 64 KiB")
     if payload.get("evidence_kind") not in EVIDENCE:
@@ -30,9 +57,17 @@ def validate_payload(kind, payload):
         raise ValueError("source_url must be an HTTP(S) source, never a private attachment")
     if "metrics" in payload and (
         not isinstance(payload["metrics"], dict)
+        or set(payload["metrics"]) - EMPLOYER_METRICS
         or any(not isinstance(v, (int, float)) or isinstance(v, bool) for v in payload["metrics"].values())
     ):
-        raise ValueError("Shared metrics must contain numeric aggregate values only")
+        raise ValueError(
+            "Shared metrics may describe only employer response, hiring, test/work hours, pay delays"
+        )
+    if "tags" in payload and (
+        not isinstance(payload["tags"], list)
+        or any(not isinstance(tag, str) or tag not in EMPLOYER_TAGS for tag in payload["tags"])
+    ):
+        raise ValueError("Shared tags must describe employer topics only")
     if kind == "retraction" and not payload.get("supersedes"):
         raise ValueError("Retraction requires supersedes")
 
@@ -70,8 +105,8 @@ class Ledger:
                 raise ValueError("Unsupported event schema")
             if type(event["seq"]) is not int or event["seq"] < 1:
                 raise ValueError("Invalid sequence")
-            if not isinstance(event["subject"], str) or not 1 <= len(event["subject"]) <= 300:
-                raise ValueError("Invalid subject")
+            if employer_domain(event["subject"]) != event["subject"]:
+                raise ValueError("Shared subject must be a canonical employer domain")
             if not re.fullmatch(r"[0-9a-f]{64}", event["prev"]):
                 raise ValueError("Invalid previous event hash")
             public = bytes.fromhex(event["public_key"])
@@ -90,6 +125,7 @@ class Ledger:
 
     def publish(self, kind, subject, payload):
         validate_payload(kind, payload)
+        subject = employer_domain(subject)
         with self.store.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             row = db.execute(
@@ -154,17 +190,10 @@ class Ledger:
         return {"imported": count}
 
     def export(self, after=0, limit=1000):
-        if after < 0 or not 1 <= limit <= 1000:
-            raise ValueError("Invalid export cursor or limit")
-        with self.store.connect() as db:
-            return [
-                json.loads(r[0])
-                for r in db.execute(
-                    "SELECT document FROM events WHERE rowid>? ORDER BY rowid LIMIT ?", (after, limit)
-                )
-            ]
+        return self.page(after, limit)["events"]
 
     def page(self, after=0, limit=200):
+        self.verify()
         # Cursor belongs to this replica. It is never an author sequence or a peer cursor.
         if after < 0 or not 1 <= limit <= 1000:
             raise ValueError("Invalid export cursor or limit")
@@ -175,10 +204,13 @@ class Ledger:
         return {"events": [json.loads(r[1]) for r in rows], "next_cursor": rows[-1][0] if rows else after}
 
     def all(self):
+        self.verify()
         with self.store.connect() as db:
             return [json.loads(r[0]) for r in db.execute("SELECT document FROM events ORDER BY rowid")]
 
     def query(self, kind=None, subject=None):
+        if subject is not None:
+            subject = employer_domain(subject)
         self.verify()
         events = self.all()
         superseded = {e["payload"]["supersedes"] for e in events if e["payload"].get("supersedes")}

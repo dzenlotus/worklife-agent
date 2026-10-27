@@ -20,9 +20,19 @@ Use connector_read for reading; use action_draft -> action_approve -> action_exe
 Approve only within the user's explicit instruction or standing authorization. Never ask again if authorized.
 Browser clicks/Enter go through queued connector='browser' actions with expected_url; inspect after each step.
 Do not invent credentials, skills, salaries, outcomes, or successful delivery. External accounts need setup.
-Shared knowledge is opt-in: publish only reviewed nonpersonal employer evidence or aggregate lessons.
+The shared database contains EMPLOYERS ONLY: company conditions, vacancies and employer hiring behavior.
+Publish only reviewed nonpersonal employer evidence under its company domain.
+Worker/candidate profiles, scores, CV strategies and personal experiment results remain private and local.
+Choose relevant sources yourself: job aggregators, employer sites and professional services; use API or browser.
+If needed and authorized, register job-search accounts, use the user's configured mailbox for verification,
+and track actual registration status with account_save. Discover and save platforms; there is no fixed source list.
+Use resources, statistics, schedules, tactics, evidence-backed strengths, own Git analyses and multilingual CVs.
+For newly registered accounts, generate credentials with credential_create and fill them with browser_fill_credential.
+Keep only credential references in account notes; never put passwords in ordinary records or tool argument logs.
+Honor the employer blocklist. Attach _employer_domain or _job_id to contact actions so company checks are explicit.
 Signatures prove origin and chain continuity, not factual truth or one-person-one-identity.
-Never upload CVs, mail bodies, recruiter contact details, secrets or personal identifiers to the public log.
+Never upload CVs, mail bodies, employee/recruiter names or contacts, secrets or personal identifiers to the public log.
+Signing author fingerprints are technical provenance, not worker profiles.
 Keep conflicting claims with provenance; use local trust decisions instead of a universal employer score.
 """
 
@@ -37,6 +47,7 @@ def create_server(config):
         try:
             yield {}
         finally:
+            mcp.worklife_runtime.close()
             browser.close()
 
     mcp = FastMCP("Worklife", instructions=INSTRUCTIONS, lifespan=lifespan, log_level="WARNING")
@@ -72,7 +83,27 @@ def create_server(config):
     @mcp.tool(annotations=read)
     def records_list(bucket: str) -> list[dict]:
         """List private job, cv, application, experiment, assignment, task, or research records."""
-        if bucket not in {"job", "cv", "application", "experiment", "assignment", "task", "research"}:
+        if bucket not in {
+            "job",
+            "cv",
+            "application",
+            "experiment",
+            "assignment",
+            "task",
+            "research",
+            "resource",
+            "activity",
+            "schedule",
+            "schedule_run",
+            "strength",
+            "tactic",
+            "repository",
+            "platform",
+            "account",
+            "employer_block",
+            "agent_run",
+            "credential",
+        }:
             raise ValueError("Unsupported private record bucket")
         return w.store.list(bucket)
 
@@ -215,7 +246,11 @@ def create_server(config):
                 else connectors.execute(name, operation, payload)
             )
 
-        return w.execute_action(action_id, execute)
+        result = w.execute_action(action_id, execute)
+        mcp.worklife_operations.activity_record(
+            "action", f"{result['operation']}: {result['status']}", action_id
+        )
+        return result
 
     @mcp.tool(annotations=write)
     def action_cancel(action_id: str) -> dict:
@@ -251,16 +286,19 @@ def create_server(config):
 
     @mcp.tool(annotations=external)
     def knowledge_publish(kind: str, subject: str, payload: dict) -> dict:
-        """OPT-IN public record: employer,experience,lesson,retraction. subject=company domain/topic.
+        """OPT-IN EMPLOYERS ONLY: kind=employer or retraction; subject=company domain (acme.example).
         Required payload: claim,source_url,observed_at,evidence_kind(advertised/confirmed/observed/hypothesis).
-        Optional: name,tags,numeric aggregate metrics,supersedes(own previous event_id). Never include personal data."""
+        Optional name=company name; tags: organization,vacancy,salary,remote,schedule,hiring_process,test_task,
+        communication,payment,working_conditions,benefits. Numeric metrics: response_days,hiring_stages,
+        test_hours,weekly_hours,salary_delay_days. supersedes references your earlier employer record.
+        No worker profiles, candidate scores, CV results, employee names or contact details; review free text."""
         return w.ledger.publish(kind, subject, payload)
 
     @mcp.tool(annotations=read)
     def knowledge_query(
         kind: str | None = None, subject: str | None = None, include_blocked: bool = False
     ) -> list[dict]:
-        """Shared claims with signatures, sources, timestamps, and LOCAL author trust. Preserves disagreements."""
+        """Employer-only claims, keyed by company domain, with signatures, sources and local author trust."""
         return w.shared_records(kind, subject, include_blocked)
 
     @mcp.tool(annotations=read)
@@ -270,7 +308,7 @@ def create_server(config):
 
     @mcp.tool(annotations=read)
     def knowledge_export(after: int = 0, limit: int = 100) -> dict:
-        """Page shared signed events for offline exchange. No profile, email, CV or credentials are exported."""
+        """Export signed employer records for offline exchange. Private worker records are never included."""
         return w.ledger.page(after, limit)
 
     @mcp.tool(annotations=write)
@@ -310,4 +348,7 @@ def create_server(config):
 
     # Also used by the one-shot CLI, which does not enter the MCP transport lifespan.
     mcp.worklife_browser = browser
+    from .tools_extra import register_tools
+
+    register_tools(mcp, w, connectors, peers)
     return mcp

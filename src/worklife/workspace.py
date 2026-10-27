@@ -5,9 +5,10 @@ import shutil
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
+from urllib.parse import urlparse
 from uuid import uuid4
 
-from .ledger import Ledger
+from .ledger import Ledger, employer_domain
 from .storage import Store, canonical, now
 
 
@@ -74,6 +75,9 @@ class Workspace:
         job, profile = self.store.get("job", job_id), self.get_profile()
         rules = profile.get("constraints", {})
         reject, clarify = [], []
+        domain = self.job_domain(job)
+        if domain and self.employer_blocked(domain):
+            reject.append("Employer is blocked in your local blocklist")
         if rules.get("remote") is True:
             if job.get("remote") is False:
                 reject.append("Requires office attendance")
@@ -288,6 +292,7 @@ class Workspace:
     def draft_action(self, connector, operation, payload, idempotency_key):
         if not idempotency_key or not connector or not operation:
             raise ValueError("Connector, operation, and idempotency key required")
+        self.guard_employer_contact(payload)
         with self.store.connect() as db:
             row = db.execute(
                 "SELECT document FROM actions WHERE idempotency_key=?", (idempotency_key,)
@@ -339,6 +344,8 @@ class Workspace:
         old = next((a for a in self.actions() if a["id"] == action_id), None)
         if old and old["status"] == "sent":
             return old
+        if old:
+            self.guard_employer_contact(old["payload"])
         action = self._change_action(action_id, {"approved"}, status="sending")
         try:
             result = executor(action["connector"], action["operation"], action["payload"])
@@ -351,6 +358,45 @@ class Workspace:
                 error=f"{type(exc).__name__}; inspect the provider before reconciling",
             )
         return self._change_action(action_id, {"sending"}, status="sent", result=result)
+
+    def employer_blocked(self, domain):
+        try:
+            return self.store.get("employer_block", employer_domain(domain)).get("blocked", False)
+        except ValueError:
+            return False
+
+    @staticmethod
+    def job_domain(job):
+        value = job.get("employer_domain")
+        if not value:
+            url = job.get("employer_url") or (
+                job.get("url") if job.get("platform") in {"manual", "browser"} else None
+            )
+            value = urlparse(url).hostname if url else None
+        return employer_domain(value) if value else None
+
+    def guard_employer_contact(self, payload):
+        """Honor company blocks before queuing or sending, including already approved drafts."""
+        from email.utils import getaddresses
+
+        domains = [payload.get("_employer_domain")]
+        if payload.get("_job_id"):
+            domains.append(self.job_domain(self.store.get("job", payload["_job_id"])))
+        if payload.get("vacancy_id"):
+            domains += [
+                self.job_domain(j)
+                for j in self.store.list("job")
+                if j["id"].endswith(":" + str(payload["vacancy_id"]))
+            ]
+        if payload.get("expected_url"):
+            domains.append(urlparse(payload["expected_url"]).hostname)
+        recipients = []
+        for field in ("to", "cc", "bcc"):
+            addresses = payload.get(field, [])
+            recipients.extend([addresses] if isinstance(addresses, str) else addresses)
+        domains += [address.rsplit("@", 1)[1] for _, address in getaddresses(recipients) if "@" in address]
+        if any(self.employer_blocked(domain) for domain in domains if domain):
+            raise ValueError("Contact prevented: employer is blocked in your local blocklist")
 
     def reconcile_action(self, action_id, delivered, evidence):
         if not evidence.strip():

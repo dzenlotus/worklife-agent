@@ -40,9 +40,9 @@ async def test_mcp_stdio_is_usable_by_a_real_client(tmp_path):
                 "knowledge_publish",
                 {
                     "kind": "employer",
-                    "subject": "acme",
+                    "subject": "acme.example",
                     "payload": {
-                        "claim": "Remote advertised",
+                        "claim": "Employer advertises remote work",
                         "evidence_kind": "advertised",
                         "source_url": "https://example.org",
                         "observed_at": "2026-10-27T10:00:00Z",

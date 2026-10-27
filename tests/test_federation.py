@@ -7,7 +7,7 @@ from starlette.testclient import TestClient
 
 def record():
     return {
-        "claim": "Two interviews advertised",
+        "claim": "Employer advertises two interview stages",
         "evidence_kind": "advertised",
         "source_url": "https://example.org/jobs",
         "observed_at": "2026-10-27T10:00:00Z",
@@ -19,7 +19,7 @@ def test_peer_protocol_auth_and_pinning(tmp_path):
     from worklife.workspace import Workspace
 
     a, b = Workspace(tmp_path / "a"), Workspace(tmp_path / "b")
-    event = a.ledger.publish("employer", "acme", record())
+    event = a.ledger.publish("employer", "acme.example", record())
     app = create_app(b, "test-token")
     with TestClient(app) as client:
         assert client.get("/v1/events").status_code == 401
@@ -42,8 +42,8 @@ def test_real_network_two_way_replication_and_restart(tmp_path):
     from worklife.workspace import Workspace
 
     a, b = Workspace(tmp_path / "a"), Workspace(tmp_path / "b")
-    a.ledger.publish("employer", "a", record())
-    b.ledger.publish("lesson", "b", record())
+    a.ledger.publish("employer", "a.example", record())
+    b.ledger.publish("employer", "b.example", record())
     sock = socket.socket()
     sock.bind(("127.0.0.1", 0))
     port = sock.getsockname()[1]

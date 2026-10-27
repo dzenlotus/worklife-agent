@@ -121,7 +121,7 @@ def test_signed_network_replicates_and_rejects_tampering(tmp_path):
         b.ledger.import_events([changed])
     assert b.ledger.verify()["events"] == 1
     a.ledger.publish(
-        "experience",
+        "employer",
         "acme.example",
         {
             "claim": "Replied within 2 days",
@@ -145,10 +145,10 @@ def test_backup_restores_identity_private_state_and_public_log(tmp_path):
     a = Workspace(tmp_path / "a")
     a.save_profile({"name": "Alex", "facts": []})
     a.ledger.publish(
-        "lesson",
-        "cv",
+        "employer",
+        "acme.example",
         {
-            "claim": "Hypothesis only",
+            "claim": "Employer may offer flexible working hours; hypothesis only",
             "evidence_kind": "hypothesis",
             "observed_at": "2026-10-27T10:00:00Z",
             "source_url": "https://example.org",

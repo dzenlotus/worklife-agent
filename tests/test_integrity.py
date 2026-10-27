@@ -3,7 +3,7 @@ import json
 import pytest
 
 
-def payload(claim="Advertised terms"):
+def payload(claim="Employer advertises remote working terms"):
     return {
         "claim": claim,
         "evidence_kind": "advertised",
@@ -16,21 +16,29 @@ def test_fork_and_corrections(tmp_path):
     from worklife.workspace import Workspace
 
     original = Workspace(tmp_path / "original")
-    first = original.ledger.publish("employer", "acme", payload())
+    first = original.ledger.publish("employer", "acme.example", payload())
     original.backup(tmp_path / "snapshot")
     fork = Workspace.restore(tmp_path / "snapshot", tmp_path / "fork")
     second = original.ledger.publish(
-        "employer", "acme", {**payload("Corrected"), "supersedes": first["event_id"]}
+        "employer",
+        "acme.example",
+        {**payload("Employer corrected its advertised work schedule"), "supersedes": first["event_id"]},
     )
-    forked = fork.ledger.publish("employer", "acme", payload("Different history"))
+    forked = fork.ledger.publish(
+        "employer", "acme.example", payload("Employer advertises a different schedule")
+    )
     with pytest.raises(ValueError, match="fork"):
         original.ledger.import_events([forked])
     assert [e["event_id"] for e in original.ledger.query()] == [second["event_id"]]
     other = Workspace(tmp_path / "other")
     other.ledger.import_events(original.ledger.export())
     with pytest.raises(ValueError, match="author"):
-        other.ledger.publish("retraction", "acme", {**payload(), "supersedes": second["event_id"]})
-    original.ledger.publish("retraction", "acme", {**payload("Retracted"), "supersedes": second["event_id"]})
+        other.ledger.publish("retraction", "acme.example", {**payload(), "supersedes": second["event_id"]})
+    original.ledger.publish(
+        "retraction",
+        "acme.example",
+        {**payload("Employer schedule claim retracted"), "supersedes": second["event_id"]},
+    )
     assert original.ledger.query() == []
     assert original.ledger.verify()["events"] == 3
 
@@ -39,7 +47,7 @@ def test_local_index_tampering_is_detected(tmp_path):
     from worklife.workspace import Workspace
 
     w = Workspace(tmp_path)
-    w.ledger.publish("employer", "acme", payload())
+    w.ledger.publish("employer", "acme.example", payload())
     with w.store.connect() as db:
         db.execute("UPDATE events SET subject='different-company'")
     with pytest.raises(ValueError, match="index"):
@@ -50,20 +58,20 @@ def test_query_never_returns_locally_forged_claims(tmp_path):
     from worklife.workspace import Workspace
 
     w = Workspace(tmp_path)
-    event = w.ledger.publish("employer", "acme", payload())
+    event = w.ledger.publish("employer", "acme.example", payload())
     event["payload"]["claim"] = "Forged in local database"
     with w.store.connect() as db:
         db.execute("UPDATE events SET document=?", (json.dumps(event),))
     with pytest.raises(ValueError):
-        w.shared_records("employer", "acme")
+        w.shared_records("employer", "acme.example")
 
 
 def test_import_batch_is_atomic(tmp_path):
     from worklife.workspace import Workspace
 
     a, b = Workspace(tmp_path / "a"), Workspace(tmp_path / "b")
-    first = a.ledger.publish("employer", "a", payload())
-    second = a.ledger.publish("employer", "b", payload())
+    first = a.ledger.publish("employer", "a.example", payload())
+    second = a.ledger.publish("employer", "b.example", payload())
     altered = json.loads(json.dumps(second))
     altered["payload"]["claim"] = "forged"
     with pytest.raises(ValueError):

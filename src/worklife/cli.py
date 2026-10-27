@@ -16,12 +16,26 @@ def emit(value):
     print(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False))
 
 
+def finish_started_runs(server, previous_ids):
+    """One-shot processes must finish their own queued work before closing the runtime."""
+    terminal = {"completed", "failed", "step_limit", "cancelled"}
+    while True:
+        runs = [r for r in server.worklife_runtime.status()["runs"] if r["id"] not in previous_ids]
+        if all(r["status"] in terminal for r in runs):
+            return runs
+        time.sleep(0.05)
+
+
 def call(config, name, arguments):
     from .server import create_server
 
     server = create_server(config)
     try:
+        previous = {r["id"] for r in server.worklife_runtime.status()["runs"]}
         result = asyncio.run(server.call_tool(name, arguments))
+        finished = finish_started_runs(server, previous)
+        if name == "agent_run" and finished:
+            return finished[0]
         if isinstance(result, dict):
             return result
         if isinstance(result, tuple) and len(result) == 2 and isinstance(result[1], dict):
@@ -32,6 +46,7 @@ def call(config, name, arguments):
         except json.JSONDecodeError:
             return {"text": text}
     finally:
+        server.worklife_runtime.close()
         server.worklife_browser.close()
 
 
@@ -101,7 +116,7 @@ def demo(workspace):
     }
 
 
-def worker_cycle(config, w):
+def worker_cycle(config, w, operations=None):
     peers = {
         **{p.get("name", p["url"]): p for p in config.peers},
         **{p["id"]: p["config"] for p in w.store.list("peer")},
@@ -119,7 +134,8 @@ def worker_cycle(config, w):
         "at": now(),
         "due_tasks": w.due_tasks(),
         "peers": reports,
-        "note": "An external MCP host must run the reasoning/search/reply cycle",
+        "scheduled_runs": operations.run_due() if operations else [],
+        "note": "Agent cycles require a configured model and a running app/worker",
     }
     path = w.home / "worker-status.json"
     temp = path.with_suffix(".tmp")
@@ -143,6 +159,10 @@ def main():
     serve = sub.add_parser("serve", help="Serve ONLY shared signed events; private data has no HTTP endpoint")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8765)
+    app_parser = sub.add_parser(
+        "app", help="Private local browser application with schedules and agent activity"
+    )
+    app_parser.add_argument("--port", type=int, default=8877)
     sync = sub.add_parser("sync")
     sync.add_argument("peer", nargs="?")
     backup = sub.add_parser("backup")
@@ -155,7 +175,7 @@ def main():
     ingest = sub.add_parser("import")
     ingest.add_argument("source")
     worker = sub.add_parser(
-        "worker", help="Periodic shared replication and local follow-up status; no autonomous sends"
+        "worker", help="Persistent schedules, monitors, agent cycles and shared employer replication"
     )
     worker.add_argument("--interval", type=int, default=300)
     worker.add_argument("--once", action="store_true")
@@ -173,6 +193,14 @@ def main():
 
             create_server(config).run()
             return
+        if args.command == "app":
+            import uvicorn
+
+            from .app import create_app as local_app
+
+            print(f"Worklife: http://127.0.0.1:{args.port}", file=sys.stderr)
+            uvicorn.run(local_app(config), host="127.0.0.1", port=args.port, log_level="info")
+            return
         if args.command == "call":
             emit(call(config, args.tool, json.loads(args.arguments)))
             return
@@ -188,6 +216,7 @@ def main():
                     ]
                 )
             finally:
+                server.worklife_runtime.close()
                 server.worklife_browser.close()
             return
         w = Workspace(config.home)
@@ -225,11 +254,22 @@ def main():
         elif args.command == "worker":
             if args.interval < 1:
                 raise ValueError("Worker interval must be positive")
-            while True:
-                emit(worker_cycle(config, w))
-                if args.once:
-                    break
-                time.sleep(args.interval)
+            from .server import create_server
+
+            server = create_server(config)
+            try:
+                while True:
+                    previous = {r["id"] for r in server.worklife_runtime.status()["runs"]}
+                    packet = worker_cycle(config, w, server.worklife_operations)
+                    if args.once:
+                        packet["agent_results"] = finish_started_runs(server, previous)
+                    emit(packet)
+                    if args.once:
+                        break
+                    time.sleep(args.interval)
+            finally:
+                server.worklife_runtime.close()
+                server.worklife_browser.close()
     except KeyboardInterrupt:
         pass
     except Exception as exc:
