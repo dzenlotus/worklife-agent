@@ -1,0 +1,11 @@
+interface:
+  display_name: "Отклики и переписка"
+  short_description: "Разрешённые отклики и точная история сообщений"
+  default_prompt: "Используй $worklife-pipeline. Проверь мою воронку и подготовь следующие разрешённые действия."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "worklife_recruiter"
+      description: "Карьерный профиль MCP Worklife"
+policy:
+  allow_implicit_invocation: true

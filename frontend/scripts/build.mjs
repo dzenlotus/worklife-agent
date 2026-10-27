@@ -23,6 +23,7 @@ const targets = [
 // Complete both builds before replacing the files served by the app or GitHub Pages.
 for (const { mode } of targets) {
   await build({ root: frontend, configFile, mode });
+  await cp(`${frontend}src/fonts/OFL-Golos-Text.txt`, `${frontend}dist/${mode}/assets/OFL-Golos-Text.txt`);
   await verifyBuild(mode);
 }
 

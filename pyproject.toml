@@ -4,11 +4,23 @@ build-backend = "hatchling.build"
 
 [project]
 name = "worklife-agent"
-version = "0.3.0"
+version = "0.4.0"
 description = "Local-first job-search tools and a signed, replicated employer knowledge network for personal agents"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["cryptography>=44", "httpx>=0.28,<1", "keyring>=25,<26", "mcp>=1.20,<2", "starlette>=0.40,<1", "uvicorn>=0.30,<1"]
+dependencies = [
+    "cryptography>=44",
+    "httpx>=0.28,<1",
+    "json-five>=1.1.2,<2",
+    "keyring>=25,<26",
+    "mcp>=1.20,<2",
+    "pypdf>=6,<7",
+    "python-dotenv>=1.1,<2",
+    "ruamel.yaml>=0.18,<1",
+    "starlette>=0.40,<1",
+    "tomlkit>=0.13,<1",
+    "uvicorn>=0.30,<1",
+]
 
 [project.optional-dependencies]
 browser = ["playwright>=1.50,<2"]
@@ -16,6 +28,7 @@ dev = ["pytest>=8,<10", "pytest-asyncio>=0.24,<2", "ruff>=0.9"]
 
 [project.scripts]
 worklife = "worklife.cli:main"
+worklife-recruiter = "worklife.recruiter_cli:main"
 
 [project.urls]
 Homepage = "https://dzenlotus.github.io/worklife-agent/"

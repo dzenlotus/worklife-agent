@@ -1,5 +1,11 @@
 export const list = (value) => (Array.isArray(value) ? value : []);
 export const labels = {
+  partial: "Частично",
+  received: "Получен",
+  negotiating: "Обсуждается",
+  scheduled: "Запланировано",
+  declined: "Отклонён",
+  expired: "Истёк",
   saved: "Сохранена",
   new: "Новая",
   applied: "Отклик отправлен",

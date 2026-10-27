@@ -1,0 +1,19 @@
+{
+  "profile": "recruiter",
+  "allowed_tools": [
+    "recruiter_start", "recruiter_skill", "agency_brief", "profile_save", "records_list",
+    "research_note", "resource_save", "activity_record", "statistics_report",
+    "job_save", "jobs_search", "job_assess", "market_collect", "market_snapshot", "market_report",
+    "recommendations_report", "recommendation_save", "resume_import", "cv_create", "cv_match",
+    "cv_localize", "cv_export", "repository_analyze", "strength_save", "tactic_save",
+    "pipeline_update", "conversation_record", "conversation_list", "conversation_update", "inbox_sync",
+    "interview_brief", "interview_save", "offer_save", "offer_compare", "search_review",
+    "task_add", "task_complete", "schedule_save", "schedule_toggle", "schedule_run",
+    "experiment_create", "experiment_assign", "experiment_outcome", "experiment_report",
+    "connectors_list", "connector_configure", "connector_read", "platform_save", "account_save",
+    "credential_create", "browser_fill_credential", "browser_open", "browser_inspect",
+    "browser_prepare", "browser_screenshot", "action_draft", "action_approve", "action_execute",
+    "action_cancel", "action_reconcile", "knowledge_query", "knowledge_proposals", "knowledge_publish",
+    "employer_block", "employer_block_status", "agent_status"
+  ]
+}

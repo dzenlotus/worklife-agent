@@ -110,90 +110,97 @@ class Connectors:
         c = self.config(name)
         kind = c["type"]
         jobs = []
-        if kind == "hh":
-            data = self._request(c, "GET", "/vacancies", params={"text": query, "per_page": 50, **parameters})
-            for j in data["items"]:
-                salary = j.get("salary") or {}
-                formats = {v["id"] for v in j.get("work_format", [])}
-                remote = (
-                    True
-                    if "REMOTE" in formats or (j.get("schedule") or {}).get("id") == "remote"
-                    else (False if formats else None)
+        try:
+            if kind == "hh":
+                data = self._request(
+                    c, "GET", "/vacancies", params={"text": query, "per_page": 50, **parameters}
                 )
-                jobs.append(
+                for j in data["items"]:
+                    salary = j.get("salary") or {}
+                    formats = {v["id"] for v in j.get("work_format", [])}
+                    remote = (
+                        True
+                        if "REMOTE" in formats or (j.get("schedule") or {}).get("id") == "remote"
+                        else (False if formats else None)
+                    )
+                    jobs.append(
+                        {
+                            "id": str(j["id"]),
+                            "title": j["name"],
+                            "employer": (j.get("employer") or {}).get("name", "Undisclosed"),
+                            "employer_id": (j.get("employer") or {}).get("id"),
+                            "url": j["alternate_url"],
+                            "remote": remote,
+                            "location": (j.get("area") or {}).get("name"),
+                            "salary_min": salary.get("from"),
+                            "salary_max": salary.get("to"),
+                            "currency": salary.get("currency"),
+                            "salary_period": "month",
+                            "salary_gross": salary.get("gross"),
+                            "description": plain(
+                                " ".join(v or "" for v in (j.get("snippet") or {}).values())
+                            ),
+                        }
+                    )
+            elif kind == "greenhouse":
+                board = parameters.pop("board", c.get("board", ""))
+                if not board:
+                    raise ValueError("Greenhouse requires board")
+                c = {"base_url": "https://boards-api.greenhouse.io", **c}
+                data = self._request(
+                    c, "GET", f"/v1/boards/{quote(board, safe='')}/jobs", params={"content": "true"}
+                )
+                jobs = [
                     {
                         "id": str(j["id"]),
-                        "title": j["name"],
-                        "employer": (j.get("employer") or {}).get("name", "Undisclosed"),
-                        "employer_id": (j.get("employer") or {}).get("id"),
-                        "url": j["alternate_url"],
-                        "remote": remote,
-                        "location": (j.get("area") or {}).get("name"),
-                        "salary_min": salary.get("from"),
-                        "salary_max": salary.get("to"),
-                        "currency": salary.get("currency"),
-                        "salary_period": "month",
-                        "salary_gross": salary.get("gross"),
-                        "description": plain(" ".join(v or "" for v in (j.get("snippet") or {}).values())),
-                    }
-                )
-        elif kind == "greenhouse":
-            board = parameters.pop("board", c.get("board", ""))
-            if not board:
-                raise ValueError("Greenhouse requires board")
-            c = {"base_url": "https://boards-api.greenhouse.io", **c}
-            data = self._request(
-                c, "GET", f"/v1/boards/{quote(board, safe='')}/jobs", params={"content": "true"}
-            )
-            jobs = [
-                {
-                    "id": str(j["id"]),
-                    "title": j["title"],
-                    "employer": c.get("employer", board),
-                    "url": j["absolute_url"],
-                    "location": (j.get("location") or {}).get("name"),
-                    "remote": None,
-                    "description": plain(j.get("content")),
-                }
-                for j in data["jobs"]
-            ]
-        elif kind == "lever":
-            board = parameters.pop("board", c.get("board", ""))
-            if not board:
-                raise ValueError("Lever requires board")
-            c = {"base_url": "https://api.lever.co", **c}
-            data = self._request(
-                c, "GET", f"/v0/postings/{quote(board, safe='')}", params={"mode": "json", **parameters}
-            )
-            for j in data:
-                salary = j.get("salaryRange") or {}
-                jobs.append(
-                    {
-                        "id": j["id"],
-                        "title": j["text"],
+                        "title": j["title"],
                         "employer": c.get("employer", board),
-                        "url": j["hostedUrl"],
-                        "apply_url": j.get("applyUrl"),
-                        "location": (j.get("categories") or {}).get("location"),
-                        "remote": {"remote": True, "on-site": False, "hybrid": False}.get(
-                            j.get("workplaceType")
-                        ),
-                        "salary_min": salary.get("min"),
-                        "salary_max": salary.get("max"),
-                        "currency": salary.get("currency"),
-                        "salary_period": salary.get("interval"),
-                        "description": plain(j.get("descriptionPlain") or j.get("description")),
+                        "url": j["absolute_url"],
+                        "location": (j.get("location") or {}).get("name"),
+                        "remote": None,
+                        "description": plain(j.get("content")),
                     }
+                    for j in data["jobs"]
+                ]
+            elif kind == "lever":
+                board = parameters.pop("board", c.get("board", ""))
+                if not board:
+                    raise ValueError("Lever requires board")
+                c = {"base_url": "https://api.lever.co", **c}
+                data = self._request(
+                    c, "GET", f"/v0/postings/{quote(board, safe='')}", params={"mode": "json", **parameters}
                 )
-        else:
-            raise ValueError("Use connector_read for configured HTTP search operations")
-        if kind != "hh" and query:
-            terms = query.lower().split()
-            jobs = [
-                j
-                for j in jobs
-                if all(t in (j["title"] + " " + j.get("description", "")).lower() for t in terms)
-            ]
+                for j in data:
+                    salary = j.get("salaryRange") or {}
+                    jobs.append(
+                        {
+                            "id": j["id"],
+                            "title": j["text"],
+                            "employer": c.get("employer", board),
+                            "url": j["hostedUrl"],
+                            "apply_url": j.get("applyUrl"),
+                            "location": (j.get("categories") or {}).get("location"),
+                            "remote": {"remote": True, "on-site": False, "hybrid": False}.get(
+                                j.get("workplaceType")
+                            ),
+                            "salary_min": salary.get("min"),
+                            "salary_max": salary.get("max"),
+                            "currency": salary.get("currency"),
+                            "salary_period": salary.get("interval"),
+                            "description": plain(j.get("descriptionPlain") or j.get("description")),
+                        }
+                    )
+            else:
+                raise ValueError("Use connector_read for configured HTTP search operations")
+            if kind != "hh" and query:
+                terms = query.lower().split()
+                jobs = [
+                    j
+                    for j in jobs
+                    if all(t in (j["title"] + " " + j.get("description", "")).lower() for t in terms)
+                ]
+        except (KeyError, TypeError, AttributeError):
+            raise ValueError("Источник вакансий вернул неподдерживаемую структуру данных") from None
         # Qualify board IDs too: two different companies can share provider-local IDs.
         platform = name + (":" + board if kind in {"greenhouse", "lever"} else "")
         saved = [
@@ -336,41 +343,104 @@ class Connectors:
         }
 
     def _mail_read(self, c, operation, p):
+        cursor = operation == "inbox" and "after_uid" in p
+        after_uid = p.get("after_uid", 0)
+        if cursor and (type(after_uid) is not int or after_uid < 0):
+            raise ValueError("after_uid must be a nonnegative integer")
+        limit = int(p.get("limit", 20))
+        if limit < 1:
+            raise ValueError("Mail limit must be positive")
+        limit = min(limit, 100)
         with imaplib.IMAP4_SSL(c["imap_host"], c.get("imap_port", 993)) as client:
             client.login(secret(c, "username", True), secret(c, "password", True))
             status, _ = client.select(p.get("folder", "INBOX"), readonly=True)
             if status != "OK":
                 raise ValueError("Cannot select mailbox")
+            uidvalidity = None
+            if callable(getattr(client, "response", None)):
+                _, validity = client.response("UIDVALIDITY")
+                if validity and validity[0] is not None:
+                    raw_validity = validity[0]
+                    if isinstance(raw_validity, bytes):
+                        raw_validity = raw_validity.decode("ascii")
+                    if str(raw_validity).isdigit():
+                        uidvalidity = str(raw_validity)
+            cursor_reset = bool(
+                cursor
+                and p.get("uidvalidity") is not None
+                and uidvalidity is not None
+                and str(p["uidvalidity"]) != uidvalidity
+            )
+            if cursor_reset:
+                after_uid = 0
             if operation == "message":
                 ids = [str(p["uid"]).encode()]
             else:
-                status, data = client.uid("search", None, p.get("criteria", "UNSEEN"))
+                criteria = [p.get("criteria", "UNSEEN")]
+                if cursor:
+                    criteria.extend(["UID", f"{after_uid + 1}:*"])
+                status, data = client.uid("search", None, *criteria)
                 if status != "OK":
                     raise ValueError("IMAP search failed")
-                ids = data[0].split()[-min(int(p.get("limit", 20)), 100) :]
-            messages = []
+                found = data[0].split() if data and data[0] else []
+                # IMAP N:* may include the last UID when N exceeds it; filter locally too.
+                ids = (
+                    sorted((identifier for identifier in found if int(identifier) > after_uid), key=int)[
+                        :limit
+                    ]
+                    if cursor
+                    else found[-limit:]
+                )
+            messages, errors = [], []
             for identifier in ids:
                 status, data = client.uid("fetch", identifier, "(BODY.PEEK[])")
                 if status != "OK":
+                    errors.append({"uid": identifier.decode(), "code": "imap_fetch_failed"})
                     continue
                 raw = next((part[1] for part in data if isinstance(part, tuple)), None)
                 if raw is None:
+                    errors.append({"uid": identifier.decode(), "code": "imap_empty_fetch"})
                     continue
-                message = BytesParser(policy=policy.default).parsebytes(raw)
-                body = message.get_body(preferencelist=("plain", "html"))
-                text = body.get_content() if body else ""
-                if body and body.get_content_type() == "text/html":
-                    text = plain(text)
+                try:
+                    message = BytesParser(policy=policy.default).parsebytes(raw)
+                    body = message.get_body(preferencelist=("plain", "html"))
+                    text = body.get_content() if body else ""
+                    if body and body.get_content_type() == "text/html":
+                        text = plain(text)
+                    headers = {
+                        key: str(value) if (value := message.get(header)) is not None else None
+                        for key, header in (
+                            ("message_id", "Message-ID"),
+                            ("in_reply_to", "In-Reply-To"),
+                            ("references", "References"),
+                            ("date", "Date"),
+                        )
+                    }
+                except (ValueError, TypeError, LookupError):
+                    errors.append({"uid": identifier.decode(), "code": "imap_message_parse_failed"})
+                    continue
                 messages.append(
                     {
                         "uid": identifier.decode(),
-                        "message_id": message.get("Message-ID"),
+                        **headers,
                         "from": str(message.get("From", "")),
                         "to": str(message.get("To", "")),
                         "subject": str(message.get("Subject", "")),
-                        "date": message.get("Date"),
                         "body": text,
                         "attachments": [a.get_filename() for a in message.iter_attachments()],
                     }
                 )
-            return {"folder": p.get("folder", "INBOX"), "messages": messages}
+            result = {
+                "folder": p.get("folder", "INBOX"),
+                "messages": messages,
+                "uidvalidity": uidvalidity,
+                "cursor_reset": cursor_reset,
+                "errors": errors,
+            }
+            if cursor:
+                result["next_after_uid"] = (
+                    max((int(identifier) for identifier in ids), default=after_uid)
+                    if not errors
+                    else after_uid
+                )
+            return result

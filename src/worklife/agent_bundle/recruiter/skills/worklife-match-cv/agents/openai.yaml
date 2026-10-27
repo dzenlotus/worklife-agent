@@ -1,0 +1,11 @@
+interface:
+  display_name: "Подбор и CV"
+  short_description: "Смысловая оценка вакансий и правдивое CV"
+  default_prompt: "Используй $worklife-match-cv. Сопоставь сохранённые вакансии с моим опытом и подбери CV."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "worklife_recruiter"
+      description: "Карьерный профиль MCP Worklife"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,2262 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-10-27",
+  "scope": "Documentation-based compatibility catalog; no clients installed or user configuration changed. Not a claim to enumerate every agent product.",
+  "mode_definitions": {
+    "native": "A verified native custom-agent definition is available in addition to MCP. It may be a subagent rather than a primary UI persona.",
+    "mcp_instructions": "Recruiter workflow is delivered by MCP tools/resources and optional native instructions/skills; no custom-agent UI claim.",
+    "export_only": "Portable bundle can be generated, but no verified direct configuration adapter is provided."
+  },
+  "template_variables": {
+    "$PROCESS_COMMAND": "absolute executable string",
+    "$PROCESS_ARGS": "list of individual argument strings",
+    "$PROCESS_ENV_OPTIONAL": "optional object, no embedded secret values",
+    "$COMMAND_PLUS_ARGS_ARRAY": "[command, *args]",
+    "$SERVER_NAME": "worklife_recruiter"
+  },
+  "merge_contract": {
+    "map": "Insert/update only the selected server identity; preserve unrelated root keys, models, permissions, servers and unknown fields.",
+    "list": "Merge by name (or the explicitly declared identity field), never replace the whole array.",
+    "jsonc": "Preserve comments and trailing commas with a JSONC-aware edit; never feed existing JSONC directly to json.loads or silently reserialize as strict JSON.",
+    "json5": "Use JSON5-aware read/edit for unquoted keys and comments; never assume JSONC is enough.",
+    "toml": "Use TOML-aware round-trip edits; map tables and array-of-tables are different. Preserve comments and unrelated tables.",
+    "yaml": "Use safe round-trip YAML editing preserving mappings, sequences and comments; do not load executable YAML tags.",
+    "existing_file": "Prefer an existing supported variant/profile over creating a competing file; back up before installation.",
+    "instructions": "Never replace AGENTS.md/CLAUDE.md or other existing guidance; use a dedicated file/directory or scoped clearly delimited addition.",
+    "secrets": "Do not read private dotenv files or bake credentials into exports. Pass environment references only when supported by that exact host.",
+    "permissions": "Never auto-approve all MCP tools or change model/provider/permission defaults as part of installation.",
+    "new_agent_fields": "Generate identity, description and instruction fields only, plus required type/mode metadata. Never pin model, provider or policy; preserve unrelated existing fields."
+  },
+  "harnesses": [
+    {
+      "id": "codex",
+      "display_name": "Codex CLI / desktop / IDE",
+      "mode": "native",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": ".codex/config.toml",
+          "format": "toml",
+          "root_key": [
+            "mcp_servers"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "command": "$PROCESS_COMMAND",
+            "args": "$PROCESS_ARGS",
+            "env": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {
+          "macos": {
+            "path": "~/.codex/config.toml",
+            "format": "toml",
+            "root_key": [
+              "mcp_servers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.codex/config.toml",
+            "format": "toml",
+            "root_key": [
+              "mcp_servers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "~/.codex/config.toml",
+            "format": "toml",
+            "root_key": [
+              "mcp_servers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": {
+        "project_path": ".codex/agents/worklife-recruiter.toml",
+        "user_path": "~/.codex/agents/worklife-recruiter.toml",
+        "format": "toml",
+        "required_fields": [
+          "name",
+          "description",
+          "developer_instructions"
+        ],
+        "instructions_body": null,
+        "instructions_field": "developer_instructions"
+      },
+      "instructions": [
+        "AGENTS.md"
+      ],
+      "skills": [
+        {
+          "project_path": ".agents/skills",
+          "user_path": "~/.agents/skills",
+          "format": "directory/SKILL.md",
+          "frontmatter": [
+            "name",
+            "description"
+          ]
+        }
+      ],
+      "cli": {
+        "mcp_add": [
+          "codex",
+          "mcp",
+          "add",
+          "$NAME",
+          "--",
+          "$COMMAND",
+          "$ARGS..."
+        ],
+        "launch": [
+          "codex"
+        ],
+        "verify": [
+          "codex",
+          "mcp",
+          "list"
+        ]
+      },
+      "citations": [
+        "https://learn.chatgpt.com/docs/extend/mcp?surface=cli",
+        "https://learn.chatgpt.com/docs/agent-configuration/subagents",
+        "https://learn.chatgpt.com/docs/customization/overview"
+      ],
+      "limits": [
+        "Project configuration requires workspace trust. Custom agents inherit parent MCP, provider and permissions. Preserve CODEX_HOME override; do not assign it. Standalone agents are documented by current docs; installed-version compatibility must be checked."
+      ]
+    },
+    {
+      "id": "claude-code",
+      "display_name": "Claude Code",
+      "mode": "native",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": ".mcp.json",
+          "format": "json",
+          "root_key": [
+            "mcpServers"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "command": "$PROCESS_COMMAND",
+            "args": "$PROCESS_ARGS",
+            "env": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {
+          "macos": {
+            "path": "~/.claude.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.claude.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "~/.claude.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": {
+        "project_path": ".claude/agents/worklife-recruiter.md",
+        "user_path": "~/.claude/agents/worklife-recruiter.md",
+        "format": "markdown_frontmatter",
+        "required_fields": [
+          "name",
+          "description"
+        ],
+        "instructions_body": "markdown"
+      },
+      "instructions": [],
+      "skills": [
+        {
+          "project_path": ".claude/skills",
+          "user_path": "~/.claude/skills",
+          "format": "directory/SKILL.md",
+          "frontmatter": [
+            "name",
+            "description"
+          ]
+        }
+      ],
+      "cli": {
+        "mcp_add": [
+          "claude",
+          "mcp",
+          "add",
+          "--scope",
+          "project",
+          "--transport",
+          "stdio",
+          "$NAME",
+          "--",
+          "$COMMAND",
+          "$ARGS..."
+        ],
+        "launch": [
+          "claude",
+          "--agent",
+          "worklife-recruiter"
+        ],
+        "verify": [
+          "claude",
+          "mcp",
+          "list"
+        ]
+      },
+      "citations": [
+        "https://code.claude.com/docs/en/mcp",
+        "https://code.claude.com/docs/en/sub-agents",
+        "https://code.claude.com/docs/en/skills"
+      ],
+      "limits": [
+        "User MCP is ~/.claude.json, not ~/.claude/settings.json. Local scope nests under projects.<absolute_project_path>.mcpServers. Project trust/approval remains interactive."
+      ]
+    },
+    {
+      "id": "claude-desktop",
+      "display_name": "Claude Desktop",
+      "mode": "mcp_instructions",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": null,
+        "user": {
+          "macos": {
+            "path": "~/Library/Application Support/Claude/claude_desktop_config.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "%APPDATA%/Claude/claude_desktop_config.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [],
+      "cli": {},
+      "citations": [
+        "https://modelcontextprotocol.io/docs/develop/connect-local-servers"
+      ],
+      "limits": [
+        "Chat desktop local MCP; this is not a Claude Code custom agent. No project configuration or Linux installation asserted. Restart desktop after modification. Recruiter tools/resources carry the workflow."
+      ]
+    },
+    {
+      "id": "cursor",
+      "display_name": "Cursor IDE / CLI",
+      "mode": "native",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": ".cursor/mcp.json",
+          "format": "json",
+          "root_key": [
+            "mcpServers"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "command": "$PROCESS_COMMAND",
+            "args": "$PROCESS_ARGS",
+            "env": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {
+          "macos": {
+            "path": "~/.cursor/mcp.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.cursor/mcp.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "~/.cursor/mcp.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": {
+        "project_path": ".cursor/agents/worklife-recruiter.md",
+        "user_path": "~/.cursor/agents/worklife-recruiter.md",
+        "format": "markdown_frontmatter",
+        "required_fields": [
+          "name",
+          "description"
+        ],
+        "instructions_body": "markdown"
+      },
+      "instructions": [],
+      "skills": [
+        {
+          "project_path": ".cursor/skills",
+          "user_path": "~/.cursor/skills",
+          "format": "directory/SKILL.md",
+          "frontmatter": [
+            "name",
+            "description"
+          ]
+        }
+      ],
+      "cli": {
+        "launch": [
+          "agent"
+        ],
+        "verify": [
+          "agent",
+          "mcp",
+          "list"
+        ]
+      },
+      "citations": [
+        "https://cursor.com/docs/mcp",
+        "https://cursor.com/docs/cli/mcp",
+        "https://cursor.com/docs/reference/plugins",
+        "https://cursor.com/docs/skills",
+        "https://cursor.com/docs/subagents"
+      ],
+      "limits": [
+        "Project MCP entry overrides same-name global entry. Native custom subagent works in IDE, CLI and Cloud Agents; local user files are not automatically available in cloud sessions."
+      ]
+    },
+    {
+      "id": "windsurf",
+      "display_name": "Windsurf legacy Cascade",
+      "mode": "mcp_instructions",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": null,
+        "user": {
+          "macos": {
+            "path": "~/.codeium/windsurf/mcp_config.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.codeium/windsurf/mcp_config.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "~/.codeium/windsurf/mcp_config.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [],
+      "cli": {},
+      "citations": [
+        "https://code.visualstudio.com/docs/agents/reference/mcp-configuration",
+        "https://docs.devin.ai/desktop/cascade/mcp"
+      ],
+      "limits": [
+        "Legacy path is documented by official VS Code discovery. Current Windsurf docs redirect to Devin Desktop with different paths. Detect installed product; do not silently migrate or write both locations."
+      ]
+    },
+    {
+      "id": "devin-cascade",
+      "display_name": "Devin Desktop legacy Cascade",
+      "mode": "mcp_instructions",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": null,
+        "user": {
+          "macos": {
+            "path": "~/.config/devin/mcp_config.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.config/devin/mcp_config.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "%APPDATA%/devin/mcp_config.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [],
+      "cli": {},
+      "citations": [
+        "https://docs.devin.ai/desktop/cascade/mcp"
+      ],
+      "limits": [
+        "Honor XDG_CONFIG_HOME on macOS/Linux. This configuration applies to legacy Cascade, not default Devin Local. Global only in reviewed page; 100 active-tool limit."
+      ]
+    },
+    {
+      "id": "vscode",
+      "display_name": "VS Code Copilot (VS Code format)",
+      "mode": "native",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": ".vscode/mcp.json",
+          "format": "jsonc",
+          "root_key": [
+            "servers"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "type": "stdio",
+            "command": "$PROCESS_COMMAND",
+            "args": "$PROCESS_ARGS",
+            "env": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {},
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": {
+        "project_path": ".github/agents/worklife-recruiter.agent.md",
+        "user_path": null,
+        "format": "markdown_frontmatter",
+        "required_fields": [
+          "name",
+          "description"
+        ],
+        "instructions_body": "markdown"
+      },
+      "instructions": [],
+      "skills": [
+        {
+          "project_path": ".github/skills",
+          "user_path": "~/.copilot/skills",
+          "format": "directory/SKILL.md",
+          "frontmatter": [
+            "name",
+            "description"
+          ]
+        }
+      ],
+      "cli": {
+        "mcp_add": [
+          "code",
+          "--add-mcp",
+          "$JSON_WITH_NAME_TYPE_COMMAND_ARGS"
+        ],
+        "launch": [
+          "code",
+          "."
+        ]
+      },
+      "citations": [
+        "https://code.visualstudio.com/docs/agents/reference/mcp-configuration",
+        "https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference",
+        "https://code.visualstudio.com/docs/agent-customization/agent-skills",
+        "https://code.visualstudio.com/docs/agent-customization/custom-agents"
+      ],
+      "limits": [
+        "Existing VS Code format remains supported but guided UI labels it deprecated. User profile path varies; use MCP: Open User Configuration or code --add-mcp. Do not assume a profile path."
+      ]
+    },
+    {
+      "id": "copilot",
+      "display_name": "GitHub Copilot portable format",
+      "mode": "native",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": ".mcp.json",
+          "format": "json",
+          "root_key": [
+            "mcpServers"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "command": "$PROCESS_COMMAND",
+            "args": "$PROCESS_ARGS",
+            "env": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {
+          "macos": {
+            "path": "~/.copilot/mcp-config.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.copilot/mcp-config.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "~/.copilot/mcp-config.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": {
+        "project_path": ".github/agents/worklife-recruiter.agent.md",
+        "user_path": null,
+        "format": "markdown_frontmatter",
+        "required_fields": [
+          "name",
+          "description"
+        ],
+        "instructions_body": "markdown"
+      },
+      "instructions": [],
+      "skills": [
+        {
+          "project_path": ".github/skills",
+          "user_path": "~/.copilot/skills",
+          "format": "directory/SKILL.md",
+          "frontmatter": [
+            "name",
+            "description"
+          ]
+        }
+      ],
+      "cli": {},
+      "citations": [
+        "https://code.visualstudio.com/docs/agents/reference/mcp-configuration",
+        "https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference",
+        "https://code.visualstudio.com/docs/agent-customization/agent-skills",
+        "https://code.visualstudio.com/docs/agent-customization/custom-agents"
+      ],
+      "limits": [
+        "Honor COPILOT_HOME without changing it. Portable MCP format does not accept VS Code input variables or envFile. This row covers the documented portable config consumed by Copilot harnesses; check CLI version before native launch."
+      ]
+    },
+    {
+      "id": "gemini",
+      "display_name": "Gemini CLI",
+      "mode": "native",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": ".gemini/settings.json",
+          "format": "json",
+          "root_key": [
+            "mcpServers"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "command": "$PROCESS_COMMAND",
+            "args": "$PROCESS_ARGS",
+            "env": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {
+          "macos": {
+            "path": "~/.gemini/settings.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.gemini/settings.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "~/.gemini/settings.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": {
+        "project_path": ".gemini/agents/worklife-recruiter.md",
+        "user_path": "~/.gemini/agents/worklife-recruiter.md",
+        "format": "markdown_frontmatter",
+        "required_fields": [
+          "name",
+          "description",
+          "kind"
+        ],
+        "instructions_body": "markdown",
+        "extra_fields": {
+          "kind": "local"
+        }
+      },
+      "instructions": [],
+      "skills": [
+        {
+          "project_path": ".gemini/skills",
+          "user_path": "~/.gemini/skills",
+          "format": "directory/SKILL.md",
+          "frontmatter": [
+            "name",
+            "description"
+          ]
+        }
+      ],
+      "cli": {
+        "mcp_add": [
+          "gemini",
+          "mcp",
+          "add",
+          "--scope",
+          "project",
+          "$NAME",
+          "$COMMAND",
+          "$ARGS..."
+        ],
+        "launch": [
+          "gemini"
+        ],
+        "verify": [
+          "gemini",
+          "mcp",
+          "list"
+        ]
+      },
+      "citations": [
+        "https://geminicli.com/docs/tools/mcp-server/",
+        "https://geminicli.com/docs/core/subagents/",
+        "https://geminicli.com/docs/cli/skills/"
+      ],
+      "limits": [
+        "Do not set trust=true or experimental agent toggles automatically. Verify installed subagent support.",
+        "Custom subagent tool access can be isolated; verify configured MCP tool names are visible in the spawned subagent before claiming runtime readiness."
+      ]
+    },
+    {
+      "id": "opencode",
+      "display_name": "OpenCode",
+      "mode": "native",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": "opencode.json",
+          "format": "jsonc",
+          "root_key": [
+            "mcp"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "type": "local",
+            "command": "$COMMAND_PLUS_ARGS_ARRAY",
+            "environment": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {
+          "macos": {
+            "path": "~/.config/opencode/opencode.json",
+            "format": "jsonc",
+            "root_key": [
+              "mcp"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "type": "local",
+              "command": "$COMMAND_PLUS_ARGS_ARRAY",
+              "environment": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.config/opencode/opencode.json",
+            "format": "jsonc",
+            "root_key": [
+              "mcp"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "type": "local",
+              "command": "$COMMAND_PLUS_ARGS_ARRAY",
+              "environment": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "~/.config/opencode/opencode.json",
+            "format": "jsonc",
+            "root_key": [
+              "mcp"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "type": "local",
+              "command": "$COMMAND_PLUS_ARGS_ARRAY",
+              "environment": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": {
+        "project_path": ".opencode/agents/worklife-recruiter.md",
+        "user_path": "~/.config/opencode/agents/worklife-recruiter.md",
+        "format": "markdown_frontmatter",
+        "required_fields": [
+          "description"
+        ],
+        "instructions_body": "markdown",
+        "extra_fields": {
+          "mode": "primary"
+        }
+      },
+      "instructions": [],
+      "skills": [
+        {
+          "project_path": ".opencode/skills",
+          "user_path": "~/.config/opencode/skills",
+          "format": "directory/SKILL.md",
+          "frontmatter": [
+            "name",
+            "description"
+          ]
+        }
+      ],
+      "cli": {
+        "launch": [
+          "opencode",
+          "--agent",
+          "worklife-recruiter"
+        ],
+        "verify": [
+          "opencode",
+          "mcp",
+          "list"
+        ]
+      },
+      "citations": [
+        "https://opencode.ai/docs/config/",
+        "https://opencode.ai/docs/mcp-servers/",
+        "https://opencode.ai/docs/agents/",
+        "https://opencode.ai/docs/skills/"
+      ],
+      "limits": [
+        "Prefer an existing opencode.jsonc over creating a competing opencode.json. Command is an argv array, environment is not env. Respect custom config/XDG settings."
+      ]
+    },
+    {
+      "id": "cline",
+      "display_name": "Cline CLI / extensions",
+      "mode": "mcp_instructions",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": null,
+        "user": {
+          "macos": {
+            "path": "~/.cline/data/settings/cline_mcp_settings.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.cline/data/settings/cline_mcp_settings.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "~/.cline/data/settings/cline_mcp_settings.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [
+        {
+          "project_path": ".cline/skills",
+          "user_path": "~/.cline/skills",
+          "format": "directory/SKILL.md",
+          "frontmatter": [
+            "name",
+            "description"
+          ]
+        }
+      ],
+      "cli": {
+        "launch": [
+          "cline"
+        ]
+      },
+      "citations": [
+        "https://docs.cline.bot/mcp/mcp-overview",
+        "https://docs.cline.bot/customization/skills"
+      ],
+      "limits": [
+        "Documented path is CLI only; honor CLINE_MCP_SETTINGS_PATH. IDE extension exact profile path was not established: use Configure MCP Servers UI or explicit config path. No project MCP path asserted.",
+        "Global skills override same-name project skills."
+      ]
+    },
+    {
+      "id": "roo",
+      "display_name": "Roo Code",
+      "mode": "native",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": ".roo/mcp.json",
+          "format": "json",
+          "root_key": [
+            "mcpServers"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "command": "$PROCESS_COMMAND",
+            "args": "$PROCESS_ARGS",
+            "env": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {},
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": {
+        "project_path": ".roomodes",
+        "user_path": null,
+        "format": "yaml_or_json",
+        "required_fields": [
+          "customModes"
+        ],
+        "instructions_body": null,
+        "entry_template": {
+          "slug": "worklife-recruiter",
+          "name": "Worklife Recruiter",
+          "roleDefinition": "$INSTRUCTIONS",
+          "groups": [
+            "read",
+            "mcp"
+          ]
+        },
+        "entries_shape": "list",
+        "identity_field": "slug"
+      },
+      "instructions": [],
+      "skills": [],
+      "cli": {},
+      "citations": [
+        "https://roocodeinc.github.io/Roo-Code/features/mcp/using-mcp-in-roo/",
+        "https://roocodeinc.github.io/Roo-Code/features/custom-modes/"
+      ],
+      "limits": [
+        "Global mcp_settings.json and settings/custom_modes.yaml belong to extension storage; exact profile path not asserted. .roomodes accepts YAML or JSON; preserve its current format and merge customModes by slug."
+      ]
+    },
+    {
+      "id": "kilo",
+      "display_name": "Kilo current CLI / extension",
+      "mode": "mcp_instructions",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": "kilo.json",
+          "format": "jsonc",
+          "root_key": [
+            "mcp"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "type": "local",
+            "command": "$COMMAND_PLUS_ARGS_ARRAY",
+            "environment": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {
+          "macos": {
+            "path": "~/.config/kilo/kilo.json",
+            "format": "jsonc",
+            "root_key": [
+              "mcp"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "type": "local",
+              "command": "$COMMAND_PLUS_ARGS_ARRAY",
+              "environment": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.config/kilo/kilo.json",
+            "format": "jsonc",
+            "root_key": [
+              "mcp"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "type": "local",
+              "command": "$COMMAND_PLUS_ARGS_ARRAY",
+              "environment": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "~/.config/kilo/kilo.json",
+            "format": "jsonc",
+            "root_key": [
+              "mcp"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "type": "local",
+              "command": "$COMMAND_PLUS_ARGS_ARRAY",
+              "environment": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [],
+      "cli": {
+        "launch": [
+          "kilo"
+        ],
+        "verify": [
+          "kilo",
+          "mcp",
+          "list"
+        ]
+      },
+      "citations": [
+        "https://github.com/Kilo-Org/kilocode/blob/main/packages/kilo-docs/pages/automate/mcp/using-in-cli.md",
+        "https://kilo.ai/docs/automate/mcp/overview"
+      ],
+      "limits": [
+        "Also supports kilo.jsonc and project .kilo/kilo.json/jsonc; choose existing configuration first. Do not infer .kilocode schema for current Kilo."
+      ]
+    },
+    {
+      "id": "kilo-legacy",
+      "display_name": "Kilo Code legacy IDE extension",
+      "mode": "export_only",
+      "evidence_status": "official_path_only",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": ".kilocode/mcp.json",
+          "format": "json",
+          "root_key": [
+            "mcpServers"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "command": "$PROCESS_COMMAND",
+            "args": "$PROCESS_ARGS",
+            "env": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {},
+        "installable": false,
+        "auto_apply_documented": false
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [],
+      "cli": {},
+      "citations": [
+        "https://github.com/Kilo-Org/kilocode-legacy/blob/main/docs/legacy-ides/automate/tools/use-mcp-tool.md"
+      ],
+      "limits": [
+        "Legacy .kilocode/mcp.json path is verified; current Kilo differs. Full legacy server schema was not checked, so direct application is disabled; export for manual legacy-UI import."
+      ]
+    },
+    {
+      "id": "continue",
+      "display_name": "Continue",
+      "mode": "mcp_instructions",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": ".continue/mcpServers/worklife-recruiter.json",
+          "format": "json",
+          "root_key": [
+            "mcpServers"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "command": "$PROCESS_COMMAND",
+            "args": "$PROCESS_ARGS",
+            "env": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {},
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [],
+      "cli": {},
+      "citations": [
+        "https://docs.continue.dev/customize/deep-dives/mcp"
+      ],
+      "limits": [
+        "Agent mode required. Directory accepts portable mcpServers JSON. YAML alternative is a document with name/version/schema and mcpServers list; avoid rewriting central config.yaml."
+      ]
+    },
+    {
+      "id": "amp",
+      "display_name": "Amp",
+      "mode": "mcp_instructions",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": ".amp/settings.json",
+          "format": "jsonc",
+          "root_key": [
+            "amp.mcpServers"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "command": "$PROCESS_COMMAND",
+            "args": "$PROCESS_ARGS",
+            "env": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {
+          "macos": {
+            "path": "~/.config/amp/settings.json",
+            "format": "jsonc",
+            "root_key": [
+              "amp.mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.config/amp/settings.json",
+            "format": "jsonc",
+            "root_key": [
+              "amp.mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "~/.config/amp/settings.json",
+            "format": "jsonc",
+            "root_key": [
+              "amp.mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [
+        {
+          "project_path": ".agents/skills",
+          "user_path": "~/.config/agents/skills",
+          "format": "directory/SKILL.md",
+          "frontmatter": [
+            "name",
+            "description"
+          ]
+        }
+      ],
+      "cli": {
+        "mcp_add": [
+          "amp",
+          "mcp",
+          "add",
+          "$NAME",
+          "--",
+          "$COMMAND",
+          "$ARGS..."
+        ],
+        "launch": [
+          "amp"
+        ]
+      },
+      "citations": [
+        "https://ampcode.com/docs/customize/mcp",
+        "https://ampcode.com/docs/cli/settings",
+        "https://ampcode.com/docs/customize/skills"
+      ],
+      "limits": [
+        "amp.mcpServers is one literal dotted key, not nested amp.mcpServers. Prefer existing settings.jsonc. Native custom-agent file format is not asserted."
+      ]
+    },
+    {
+      "id": "factory",
+      "display_name": "Factory Droid",
+      "mode": "native",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": ".factory/mcp.json",
+          "format": "json",
+          "root_key": [
+            "mcpServers"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "command": "$PROCESS_COMMAND",
+            "args": "$PROCESS_ARGS",
+            "env": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {
+          "macos": {
+            "path": "~/.factory/mcp.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.factory/mcp.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "~/.factory/mcp.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": {
+        "project_path": ".factory/droids/worklife-recruiter.md",
+        "user_path": "~/.factory/droids/worklife-recruiter.md",
+        "format": "markdown_frontmatter",
+        "required_fields": [
+          "name",
+          "description"
+        ],
+        "instructions_body": "markdown"
+      },
+      "instructions": [],
+      "skills": [
+        {
+          "project_path": ".factory/skills",
+          "user_path": "~/.factory/skills",
+          "format": "directory/SKILL.md",
+          "frontmatter": [
+            "name",
+            "description"
+          ]
+        }
+      ],
+      "cli": {
+        "mcp_add": [
+          "droid",
+          "mcp",
+          "add",
+          "$NAME",
+          "$COMMAND_WITH_ARGS",
+          "--type",
+          "stdio"
+        ],
+        "launch": [
+          "droid"
+        ],
+        "verify": [
+          "droid",
+          "mcp",
+          "list"
+        ]
+      },
+      "citations": [
+        "https://docs.factory.com/harness/mcp",
+        "https://docs.factory.com/harness/subagents",
+        "https://docs.factory.com/harness/skills"
+      ],
+      "limits": [
+        "droid mcp add writes user config even inside a project. Agent tools selection needs separate MCP access verification; omit model and permission overrides."
+      ]
+    },
+    {
+      "id": "goose",
+      "display_name": "Goose",
+      "mode": "mcp_instructions",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": null,
+        "user": {
+          "macos": {
+            "path": "~/.config/goose/config.yaml",
+            "format": "yaml",
+            "root_key": [
+              "extensions"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "type": "stdio",
+              "name": "$SERVER_NAME",
+              "enabled": true,
+              "cmd": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "envs": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.config/goose/config.yaml",
+            "format": "yaml",
+            "root_key": [
+              "extensions"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "type": "stdio",
+              "name": "$SERVER_NAME",
+              "enabled": true,
+              "cmd": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "envs": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "%APPDATA%/Block/goose/config/config.yaml",
+            "format": "yaml",
+            "root_key": [
+              "extensions"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "type": "stdio",
+              "name": "$SERVER_NAME",
+              "enabled": true,
+              "cmd": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "envs": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [],
+      "cli": {
+        "mcp_setup": [
+          "goose",
+          "configure"
+        ],
+        "launch": [
+          "goose"
+        ]
+      },
+      "citations": [
+        "https://github.com/aaif-goose/goose/blob/main/documentation/docs/guides/config-files.md",
+        "https://github.com/aaif-goose/goose/blob/main/documentation/docs/getting-started/using-extensions.md"
+      ],
+      "limits": [
+        "Project MCP path not established. Use YAML-aware round-trip merge and preserve provider/model/permissions. Native recipe is separate from a custom-agent UI."
+      ]
+    },
+    {
+      "id": "qwen",
+      "display_name": "Qwen Code",
+      "mode": "mcp_instructions",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": ".qwen/settings.json",
+          "format": "json",
+          "root_key": [
+            "mcpServers"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "command": "$PROCESS_COMMAND",
+            "args": "$PROCESS_ARGS",
+            "env": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {
+          "macos": {
+            "path": "~/.qwen/settings.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.qwen/settings.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "~/.qwen/settings.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [
+        {
+          "project_path": ".qwen/skills",
+          "user_path": "~/.qwen/skills",
+          "format": "directory/SKILL.md",
+          "frontmatter": [
+            "name",
+            "description"
+          ]
+        }
+      ],
+      "cli": {
+        "mcp_add": [
+          "qwen",
+          "mcp",
+          "add",
+          "--scope",
+          "project",
+          "$NAME",
+          "$COMMAND",
+          "$ARGS..."
+        ],
+        "launch": [
+          "qwen"
+        ]
+      },
+      "citations": [
+        "https://qwenlm.github.io/qwen-code-docs/en/users/configuration/settings/",
+        "https://qwenlm.github.io/qwen-code-docs/en/developers/tools/mcp-server/",
+        "https://qwenlm.github.io/qwen-code-docs/en/users/features/skills/"
+      ],
+      "limits": [
+        "Verified independently of Gemini; do not infer additional schema from the fork. Preserve model and mcp policy fields."
+      ]
+    },
+    {
+      "id": "kiro",
+      "display_name": "Kiro IDE / CLI",
+      "mode": "native",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": ".kiro/settings/mcp.json",
+          "format": "json",
+          "root_key": [
+            "mcpServers"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "command": "$PROCESS_COMMAND",
+            "args": "$PROCESS_ARGS",
+            "env": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {
+          "macos": {
+            "path": "~/.kiro/settings/mcp.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.kiro/settings/mcp.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "~/.kiro/settings/mcp.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": {
+        "project_path": ".kiro/agents/worklife-recruiter.json",
+        "user_path": "~/.kiro/agents/worklife-recruiter.json",
+        "format": "json",
+        "required_fields": [
+          "name"
+        ],
+        "instructions_body": null,
+        "instructions_field": "prompt",
+        "extra_fields": {
+          "includeMcpJson": true
+        }
+      },
+      "instructions": [],
+      "skills": [
+        {
+          "project_path": ".kiro/skills",
+          "user_path": "~/.kiro/skills",
+          "format": "directory/SKILL.md",
+          "frontmatter": [
+            "name",
+            "description"
+          ]
+        }
+      ],
+      "cli": {},
+      "citations": [
+        "https://kiro.dev/docs/mcp/configuration/",
+        "https://kiro.dev/docs/custom-agents/",
+        "https://kiro.dev/docs/skills/"
+      ],
+      "limits": [
+        "Current IDE 1.x / CLI V3 format. Prior CLI 2.x policy fields changed; do not set allowedTools or toolsSettings. Web supports subagent delegation but not selecting a custom primary agent."
+      ]
+    },
+    {
+      "id": "zed",
+      "display_name": "Zed",
+      "mode": "mcp_instructions",
+      "evidence_status": "official_schema_manual_path",
+      "runtime_tested": false,
+      "mcp": {
+        "project": null,
+        "user": {},
+        "installable": false,
+        "auto_apply_documented": false
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [],
+      "cli": {},
+      "citations": [
+        "https://zed.dev/docs/ai/mcp",
+        "https://zed.dev/faq",
+        "https://zed.dev/docs/remote-development"
+      ],
+      "limits": [
+        "Confirmed schema is context_servers.<name> {command,args,env}. Official FAQ gives ~/.config/zed/settings.json while remote-development docs mention ~/.zed/settings.json on macOS; do not auto-select across this discrepancy. Require an explicit existing settings path or the Zed settings UI. No project context-server path is asserted. Tools and prompts supported; resource-only recruiter workflow is insufficient."
+      ],
+      "mcp_schema": {
+        "path": null,
+        "format": "jsonc",
+        "root_key": [
+          "context_servers"
+        ],
+        "entries_shape": "map",
+        "entry_template": {
+          "command": "$PROCESS_COMMAND",
+          "args": "$PROCESS_ARGS",
+          "env": "$PROCESS_ENV_OPTIONAL"
+        }
+      }
+    },
+    {
+      "id": "antigravity",
+      "display_name": "Google Antigravity App / IDE / CLI",
+      "mode": "mcp_instructions",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": ".agents/mcp_config.json",
+          "format": "jsonc",
+          "root_key": [
+            "mcpServers"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "command": "$PROCESS_COMMAND",
+            "args": "$PROCESS_ARGS",
+            "env": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {
+          "macos": {
+            "path": "~/.gemini/config/mcp_config.json",
+            "format": "jsonc",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.gemini/config/mcp_config.json",
+            "format": "jsonc",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "~/.gemini/config/mcp_config.json",
+            "format": "jsonc",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [],
+      "cli": {},
+      "citations": [
+        "https://antigravity.google/docs/mcp",
+        "https://antigravity.google/docs/cli/gcli-migration/",
+        "https://antigravity.google/docs/changelog?tab=cli"
+      ],
+      "limits": [
+        "Current global path differs from older antigravity-specific paths. Uses command/args/env for stdio; serverUrl for remote. JSONC supported since CLI v1.1.24."
+      ]
+    },
+    {
+      "id": "mistral-vibe",
+      "display_name": "Mistral Vibe",
+      "mode": "native",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": ".vibe/config.toml",
+          "format": "toml",
+          "root_key": [
+            "mcp_servers"
+          ],
+          "entries_shape": "list",
+          "entry_template": {
+            "name": "$SERVER_NAME",
+            "transport": "stdio",
+            "command": "$PROCESS_COMMAND",
+            "args": "$PROCESS_ARGS",
+            "env": "$PROCESS_ENV_OPTIONAL"
+          },
+          "identity_field": "name"
+        },
+        "user": {
+          "macos": {
+            "path": "~/.vibe/config.toml",
+            "format": "toml",
+            "root_key": [
+              "mcp_servers"
+            ],
+            "entries_shape": "list",
+            "entry_template": {
+              "name": "$SERVER_NAME",
+              "transport": "stdio",
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            },
+            "identity_field": "name"
+          },
+          "linux": {
+            "path": "~/.vibe/config.toml",
+            "format": "toml",
+            "root_key": [
+              "mcp_servers"
+            ],
+            "entries_shape": "list",
+            "entry_template": {
+              "name": "$SERVER_NAME",
+              "transport": "stdio",
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            },
+            "identity_field": "name"
+          },
+          "windows": {
+            "path": "~/.vibe/config.toml",
+            "format": "toml",
+            "root_key": [
+              "mcp_servers"
+            ],
+            "entries_shape": "list",
+            "entry_template": {
+              "name": "$SERVER_NAME",
+              "transport": "stdio",
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            },
+            "identity_field": "name"
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": {
+        "project_path": ".vibe/agents/worklife-recruiter.toml",
+        "user_path": "~/.vibe/agents/worklife-recruiter.toml",
+        "format": "toml",
+        "required_fields": [
+          "name",
+          "description"
+        ],
+        "instructions_body": null,
+        "extra_fields": {
+          "system_prompt_id": "worklife-recruiter"
+        },
+        "companion_prompt_project": ".vibe/prompts/worklife-recruiter.md",
+        "companion_prompt_user": "~/.vibe/prompts/worklife-recruiter.md"
+      },
+      "instructions": [
+        "AGENTS.md"
+      ],
+      "skills": [
+        {
+          "project_path": ".vibe/skills",
+          "user_path": "~/.vibe/skills",
+          "format": "directory/SKILL.md",
+          "frontmatter": [
+            "name",
+            "description"
+          ]
+        }
+      ],
+      "cli": {
+        "mcp_add": [
+          "vibe",
+          "mcp",
+          "add",
+          "$NAME",
+          "--transport",
+          "stdio",
+          "--command",
+          "$COMMAND",
+          "--arg",
+          "$ARG_REPEAT..."
+        ],
+        "launch": [
+          "vibe",
+          "--agent",
+          "worklife-recruiter"
+        ]
+      },
+      "citations": [
+        "https://github.com/mistralai/mistral-vibe"
+      ],
+      "limits": [
+        "mcp_servers is TOML array of tables; merge by name. Project config is selected before user fallback; do not invent cross-scope merging. Custom system prompt replaces the default prompt."
+      ]
+    },
+    {
+      "id": "openclaw",
+      "display_name": "OpenClaw",
+      "mode": "mcp_instructions",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": null,
+        "user": {
+          "macos": {
+            "path": "~/.openclaw/openclaw.json",
+            "format": "json5",
+            "root_key": [
+              "mcp",
+              "servers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.openclaw/openclaw.json",
+            "format": "json5",
+            "root_key": [
+              "mcp",
+              "servers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "~/.openclaw/openclaw.json",
+            "format": "json5",
+            "root_key": [
+              "mcp",
+              "servers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [],
+      "cli": {
+        "mcp_add": [
+          "openclaw",
+          "mcp",
+          "add",
+          "$NAME",
+          "--command",
+          "$COMMAND",
+          "--arg",
+          "$ARG_REPEAT..."
+        ],
+        "resolve_config": [
+          "openclaw",
+          "config",
+          "file"
+        ],
+        "verify": [
+          "openclaw",
+          "mcp",
+          "probe",
+          "$NAME",
+          "--json"
+        ]
+      },
+      "citations": [
+        "https://docs.openclaw.ai/gateway/config-extensions",
+        "https://docs.openclaw.ai/cli/mcp/registry",
+        "https://docs.openclaw.ai/gateway/configuration"
+      ],
+      "limits": [
+        "Honor OPENCLAW_CONFIG_PATH and active profile; resolve with openclaw config file before installation. Current MCP client registry is mcp.servers, distinct from mcporter. Registry presence does not prove runtime connectivity. The host config is JSON5 and includes unrelated channels/models/security; preserve all of them."
+      ],
+      "mcp_schema": {
+        "path": null,
+        "format": "json5",
+        "root_key": [
+          "mcp",
+          "servers"
+        ],
+        "entries_shape": "map",
+        "entry_template": {
+          "command": "$PROCESS_COMMAND",
+          "args": "$PROCESS_ARGS",
+          "env": "$PROCESS_ENV_OPTIONAL"
+        }
+      }
+    },
+    {
+      "id": "pi",
+      "display_name": "Pi",
+      "mode": "mcp_instructions",
+      "evidence_status": "official_documentation",
+      "runtime_tested": false,
+      "mcp": {
+        "project": {
+          "path": ".pi/mcp.json",
+          "format": "json",
+          "root_key": [
+            "mcpServers"
+          ],
+          "entries_shape": "map",
+          "entry_template": {
+            "command": "$PROCESS_COMMAND",
+            "args": "$PROCESS_ARGS",
+            "env": "$PROCESS_ENV_OPTIONAL"
+          }
+        },
+        "user": {
+          "macos": {
+            "path": "~/.pi/agent/mcp.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "linux": {
+            "path": "~/.pi/agent/mcp.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          },
+          "windows": {
+            "path": "~/.pi/agent/mcp.json",
+            "format": "json",
+            "root_key": [
+              "mcpServers"
+            ],
+            "entries_shape": "map",
+            "entry_template": {
+              "command": "$PROCESS_COMMAND",
+              "args": "$PROCESS_ARGS",
+              "env": "$PROCESS_ENV_OPTIONAL"
+            }
+          }
+        },
+        "installable": true,
+        "auto_apply_documented": true
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [
+        {
+          "project_path": ".agents/skills",
+          "user_path": "~/.agents/skills",
+          "format": "directory/SKILL.md",
+          "frontmatter": [
+            "name",
+            "description"
+          ]
+        }
+      ],
+      "cli": {
+        "mcp_add": [
+          "pi",
+          "mcp",
+          "add",
+          "--local",
+          "$NAME",
+          "--",
+          "$COMMAND",
+          "$ARGS..."
+        ],
+        "launch": [
+          "pi"
+        ],
+        "verify": [
+          "pi",
+          "mcp",
+          "list"
+        ]
+      },
+      "citations": [
+        "https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/mcp.md",
+        "https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/skills.md",
+        "https://github.com/earendil-works/pi/blob/main/packages/coding-agent/README.md"
+      ],
+      "limits": [
+        "Current Pi has native MCP. A third-party extension registering /mcp replaces built-in behavior; detect before claiming installation works. No native custom-agent UI asserted."
+      ]
+    },
+    {
+      "id": "openhands",
+      "display_name": "OpenHands",
+      "mode": "export_only",
+      "evidence_status": "official_ui_only",
+      "runtime_tested": false,
+      "mcp": {
+        "project": null,
+        "user": {},
+        "installable": false,
+        "auto_apply_documented": false
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [],
+      "cli": {},
+      "citations": [
+        "https://docs.openhands.dev/overview/model-context-protocol",
+        "https://docs.openhands.dev/openhands/usage/settings/mcp-settings"
+      ],
+      "limits": [
+        "MCP is supported in Agent Canvas, Cloud and SDK. Agent Canvas stores encrypted credentials with settings; official docs direct users to Customize > MCP Servers and explicitly state there is no per-project MCP configuration file. Export only for this installer; native UI or SDK adapter is separate."
+      ]
+    },
+    {
+      "id": "trae",
+      "display_name": "TRAE",
+      "mode": "export_only",
+      "evidence_status": "adapter_pending",
+      "runtime_tested": false,
+      "mcp": {
+        "project": null,
+        "user": {},
+        "installable": false,
+        "auto_apply_documented": false
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [],
+      "cli": {},
+      "citations": [
+        "https://docs.trae.ai/ide/model-context-protocol"
+      ],
+      "limits": [
+        "Official page confirms product MCP topic but body was inaccessible. Do not invent config file path or native agent format; export config/instructions for manual UI import."
+      ]
+    },
+    {
+      "id": "generic",
+      "display_name": "Other MCP / Agent Skills host",
+      "mode": "export_only",
+      "evidence_status": "portable_standard_only",
+      "runtime_tested": false,
+      "mcp": {
+        "project": null,
+        "user": {},
+        "installable": false,
+        "auto_apply_documented": false
+      },
+      "agent": null,
+      "instructions": [],
+      "skills": [],
+      "cli": {},
+      "citations": [
+        "https://modelcontextprotocol.io/docs/develop/connect-local-servers",
+        "https://agentskills.io/specification"
+      ],
+      "limits": [
+        "Export a portable mcpServers process snippet plus AGENTS.md and SKILL.md bundle. Host-specific import is manual until its schema and discovery paths are verified. Export does not mean installed or runnable."
+      ]
+    }
+  ],
+  "catalog_status": "frozen_for_implementation"
+}

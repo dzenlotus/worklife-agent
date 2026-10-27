@@ -110,10 +110,33 @@ class Workspace:
     def save_job(self, job):
         if not all(job.get(k) for k in ("id", "platform", "title", "employer", "url")):
             raise ValueError("Job requires id, platform, title, employer, url")
+        if not isinstance(job["id"], str) or not isinstance(job["platform"], str):
+            raise ValueError("Job id and platform must be strings")
         # Platform-qualified identity keeps unrelated providers' numeric IDs apart.
         key = job["id"] if job["id"].startswith(job["platform"] + ":") else f"{job['platform']}:{job['id']}"
-        value = {**job, "id": key, "fetched_at": now()}
-        return self.store.put("job", key, value)
+        try:
+            previous = self.store.get("job", key)
+        except ValueError:
+            previous = {}
+        at = now()
+        value = {
+            **job,
+            "id": key,
+            "fetched_at": at,
+            "last_seen_at": at,
+            "first_seen_at": previous.get("first_seen_at") or previous.get("fetched_at") or at,
+        }
+        observation = {"id": uid(), "job_id": key, "observed_at": at, "job": value}
+        with self.store.connect() as db:
+            for bucket, identifier, document in (
+                ("job_observation", observation["id"], observation),
+                ("job", key, value),
+            ):
+                db.execute(
+                    "INSERT INTO objects VALUES (?,?,?) ON CONFLICT(bucket,id) DO UPDATE SET data=excluded.data",
+                    (bucket, identifier, canonical(document).decode()),
+                )
+        return value
 
     def assess_job(self, job_id):
         job, profile = self.store.get("job", job_id), self.get_profile()
@@ -171,16 +194,18 @@ class Workspace:
         }:
             raise ValueError("Unknown application stage")
         self.store.get("job", job_id)
-        self.store.get("cv", cv_id)
+        if cv_id:
+            self.store.get("cv", cv_id)
         key = hashlib.sha256(job_id.encode()).hexdigest()[:24]
         try:
             previous = self.store.get("application", key)
         except ValueError:
-            previous = {"id": key, "job_id": job_id, "history": []}
+            previous = {"id": key, "job_id": job_id, "history": [], "created_at": now()}
         value = {
             **previous,
-            "cv_id": cv_id,
+            "cv_id": cv_id or previous.get("cv_id"),
             "stage": stage,
+            "updated_at": now(),
             "history": previous["history"] + [{"stage": stage, "note": note, "at": now()}],
         }
         return self.store.put("application", key, value)

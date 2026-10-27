@@ -1,17 +1,21 @@
 """Private local application. The public replica server remains separate."""
 
 import asyncio
+import base64
+import binascii
 import contextlib
 import json
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+from mcp.server.fastmcp.exceptions import ToolError
 from starlette.applications import Starlette
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.responses import FileResponse, JSONResponse
 from starlette.routing import Route
 
+from .resume_io import MAX_FILE_BYTES, extract_resume
 from .server import create_server
 
 
@@ -68,11 +72,21 @@ def snapshot(server):
         "platforms": "platform",
         "accounts": "account",
         "employer_blocks": "employer_block",
+        "interviews": "interview",
+        "offers": "offer",
     }
     result = {name: w.store.list(bucket) for name, bucket in buckets.items()}
     tool_calls = sorted(w.store.list("tool_call"), key=lambda call: call["started_at"], reverse=True)
     return {
         **result,
+        "market": {
+            "snapshots": server.worklife_market.snapshots(),
+            "report": server.worklife_market.report(),
+        },
+        "advisor": server.worklife_advisor.report(),
+        "messages": server.worklife_agency.conversation_list(),
+        "offer_comparison": server.worklife_agency.offer_compare(),
+        "search_review": server.worklife_agency.search_review(),
         "tool_calls": tool_calls,
         "mcp": {
             "last_activity": max(
@@ -153,6 +167,43 @@ def create_app(config, scheduler=True):
     async def state(request):
         return JSONResponse(await asyncio.to_thread(snapshot, server), headers={"Cache-Control": "no-store"})
 
+    async def resume_upload(request):
+        try:
+            body = await request.body()
+            if len(body) > MAX_FILE_BYTES * 4 // 3 + 8192:
+                raise ValueError("Размер резюме превышает 10 МБ")
+            payload = json.loads(body)
+            if not isinstance(payload, dict) or not isinstance(payload.get("file_base64"), str):
+                raise ValueError("Передайте файл резюме")
+            data = base64.b64decode(payload["file_base64"], validate=True)
+            filename = payload.get("filename") or payload.get("name") or "resume.txt"
+            if not isinstance(filename, str):
+                raise ValueError("Имя файла должно быть текстом")
+            filename = Path(filename.replace("\\", "/")).name
+            text = await asyncio.to_thread(extract_resume, filename, data)
+            result = await invoke(
+                server,
+                "resume_import",
+                {
+                    "name": payload.get("name") or filename,
+                    "text": text,
+                    "language": payload.get("language") or "ru",
+                    "source": f"Загруженное резюме: {filename}",
+                },
+            )
+            cv = result["cv"]
+            directory = server.worklife_workspace.home / "resumes"
+            directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+            original = directory / f"{cv['id']}{Path(filename).suffix.lower()}"
+            original.write_bytes(data)
+            original.chmod(0o600)
+            cv = {**cv, "original_path": str(original), "original_filename": filename}
+            server.worklife_workspace.store.put("cv", cv["id"], cv)
+            result["cv"] = cv
+            return JSONResponse({"ok": True, "result": result})
+        except (ValueError, TypeError, binascii.Error, UnicodeError, ToolError) as exc:
+            return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+
     async def tool(request):
         try:
             args = await request.json()
@@ -207,7 +258,9 @@ def create_app(config, scheduler=True):
                 {"cv_id": request.path_params["cv_id"], "format": request.query_params.get("format", "pdf")},
             )
             return FileResponse(
-                result["path"], filename=Path(result["path"]).name, headers={"Cache-Control": "no-store"}
+                result["path"],
+                filename=result.get("filename") or Path(result["path"]).name,
+                headers={"Cache-Control": "no-store"},
             )
         except Exception as exc:
             return JSONResponse({"error": str(exc)}, status_code=400)
@@ -226,6 +279,7 @@ def create_app(config, scheduler=True):
     app = Starlette(
         routes=[
             Route("/api/state", state),
+            Route("/api/resume", resume_upload, methods=["POST"]),
             Route("/api/model", model, methods=["GET", "POST"]),
             Route("/api/model/models", models, methods=["POST"]),
             Route("/api/tools/{name}", tool, methods=["POST"]),

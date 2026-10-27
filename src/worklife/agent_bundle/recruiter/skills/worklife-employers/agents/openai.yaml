@@ -1,0 +1,11 @@
+interface:
+  display_name: "Работодатели"
+  short_description: "Сведения о компаниях и локальные исключения"
+  default_prompt: "Используй $worklife-employers. Проверь сведения о выбранном работодателе и их происхождение."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "worklife_recruiter"
+      description: "Карьерный профиль MCP Worklife"
+policy:
+  allow_implicit_invocation: true

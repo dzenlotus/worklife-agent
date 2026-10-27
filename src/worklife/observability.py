@@ -22,6 +22,10 @@ QUIET_TOOLS = {
     "activity_record",
     "browser_inspect",
     "experiment_report",
+    "agency_brief",
+    "conversation_list",
+    "recruiter_start",
+    "recruiter_skill",
 }
 
 SUMMARIES = {
@@ -64,6 +68,22 @@ SUMMARIES = {
     "platform_save": "Площадка поиска сохранена",
     "account_save": "Состояние аккаунта сохранено",
     "agent_cancel": "Запрошена остановка автономного цикла",
+    "market_snapshot": "Сохранена рыночная выборка",
+    "market_collect": "Сбор рыночной выборки завершён",
+    "market_report": "Подготовлен отчёт по рыночной выборке",
+    "recommendations_report": "Подготовлена персональная подборка",
+    "recommendation_save": "Сохранён анализ вакансии и резюме",
+    "cv_match": "Сопоставлены варианты резюме",
+    "resume_import": "Резюме импортировано",
+    "pipeline_update": "Обновлён этап поиска и следующий шаг",
+    "conversation_record": "Сообщение сохранено в истории",
+    "conversation_update": "Связь и отметка сообщения обновлены",
+    "inbox_sync": "Входящие сообщения синхронизированы",
+    "interview_brief": "Подготовлены материалы к интервью",
+    "interview_save": "Интервью сохранено",
+    "offer_save": "Условия оффера сохранены",
+    "offer_compare": "Условия офферов сопоставлены",
+    "search_review": "Подготовлен обзор результатов поиска",
 }
 
 ACTION_STATES = {
@@ -90,6 +110,24 @@ RESULT_TOOLS = {
 
 
 def outcome_summary(tool, result):
+    if tool == "market_collect" and isinstance(result, dict):
+        return (
+            "Выборка собрана с ограничениями источников"
+            if result.get("errors")
+            else "Рыночная выборка собрана"
+        )
+    if tool == "market_report" and isinstance(result, dict) and result.get("status") == "empty":
+        return "Рыночной выборки пока нет"
+    if (
+        tool == "recommendations_report"
+        and isinstance(result, dict)
+        and result.get("status") == "needs_profile"
+    ):
+        return "Для персонального подбора нужно уточнить профиль"
+    if tool == "inbox_sync" and isinstance(result, dict):
+        return f"Получено новых сообщений: {result.get('imported', 0)}" + (
+            "; есть ошибки обработки" if result.get("errors") else ""
+        )
     if tool == "jobs_search" and isinstance(result, list):
         return f"Поиск завершён: вакансий — {len(result)}"
     if tool == "connector_read":
@@ -112,15 +150,18 @@ def outcome_summary(tool, result):
 
 
 class ObservedMCP(FastMCP):
-    def __init__(self, workspace, *args, **kwargs):
+    def __init__(self, workspace, *args, allowed_tools=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._observation_store = workspace.store
+        self._allowed_tools = frozenset(allowed_tools) if allowed_tools is not None else None
 
     def tool(self, name=None, **kwargs):
         register = super().tool(name=name, **kwargs)
 
         def decorate(function):
             tool_name = name or function.__name__
+            if self._allowed_tools is not None and tool_name not in self._allowed_tools:
+                return function
             if tool_name in QUIET_TOOLS:
                 return register(function)
 
@@ -151,6 +192,17 @@ class ObservedMCP(FastMCP):
                     raise
                 else:
                     record.update(status="completed", summary=outcome_summary(tool_name, result))
+                    if tool_name == "resume_import" and isinstance(result, dict):
+                        record["related_id"] = result.get("cv", {}).get("id")
+                    if tool_name in {
+                        "pipeline_update",
+                        "conversation_record",
+                        "conversation_update",
+                        "interview_save",
+                        "offer_save",
+                        "recommendation_save",
+                    } and isinstance(result, dict):
+                        record["related_id"] = result.get("job_id")
                     if tool_name in RESULT_TOOLS and isinstance(result, dict):
                         if isinstance(result.get("id"), str):
                             record["related_id"] = result["id"]

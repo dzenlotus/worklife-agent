@@ -1,0 +1,38 @@
+{
+  "family": "Golos Text",
+  "weights": [
+    400,
+    500,
+    600
+  ],
+  "upstream": "https://github.com/googlefonts/golos-text",
+  "license": "SIL Open Font License 1.1",
+  "css_source": "https://fonts.googleapis.com/css2?family=Golos+Text:wght@400..600&display=swap",
+  "retrieved": "2026-10-27",
+  "files": [
+    {
+      "path": "golos-text-cyrillic-ext.woff2",
+      "source": "https://fonts.gstatic.com/s/golostext/v7/q5uCsoe9Lv5t7Meb31EcEx58hK5SAMqbpw.woff2",
+      "bytes": 17532,
+      "sha256": "10aa879203c4b62f61841bdeee64a2ca5d97f1cf21e717f45c96914ce7629710"
+    },
+    {
+      "path": "golos-text-cyrillic.woff2",
+      "source": "https://fonts.gstatic.com/s/golostext/v7/q5uCsoe9Lv5t7Meb31EcExd8hK5SAMqbpw.woff2",
+      "bytes": 22028,
+      "sha256": "2f175b8fc40ed4e826742879f92ec903256fc2612d8d95c7c287232fd7138e4b"
+    },
+    {
+      "path": "golos-text-latin-ext.woff2",
+      "source": "https://fonts.gstatic.com/s/golostext/v7/q5uCsoe9Lv5t7Meb31EcEx18hK5SAMqbpw.woff2",
+      "bytes": 19204,
+      "sha256": "90256a7b8eb3b6b7b1c8f8aeb0e80eed7980a411d8c49faf7958fef6951ba863"
+    },
+    {
+      "path": "golos-text-latin.woff2",
+      "source": "https://fonts.gstatic.com/s/golostext/v7/q5uCsoe9Lv5t7Meb31EcExN8hK5SAMo.woff2",
+      "bytes": 38084,
+      "sha256": "f8d71091110f0113ba8bd16bee2ac68b51dd6491c5b9404e9fbb82b20ae632f1"
+    }
+  ]
+}

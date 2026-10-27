@@ -1,0 +1,11 @@
+interface:
+  display_name: "Рынок вакансий"
+  short_description: "Выборка рынка и сопоставимые зарплаты"
+  default_prompt: "Используй $worklife-market. Проанализируй сохранённую выборку вакансий и её ограничения."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "worklife_recruiter"
+      description: "Карьерный профиль MCP Worklife"
+policy:
+  allow_implicit_invocation: true

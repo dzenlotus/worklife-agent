@@ -1,0 +1,11 @@
+interface:
+  display_name: "Пересмотр поиска"
+  short_description: "Результаты, честные эксперименты и расписания"
+  default_prompt: "Используй $worklife-review. Оцени результаты поиска и предложи одно обоснованное изменение."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "worklife_recruiter"
+      description: "Карьерный профиль MCP Worklife"
+policy:
+  allow_implicit_invocation: true

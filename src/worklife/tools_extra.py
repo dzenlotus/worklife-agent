@@ -5,6 +5,18 @@ from .credentials import Credentials
 from .federation import sync_peer
 from .operations import Operations
 
+RECRUITER_SCHEDULE_TOOLS = {
+    "jobs_search",
+    "connector_read",
+    "repository_analyze",
+    "reminder",
+    "market_collect",
+    "market_report",
+    "recommendations_report",
+    "inbox_sync",
+    "search_review",
+}
+
 
 def register_tools(mcp, workspace, connectors, peers):
     from .agent_runtime import AgentRuntime
@@ -14,7 +26,12 @@ def register_tools(mcp, workspace, connectors, peers):
     credentials = Credentials(w)
     runtime = AgentRuntime(w, mcp)
 
+    def check_schedule_tool(tool):
+        if mcp.worklife_profile == "recruiter" and tool not in RECRUITER_SCHEDULE_TOOLS:
+            raise ValueError(f"Operation is not available in the recruiter profile: {tool}")
+
     def scheduled(tool, arguments):
+        check_schedule_tool(tool)
         args = dict(arguments)
         if tool == "jobs_search":
             return connectors.search(
@@ -33,6 +50,16 @@ def register_tools(mcp, workspace, connectors, peers):
             return w.add_task(**args)
         if tool == "agent_cycle":
             return runtime.start(**args)
+        if tool == "market_collect":
+            return mcp.worklife_market_collect(**args)
+        if tool == "market_report":
+            return mcp.worklife_market.report(**args)
+        if tool == "recommendations_report":
+            return mcp.worklife_advisor.report(**args)
+        if tool == "inbox_sync":
+            return mcp.worklife_inbox.sync(**args)
+        if tool == "search_review":
+            return mcp.worklife_agency.search_review(**args)
         raise ValueError("Unsupported scheduled job-search operation")
 
     operations = Operations(w, scheduled)
@@ -83,17 +110,22 @@ def register_tools(mcp, workspace, connectors, peers):
         schedule_id: str | None = None,
     ) -> dict:
         """Persistent job-search schedule. tools: agent_cycle,jobs_search,connector_read,peer_sync,
-        repository_analyze,reminder. The app or worker executes due jobs while running."""
+        repository_analyze,reminder,market_collect,market_report,recommendations_report,inbox_sync,search_review.
+        The app or worker executes due jobs while running. Inbox cursors are persisted after complete reads."""
+        check_schedule_tool(tool)
         return operations.schedule_save(name, tool, arguments, interval_minutes, enabled, schedule_id)
 
     @mcp.tool()
     def schedule_toggle(schedule_id: str, enabled: bool) -> dict:
         """Pause or resume a persistent schedule."""
+        if enabled:
+            check_schedule_tool(w.store.get("schedule", schedule_id)["tool"])
         return operations.schedule_toggle(schedule_id, enabled)
 
     @mcp.tool()
     def schedule_run(schedule_id: str) -> dict:
         """Run a configured scheduled operation now and retain its actual result/error."""
+        check_schedule_tool(w.store.get("schedule", schedule_id)["tool"])
         return operations.schedule_run(schedule_id)
 
     @mcp.tool()

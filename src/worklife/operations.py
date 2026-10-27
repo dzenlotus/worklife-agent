@@ -19,6 +19,11 @@ SCHEDULE_TOOLS = {
     "repository_analyze",
     "reminder",
     "agent_cycle",
+    "market_collect",
+    "market_report",
+    "recommendations_report",
+    "inbox_sync",
+    "search_review",
 }
 MAX_OUTPUT_BYTES = 32_768
 
@@ -170,29 +175,64 @@ class Operations:
             schedule = self.store.get("schedule", schedule_id)
             started_at = _timestamp(at or now())
             started = time.monotonic()
-            result, error = None, None
+            result, error, next_parameters, inbox_imported = None, None, None, None
             try:
                 if schedule["tool"] not in SCHEDULE_TOOLS:
                     raise ValueError("Unsupported scheduled tool")
                 if self.runner is None:
                     raise RuntimeError("Scheduler runner is not configured")
                 result = self.runner(schedule["tool"], json.loads(canonical(schedule["arguments"])))
+                status = "success"
+                if isinstance(result, dict) and result.get("status") in {"partial", "unsupported_data"}:
+                    status, error = "partial", "Часть источников или сообщений требует проверки"
+                if schedule["tool"] == "inbox_sync" and isinstance(result, dict):
+                    inbox_imported = result.get("imported", 0)
+                    if result.get("status") in {"ready", "empty"} and not result.get("errors"):
+                        candidate = result.get("next_parameters")
+                        if isinstance(candidate, dict):
+                            next_parameters = candidate
                 encoded = canonical(result)
                 meaningful = result
                 if schedule["tool"] == "peer_sync" and isinstance(result, dict):
                     meaningful = {
                         key: item for key, item in result.items() if key not in {"pulled", "pushed"}
                     }
-                digest = hashlib.sha256(canonical({"status": "success", "result": _meaningful(meaningful)}))
+                if schedule["tool"] in {"market_collect", "market_report"} and isinstance(result, dict):
+                    report = result.get("report", result)
+                    meaningful = {
+                        key: report.get(key)
+                        for key in (
+                            "counts",
+                            "salary_groups",
+                            "distributions",
+                            "limitations",
+                            "job_ids",
+                            "filters",
+                        )
+                    }
+                    meaningful["scope"] = (
+                        report.get("snapshot", {}).get("scope") if report.get("snapshot") else None
+                    )
+                    meaningful["errors"] = result.get("errors", [])
+                if schedule["tool"] == "search_review" and isinstance(result, dict):
+                    meaningful = {
+                        key: result.get(key) for key in ("counts", "stages", "reply_delays", "due_actions")
+                    }
+                    meaningful["pending"] = [
+                        {key: row.get(key) for key in ("job_id", "stage", "next_action", "due_at")}
+                        for row in result.get("pending", [])
+                    ]
+                digest = hashlib.sha256(canonical({"status": status, "result": _meaningful(meaningful)}))
                 if len(encoded) > MAX_OUTPUT_BYTES:
                     result = {"truncated": True, "bytes": len(encoded), "preview": encoded.decode()[:4096]}
-                status = "success"
             except Exception as exc:
                 result, status = None, "failed"
                 error = f"{type(exc).__name__}: {exc}"[:2000]
                 digest = hashlib.sha256(canonical({"status": status, "error": error}))
             duration = time.monotonic() - started
             changed = digest.hexdigest() != schedule.get("last_result_digest")
+            if schedule["tool"] == "inbox_sync" and status == "success" and inbox_imported is not None:
+                changed = bool(inbox_imported) or schedule.get("last_status") in {"failed", "partial"}
             run = {
                 "id": uuid4().hex,
                 "schedule_id": schedule_id,
@@ -206,6 +246,8 @@ class Operations:
                 "duration_seconds": duration,
             }
             self.store.put("schedule_run", run["id"], run)
+            if next_parameters is not None:
+                schedule["arguments"]["parameters"] = next_parameters
             schedule.update(
                 last_run_at=_iso(started_at),
                 next_run_at=_iso(started_at + timedelta(minutes=schedule["interval_minutes"])),
@@ -216,8 +258,12 @@ class Operations:
             self.store.put("schedule", schedule_id, schedule)
             if changed:
                 self.activity_record(
-                    "schedule_failed" if error else "schedule_changed",
-                    f"{schedule['name']}: {error or 'result changed'}",
+                    "schedule_failed"
+                    if status == "failed"
+                    else "schedule_partial"
+                    if status == "partial"
+                    else "schedule_changed",
+                    f"{schedule['name']}: {error or 'обнаружены изменения'}",
                     schedule_id,
                 )
             return run

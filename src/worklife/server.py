@@ -6,6 +6,7 @@ from pathlib import Path
 
 from mcp.types import ToolAnnotations
 
+from .agent_profile import load_agent_profile, read_agent_skill
 from .browser import Browser
 from .chain_network import BlockchainNetwork
 from .chain_tools import register_chain_tools
@@ -27,6 +28,20 @@ The shared database contains EMPLOYERS ONLY: company conditions, vacancies and e
 Publish only reviewed nonpersonal employer evidence under its company domain.
 Worker/candidate profiles, scores, CV strategies and personal experiment results remain private and local.
 Choose relevant sources yourself: job aggregators, employer sites and professional services; use API or browser.
+Use agency_brief for the current hiring board and next decisions. Ask for target_roles and sourced experience
+when missing; resume_import imports user-provided text and the UI accepts text/PDF/DOCX originals.
+Collect a stated market scope before selecting favourites. Use market_collect for configured APIs or
+job_save plus market_snapshot for browser discoveries; market_report keeps currency/period/gross groups separate.
+Preserve source URLs, publication times, requirements/key_skills, role/level/location/work format and unknowns.
+Use recommendations_report and cv_match as transparent constraint/evidence checks, not hiring probabilities.
+Interpret semantic requirements yourself and cite actual facts; no literal match proves mastery.
+After inspecting the actual job and CV, persist your semantic judgement with recommendation_save and real
+fact_id/job_field evidence. Keep hard constraints and unknown conditions; refresh stale assessments after changes.
+Use pipeline_update for observed stages and next_action/due_at. inbox_sync records messages and exact reply links;
+ambiguous messages stay unassigned. Schedule source/inbox updates with the running app/worker.
+Use interview_brief to prepare and interview_save for an actual scheduled meeting. offer_save records received
+terms and offer_compare checks constraints. Only the person decides to accept an offer or relax hard conditions.
+Use search_review to assess outcomes and pending windows before changing one tactic; no response is not rejection.
 If needed and authorized, register job-search accounts, use the user's configured mailbox for verification,
 and track actual registration status with account_save. Discover and save platforms; there is no fixed source list.
 Use resources, statistics, schedules, tactics, evidence-backed strengths, own Git analyses and multilingual CVs.
@@ -47,7 +62,8 @@ Qualification and PoW do not prove autonomous identity or factual employer truth
 """
 
 
-def create_server(config):
+def create_server(config, profile=None):
+    agent_profile = load_agent_profile(profile) if profile is not None else None
     w = Workspace(config.home)
     connectors = Connectors(config.connectors, w)
     browser = Browser(w.home / "browser-profile", headed=os.getenv("WORKLIFE_HEADED") == "1")
@@ -76,7 +92,15 @@ def create_server(config):
             mcp.worklife_runtime.close()
             browser.close()
 
-    mcp = ObservedMCP(w, "Worklife", instructions=INSTRUCTIONS, lifespan=lifespan, log_level="WARNING")
+    mcp = ObservedMCP(
+        w,
+        agent_profile["name"] if agent_profile else "Worklife",
+        instructions=agent_profile["instructions"] if agent_profile else INSTRUCTIONS,
+        allowed_tools=agent_profile["allowed_tools"] if agent_profile else None,
+        lifespan=lifespan,
+        log_level="WARNING",
+    )
+    mcp.worklife_profile = profile
     read = ToolAnnotations(readOnlyHint=True, destructiveHint=False)
     write = ToolAnnotations(readOnlyHint=False, destructiveHint=False)
     external = ToolAnnotations(readOnlyHint=False, destructiveHint=False, openWorldHint=True)
@@ -130,6 +154,12 @@ def create_server(config):
             "employer_block",
             "agent_run",
             "credential",
+            "job_observation",
+            "market_snapshot",
+            "message",
+            "interview",
+            "offer",
+            "recommendation",
         }:
             raise ValueError("Unsupported private record bucket")
         return w.store.list(bucket)
@@ -154,10 +184,21 @@ def create_server(config):
 
     @mcp.tool(annotations=write)
     def cv_export(cv_id: str, format: str = "pdf", destination: str = "") -> dict:
-        """Export real PDF (browser extra), Markdown, or HTML for upload. Returns an absolute local file path."""
+        """Export PDF (browser extra), Markdown, HTML, or an imported original file. Returns a local path."""
         cv = w.store.get("cv", cv_id)
+        if format == "original":
+            if not cv.get("original_path"):
+                raise ValueError("Для этого варианта нет исходного файла")
+            original = Path(cv["original_path"]).resolve()
+            if not original.is_relative_to((w.home / "resumes").resolve()) or not original.is_file():
+                raise ValueError("Исходный файл резюме недоступен")
+            return {
+                "path": str(original),
+                "format": "original",
+                "filename": cv.get("original_filename") or original.name,
+            }
         if format not in {"pdf", "md", "html"}:
-            raise ValueError("Supported formats: pdf, md, html")
+            raise ValueError("Supported formats: pdf, md, html, original")
         path = (
             Path(destination).expanduser().resolve()
             if destination
@@ -391,4 +432,40 @@ def create_server(config):
 
     register_tools(mcp, w, connectors, peers)
     register_chain_tools(mcp, w, network)
+    from .agency_tools import register_agency_tools
+
+    register_agency_tools(mcp, w, connectors)
+
+    @mcp.tool(annotations=read)
+    def recruiter_start() -> dict:
+        """Start/resume the career agent: instructions, skills, profile, drafts, board, market and sources."""
+        try:
+            current_profile = w.get_profile()
+        except ValueError:
+            current_profile = None
+        return {
+            "agent": load_agent_profile(),
+            "profile": current_profile,
+            "actions": w.actions(),
+            "agency": mcp.worklife_agency.brief(),
+            "market": mcp.worklife_market.report(),
+            "advisor": mcp.worklife_advisor.report(),
+            "connectors": connectors.capabilities(),
+        }
+
+    @mcp.tool(annotations=read)
+    def recruiter_skill(name: str) -> str:
+        """Read one career skill by the exact name returned in recruiter_start. No local path required."""
+        return read_agent_skill(name)
+
+    @mcp.resource("worklife://recruiter/instructions", mime_type="text/markdown")
+    def recruiter_instructions() -> str:
+        """Instructions for the user's career agent."""
+        return load_agent_profile()["instructions"]
+
+    @mcp.resource("worklife://recruiter/skills/{name}", mime_type="text/markdown")
+    def recruiter_skill_resource(name: str) -> str:
+        """A career skill from the bundled, versioned manifest."""
+        return read_agent_skill(name)
+
     return mcp

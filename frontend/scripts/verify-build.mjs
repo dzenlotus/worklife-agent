@@ -9,7 +9,7 @@ export async function verifyBuild(mode) {
   const base = mode === "site" ? "/worklife-agent/" : "/";
   const directory = `${frontend}dist/${mode}`;
   const html = await readFile(`${directory}/index.html`, "utf8");
-  const assets = [...html.matchAll(/(?:src|href)="([^"]+\.(?:js|css))"/g)].map(
+  const assets = [...html.matchAll(/(?:src|href)="([^"]+\.(?:js|css|woff2))"/g)].map(
     (match) => match[1],
   );
 
@@ -34,6 +34,8 @@ export async function verifyBuild(mode) {
     );
   }
   assert.ok((await readdir(`${directory}/assets`)).length >= 2);
+  assert.equal(assets.filter((asset) => asset.endsWith(".woff2")).length, 2, `${mode}: missing local font preloads`);
+  assert.match(await readFile(`${directory}/assets/OFL-Golos-Text.txt`, "utf8"), /SIL OPEN FONT LICENSE/);
   assert.doesNotMatch(html, /\/src\/|site\.js|app\.js|site\.css|app\.css/);
   console.log(`Verified ${mode}: compiled JavaScript and CSS use ${base}`);
 }

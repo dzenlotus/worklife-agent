@@ -1,0 +1,11 @@
+interface:
+  display_name: "Интервью и офферы"
+  short_description: "Подготовка интервью и сравнение условий офферов"
+  default_prompt: "Используй $worklife-interviews-offers. Помоги подготовиться к ближайшему интервью и проверить условия."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "worklife_recruiter"
+      description: "Карьерный профиль MCP Worklife"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,11 @@
+interface:
+  display_name: "Цели поиска"
+  short_description: "Цели, ограничения и доступы к поиску"
+  default_prompt: "Используй $worklife-intake. Помоги уточнить мои цели поиска и обновить профиль."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "worklife_recruiter"
+      description: "Карьерный профиль MCP Worklife"
+policy:
+  allow_implicit_invocation: true
