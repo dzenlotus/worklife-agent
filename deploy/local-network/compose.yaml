@@ -1,0 +1,80 @@
+x-node: &node
+  image: ${WORKLIFE_IMAGE:-worklife-public-testnet:695b13c-local}
+  environment: &environment
+    WORKLIFE_HOME: /data
+    WORKLIFE_CONFIG: /etc/worklife/config.toml
+    WORKLIFE_CHAIN_PROFILE: public-testnet-v1
+    PYTHONUNBUFFERED: "1"
+  command: [serve, --host, 0.0.0.0, --port, "8765"]
+  healthcheck:
+    test:
+      - CMD
+      - python
+      - -c
+      - "import json, urllib.request; s = json.load(urllib.request.urlopen('http://127.0.0.1:8765/v2/state', timeout=5)); assert s['transport_protocol'] == 2 and s['profile'] == 'public-testnet-v1' and s['rules']['block_bits'] == 25 and s['rules']['qualification_bits'] == 18 and s['rules']['confirmations'] == 6"
+    interval: 5s
+    timeout: 10s
+    start_period: 5s
+    retries: 12
+  restart: unless-stopped
+  logging: &logging
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+x-worker: &worker
+  image: ${WORKLIFE_IMAGE:-worklife-public-testnet:695b13c-local}
+  environment: *environment
+  command: [chain, worker, --cpu-fraction, "${WORKER_CPU_FRACTION:-0.25}", --batch-attempts, "250000", --sync-seconds, "2"]
+  restart: unless-stopped
+  logging: *logging
+
+services:
+  node-a:
+    <<: *node
+    ports: ["127.0.0.1:18761:8765"]
+    volumes:
+      - data-a:/data
+      - ./node-a.toml:/etc/worklife/config.toml:ro
+  node-b:
+    <<: *node
+    ports: ["127.0.0.1:18762:8765"]
+    volumes:
+      - data-b:/data
+      - ./node-b.toml:/etc/worklife/config.toml:ro
+  node-c:
+    <<: *node
+    ports: ["127.0.0.1:18763:8765"]
+    volumes:
+      - data-c:/data
+      - ./node-c.toml:/etc/worklife/config.toml:ro
+  worker-a:
+    <<: *worker
+    volumes:
+      - data-a:/data
+      - ./node-a.toml:/etc/worklife/config.toml:ro
+    depends_on:
+      node-a:
+        condition: service_healthy
+  worker-b:
+    <<: *worker
+    volumes:
+      - data-b:/data
+      - ./node-b.toml:/etc/worklife/config.toml:ro
+    depends_on:
+      node-b:
+        condition: service_healthy
+  worker-c:
+    <<: *worker
+    volumes:
+      - data-c:/data
+      - ./node-c.toml:/etc/worklife/config.toml:ro
+    depends_on:
+      node-c:
+        condition: service_healthy
+
+volumes:
+  data-a:
+  data-b:
+  data-c:

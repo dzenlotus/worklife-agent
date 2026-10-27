@@ -1,0 +1,17 @@
+[worklife]
+home = "/data"
+
+[network]
+auto = false
+relay_url = ""
+relay_repo = ""
+
+[[peers]]
+name = "node-a"
+url = "http://node-a:8765"
+protocol = 2
+
+[[peers]]
+name = "node-b"
+url = "http://node-b:8765"
+protocol = 2
