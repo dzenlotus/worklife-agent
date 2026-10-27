@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Alert, Button, Card, TextArea, Tabs, Link, Label, Typography, Select, ListBox, Separator } from "@heroui/react";
+import { typographyVariants } from "@heroui/styles";
 import {
   Panel,
   PageHeading,
@@ -9,6 +10,8 @@ import {
   AgentButton,
   Timestamp,
   DetailAccordion,
+  Icon,
+  IconCircle,
 } from "./ui.jsx";
 import { list, statistics, filterJobs, safeURL, currentConditions, goalExcerpt, employerGroups } from "./model.js";
 import { monitorActivity } from "./activity.js";
@@ -53,7 +56,7 @@ function JobTable({ state, filter, limit, onInspect }) {
             <span className="block">
               {href ? (
                 <Link href={href} target="_blank" rel="noreferrer">
-                  {job.title} ↗
+                  {job.title}<Icon name="external" className="size-4 shrink-0" />
                 </Link>
               ) : (
                 job.title
@@ -87,7 +90,7 @@ export function Pipeline({ state, onInspect, limit }) {
     ["reply", "Ответ получен"],
   ];
   return (
-    <section className="flex flex-col gap-4" aria-label="Вакансии"><div className="flex flex-wrap items-center justify-between gap-3"><Typography.Heading level={3}>Вакансии</Typography.Heading><Typography.Paragraph size="sm" color="muted">{list(state.jobs).length} в вашей истории</Typography.Paragraph></div>
+    <section className="flex flex-col gap-4" aria-label="Вакансии"><div className="flex flex-wrap items-center justify-between gap-3"><Typography.Paragraph size="sm" color="muted">{list(state.jobs).length} в вашей истории</Typography.Paragraph></div>
       <div className="sm:hidden"><Select aria-label="Состояние вакансий" value={filter} onChange={(value) => { if (typeof value === "string") setFilter(value); }}>
         <Select.Trigger><Select.Value /><Select.Indicator /></Select.Trigger>
         <Select.Popover><ListBox>{filters.map(([key, title]) => <ListBox.Item id={key} key={key} textValue={title}>{title}<ListBox.ItemIndicator /></ListBox.Item>)}</ListBox></Select.Popover>
@@ -220,27 +223,44 @@ function resultName(target, state) {
 }
 
 function ActivityFeed({ entries, state, onInspect }) {
-  if (!entries.length) return <Empty title="Журнал пока пуст">Здесь появятся действия вашего агента.</Empty>;
+  if (!entries.length) return <Empty icon="activity" title="Журнал пока пуст">Здесь появятся действия вашего агента, сохранённые результаты и ход поручений.</Empty>;
   return <div className="flex flex-col" role="list" aria-label="Последние действия">
-    {entries.map((entry, index) => {
+    {entries.map((entry) => {
       const name = resultName(entry.target, state);
+      const icon = { job: "search", cv: "cv", resource: "resources", action: "activity", schedule_run: "schedules" }[entry.target?.kind] || (entry.tool?.includes("search") ? "discover" : entry.tool?.startsWith("resource_") ? "resources" : "activity");
       return <div key={entry.id} role="listitem">
-        {index ? <Separator /> : null}
-        <div className="flex flex-col gap-3 py-5 sm:flex-row sm:items-start sm:gap-5">
-          <div className="shrink-0 sm:w-28"><Typography.Paragraph size="xs" color="muted"><Timestamp value={entry.at} /></Typography.Paragraph></div>
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
-            {name && entry.target ? <Link onPress={() => onInspect(entry.target.kind, entry.target.id)}>{name}</Link> : <Typography.Paragraph weight="medium">{entry.summary || entry.tool}</Typography.Paragraph>}
-            {name ? <Typography.Paragraph size="sm" color="muted">{entry.summary}</Typography.Paragraph> : null}
-            {entry.error ? <Typography.Paragraph size="sm">{entry.error}</Typography.Paragraph> : null}
+        <div className="flex min-h-36 flex-col gap-4 py-6 xl:flex-row xl:items-start">
+          <div className="shrink-0 xl:w-28 xl:pt-3"><Typography.Paragraph size="sm" color="muted"><Timestamp value={entry.at} /></Typography.Paragraph></div>
+          <div className="flex min-w-0 flex-1 items-start gap-5">
+            <IconCircle name={icon} />
+            <div className="flex min-w-0 flex-1 flex-col gap-2 pt-1">
+              <h3 className={typographyVariants({ type: "h4", weight: "normal" }).base()}>{entry.summary || entry.tool || "Действие агента"}</h3>
+              {name && entry.target ? <Link onPress={() => onInspect(entry.target.kind, entry.target.id)}>{name}<Icon name="next" className="size-4 shrink-0" /></Link> : null}
+              {entry.error ? <Typography.Paragraph size="sm" color="muted">{entry.error}</Typography.Paragraph> : null}
+            </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center justify-between gap-3 xl:flex-col xl:items-end xl:pt-1">
             {entry.status ? <Status value={entry.status} /> : null}
-            {entry.source === "mcp" ? <Button variant="ghost" size="sm" onPress={() => onInspect("tool_call", entry.id)}>Детали</Button> : entry.target ? <Button variant="ghost" size="sm" onPress={() => onInspect(entry.target.kind, entry.target.id)}>Открыть</Button> : null}
+            {entry.source === "mcp" ? <Button variant="outline" size="md" onPress={() => onInspect("tool_call", entry.id)}>Подробнее<Icon name="next" /></Button> : entry.target ? <Button variant="outline" size="md" onPress={() => onInspect(entry.target.kind, entry.target.id)}>Подробнее<Icon name="next" /></Button> : null}
           </div>
         </div>
+        <Separator />
       </div>;
     })}
   </div>;
+}
+
+export function MarketPanel({ state }) {
+  const jobs = list(state.jobs), salaryCount = jobs.filter((job) => Number(job.salary_min) > 0 || Number(job.salary_max) > 0).length;
+  return <Panel title="Рынок" action={<Typography.Paragraph size="xs" color="muted">Локальные данные</Typography.Paragraph>}>
+    <Card variant="secondary" className="gap-4 p-5"><Card.Content className="flex flex-col gap-3">
+      <Typography.Paragraph color="muted">Медиана предложений</Typography.Paragraph>
+      <p className={typographyVariants({ type: "h4", weight: "normal" }).base()}>Нет сопоставимой выборки</p>
+      <Separator />
+      <div className="flex items-center justify-between gap-3"><Typography.Paragraph size="sm" color="muted">Вакансий с зарплатой</Typography.Paragraph><Typography.Paragraph weight="medium">{salaryCount}</Typography.Paragraph></div>
+    </Card.Content></Card>
+    <Link href="#market">Данные рынка<Icon name="next" className="size-4 shrink-0" /></Link>
+  </Panel>;
 }
 
 export default function Overview({ state, pending, onInspect, onCommand }) {
@@ -248,31 +268,31 @@ export default function Overview({ state, pending, onInspect, onCommand }) {
   const running = calls.filter((call) => call.status === "running");
   const schedules = list(state.schedules);
   const next = schedules.filter((schedule) => schedule.enabled).sort((a, b) => (a.next_run_at || "").localeCompare(b.next_run_at || ""))[0];
-  const saved = [["search", "Вакансии", stats.jobs], ["cv", "Резюме", list(state.cvs).length], ["employers", "Компании", employerGroups(state.employers).length], ["resources", "Источники", list(state.resources).length]].filter(([, , count]) => count);
+  const saved = [["search", "Сохранённые вакансии", stats.jobs], ["employers", "Компании", employerGroups(state.employers).length], ["resources", "Источники", list(state.resources).length], ...(list(state.cvs).length ? [["cv", "Резюме", list(state.cvs).length]] : [])];
   const activeRuntime = list(state.agent?.runs).find((run) => ["running", "queued", "cancelling"].includes(run.status));
   return <>
-    <PageHeading title="Обзор">{running.length ? <Status value="running">В работе: {running.length}</Status> : null}</PageHeading>
+    <PageHeading title="Обзор" description="Активность агента, результаты и контекст рынка">{running.length ? <Status value="running">В работе: {running.length}</Status> : null}</PageHeading>
     {activeRuntime ? <Alert><Alert.Content><Alert.Title>Встроенный исполнитель работает</Alert.Title><Alert.Description>{goalExcerpt(activeRuntime.goal)}</Alert.Description><div className="flex flex-wrap gap-2 py-2"><Button variant="secondary" size="sm" onPress={() => onInspect("run", activeRuntime.id)}>Журнал</Button><Button variant="danger-soft" size="sm" isPending={pending === "cancel:" + activeRuntime.id} onPress={() => onCommand("agent_cancel", { run_id: activeRuntime.id }, "cancel:" + activeRuntime.id)}>Остановить</Button></div></Alert.Content></Alert> : null}
-    <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+    <div className="flex flex-col gap-5 xl:flex-row xl:items-start">
       <section className="min-w-0 flex-1" aria-label="Активность агента">
-        <Card>
-          <Card.Header className="flex flex-row items-center justify-between gap-3">
-            <Card.Title>Активность</Card.Title>
-            {activity.length ? <Button variant="ghost" size="sm" onPress={() => onInspect("activity")}>Весь журнал</Button> : null}
-          </Card.Header>
-          <Card.Content><ActivityFeed entries={activity.slice(0, 6)} state={state} onInspect={onInspect} /></Card.Content>
-        </Card>
+        <Panel title="Последняя активность" className="xl:min-h-[calc(100dvh-12rem)]" action={activity.length ? <Button variant="outline" size="md" onPress={() => onInspect("activity")}><Icon name="list" />Весь журнал</Button> : null}>
+          <ActivityFeed entries={activity.slice(0, 6)} state={state} onInspect={onInspect} />
+        </Panel>
       </section>
-      {saved.length || schedules.length ? <aside className="flex w-full flex-col gap-5 xl:w-60 xl:shrink-0" aria-label="Сводка">
-        {saved.length ? <Card><Card.Header><Card.Title>Результаты</Card.Title></Card.Header><Card.Content>
-          <dl className="flex flex-col gap-4">{saved.map(([page, title, count]) => <div className="flex items-center justify-between gap-3" key={page}><dt><Link href={`#${page}`}>{title}</Link></dt><dd><Typography.Paragraph weight="medium">{count}</Typography.Paragraph></dd></div>)}</dl>
-        </Card.Content></Card> : null}
-        {schedules.length ? <Card><Card.Header className="flex flex-row flex-wrap items-center justify-between gap-2"><Card.Title>Расписание</Card.Title><Status value={next ? "planned" : "paused"} /></Card.Header><Card.Content className="flex flex-col gap-3">
-          {next ? <><Typography.Paragraph size="sm">{next.name}</Typography.Paragraph><Typography.Paragraph size="sm" color="muted"><Timestamp value={next.next_run_at} /></Typography.Paragraph><div><Button variant="outline" size="sm" isPending={pending === "pause:" + next.id} onPress={() => onCommand("schedule_toggle", { schedule_id: next.id, enabled: false }, "pause:" + next.id)}>Приостановить</Button></div></> : <Typography.Paragraph size="sm" color="muted">Заданий на паузе: {schedules.length}</Typography.Paragraph>}
-          <Link href="#schedules">Открыть</Link>
-        </Card.Content></Card> : null}
-      </aside> : null}
+      <aside className="flex w-full flex-col gap-5 xl:w-90 xl:shrink-0" aria-label="Сводка">
+        <MarketPanel state={state} />
+        <Panel title="Результаты"><div className="flex flex-col">
+          {saved.map(([page, title, count], index) => <div key={page}>{index ? <Separator /> : null}<Button className="min-h-14 justify-start px-1" fullWidth size="lg" variant="ghost" onPress={() => { location.hash = page; }}><Icon name={page} className="size-6 shrink-0" /><span className="flex min-w-0 flex-1 items-center justify-between gap-3"><Typography.Paragraph weight="normal">{title}</Typography.Paragraph><span>{count}</span></span><Icon name="next" className="size-4 shrink-0" /></Button></div>)}
+        </div></Panel>
+        <Panel title={<span className="flex items-center gap-3"><Icon name="schedules" className="size-6 shrink-0 text-accent" />Следующий запуск</span>} action={<Button isIconOnly variant="ghost" size="sm" aria-label="Открыть расписание" onPress={() => { location.hash = "schedules"; }}><Icon name="next" /></Button>}>
+          <div className="flex items-start gap-4"><IconCircle name="schedules" /><div className="flex min-w-0 flex-1 flex-col gap-2">
+            <Typography.Paragraph>{next ? next.name : schedules.length ? "Расписание на паузе" : "Запусков пока нет"}</Typography.Paragraph>
+            <Typography.Paragraph size="sm" color="muted">{next ? <Timestamp value={next.next_run_at} /> : schedules.length ? `Поручений на паузе: ${schedules.length}` : "Попросите агента настроить."}</Typography.Paragraph>
+          </div></div>
+          {next ? <div><Button variant="outline" size="sm" isPending={pending === "pause:" + next.id} onPress={() => onCommand("schedule_toggle", { schedule_id: next.id, enabled: false }, "pause:" + next.id)}>Приостановить</Button></div> : null}
+        </Panel>
+      </aside>
     </div>
-    {stats.jobs > 0 ? <><div className="flex flex-wrap items-center justify-between gap-3"><Typography.Paragraph size="sm" color="muted">Откликов: {stats.applied} · Ответов: {stats.replies}</Typography.Paragraph><Link href="#search">Все вакансии</Link></div><Pipeline state={state} onInspect={onInspect} limit={6} /></> : null}
+    {stats.jobs > 0 ? <Panel title="Сохранённые вакансии" action={<Link href="#search">Все вакансии<Icon name="next" className="size-4 shrink-0" /></Link>}><Typography.Paragraph size="sm" color="muted">Откликов: {stats.applied} · Ответов: {stats.replies}</Typography.Paragraph><Pipeline state={state} onInspect={onInspect} limit={6} /></Panel> : null}
   </>;
 }

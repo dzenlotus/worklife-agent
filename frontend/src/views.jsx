@@ -1,4 +1,5 @@
 import { Button, Link, Typography, Alert, Chip } from "@heroui/react";
+import { typographyVariants } from "@heroui/styles";
 import {
   Panel,
   PageHeading,
@@ -10,6 +11,7 @@ import {
   RecordList,
   DetailAccordion,
   Timestamp,
+  Icon,
 } from "./ui.jsx";
 import {
   list,
@@ -23,7 +25,7 @@ import {
   usageMetric,
   observationBasis,
 } from "./model.js";
-import { Pipeline } from "./Overview.jsx";
+import { Pipeline, MarketPanel } from "./Overview.jsx";
 
 const Source = ({ value, children }) =>
   safeURL(value) ? (
@@ -33,7 +35,7 @@ const Source = ({ value, children }) =>
       target="_blank"
       rel="noreferrer"
     >
-      {children || value} ↗
+      {children || value}<Icon name="external" className="size-4 shrink-0" />
     </Link>
   ) : value ? (
     <span >{value}</span>
@@ -47,15 +49,29 @@ function EmployerObservation({ entry }) {
   </div>;
 }
 const TopicHeading = ({ title, description }) => <PageHeading title={title} description={description} />;
+export function MarketView({ state }) {
+  const jobs = list(state.jobs), resources = list(state.resources), companies = employerGroups(state.employers);
+  return <>
+    <PageHeading title="Рынок" description="Источники и фактически собранные данные для сравнения предложений." />
+    <div className="flex flex-col gap-5 xl:flex-row xl:items-start">
+      <section className="flex min-w-0 flex-1 flex-col gap-5" aria-label="Собранные данные">
+        <Panel title="Покрытие данных"><Typography.Paragraph color="muted">Сохранённые предложения отражают вашу историю поиска. Сопоставимая рыночная выборка ещё не сформирована.</Typography.Paragraph><DataTable headers={["Собрано", "Количество", ""]} rows={[["Вакансии", jobs.length, <Link href="#search">Открыть<Icon name="next" className="size-4 shrink-0" /></Link>], ["Компании", companies.length, <Link href="#employers">Открыть<Icon name="next" className="size-4 shrink-0" /></Link>], ["Источники", resources.length, <Link href="#resources">Открыть<Icon name="next" className="size-4 shrink-0" /></Link>]]} /></Panel>
+        <Panel title="Сохранённые источники">{resources.length ? <RecordList items={resources} render={(resource) => <><Icon name="resources" className="size-6 shrink-0 text-muted" /><div className="flex min-w-0 flex-1 flex-col gap-2"><h3 className={typographyVariants({ type: "h5", weight: "medium" }).base()}>{resource.name}</h3><Typography.Paragraph size="sm" color="muted">{resource.notes}</Typography.Paragraph><Source value={resource.url}>Открыть источник</Source></div></>} /> : <Empty icon="market" title="Источников пока нет">Агент сохранит источники и предложения по мере поиска.</Empty>}</Panel>
+      </section>
+      <aside className="w-full xl:w-90 xl:shrink-0" aria-label="Сравнение предложений"><MarketPanel state={state} /></aside>
+    </div>
+  </>;
+}
 export function SearchView({ state, ask, onInspect }) {
   return (
     <>
       <TopicHeading
-        title="Поиск"
+        title="Вакансии"
+        description="Сохранённые предложения, отклики и история переписки."
         topic="search"
         ask={ask}
       />
-      <Pipeline state={state} onInspect={onInspect} />
+      <Panel title="Сохранённые предложения"><Pipeline state={state} onInspect={onInspect} /></Panel>
       <div className="flex flex-col gap-4">
         <Panel title="Переписка и действия">
           {list(state.actions).length ? (
@@ -350,7 +366,7 @@ export function EmployersView({ state, ask, onBlock, onCommand, pending }) {
           empty="Общая база пока пуста. Агент будет собирать наблюдения о работодателях и обновлять их автоматически."
           render={(company) => (
               <div className="flex w-full min-w-0 flex-col gap-3">
-                <div className="flex flex-wrap items-start justify-between gap-3"><div className="flex flex-col gap-2"><Typography.Heading level={4}>{company.name}</Typography.Heading><Typography.Paragraph size="sm" color="muted">{company.domain}</Typography.Paragraph></div><Button variant="ghost" size="sm" onPress={() => onBlock(company.domain)}>Блокировать</Button></div>
+                <div className="flex flex-wrap items-start justify-between gap-3"><div className="flex flex-col gap-2"><h2 className={typographyVariants({ type: "h4", weight: "medium" }).base()}>{company.name}</h2><Typography.Paragraph size="sm" color="muted">{company.domain}</Typography.Paragraph></div><Button variant="ghost" size="sm" onPress={() => onBlock(company.domain)}>Блокировать</Button></div>
                 {company.observations.slice(0, 2).map((entry, index) => (
                   <EmployerObservation key={entry.event_id || index} entry={entry} />
                 ))}
@@ -368,13 +384,13 @@ export function EmployersView({ state, ask, onBlock, onCommand, pending }) {
           )}
         />
       </Panel>
-      <DetailAccordion title="Обмен и защита данных" id="employer-protection">
+      <DetailAccordion title="Обмен и защита данных" id="employer-protection" level={2}>
         <p>{summary.auto ? "Обмен работает автоматически." : "Автоматический обмен отключён."}{summary.protected_copies !== undefined ? ` Последних подтверждённых копий: ${summary.protected_copies}.` : ""}</p>
         <p>Подпись защищает запись от подмены. Содержание независимо не проверено — оценивайте его по источнику.</p>
         <p>Обмен касается только компаний: вакансий, условий и процесса найма. CV, личные результаты откликов, имена и контакты людей не публикуются. Перед публикацией агент проверяет, что текст касается только работодателя.</p>
       </DetailAccordion>
       <div className="flex flex-col gap-4">
-        <DetailAccordion title={`Исключённые компании · ${blocks.filter((block) => block.blocked).length}`} id="employer-exclusions">
+        <DetailAccordion title={`Исключённые компании · ${blocks.filter((block) => block.blocked).length}`} id="employer-exclusions" level={2}>
           <RecordList
             items={blocks.filter((b) => b.blocked)}
             empty="Нет заблокированных компаний. Локальные исключения не публикуются в общей базе."
@@ -429,7 +445,7 @@ export function ResourcesView({ state, ask }) {
             <>
 
               <div className="flex min-w-0 flex-1 flex-col gap-3">
-                <Typography.Heading level={3}>{resource.name}</Typography.Heading>
+                <h2 className={typographyVariants({ type: "h3", weight: "medium" }).base()}>{resource.name}</h2>
                 <Typography.Paragraph size="sm" color="muted">{resource.notes}</Typography.Paragraph>
                 <Source value={resource.url}>{safeURL(resource.url) ? new URL(resource.url).hostname : resource.url}</Source>
                 <div className="flex flex-wrap gap-3">
@@ -545,7 +561,7 @@ export function RepositoriesView({ state, ask }) {
                   ))}
                   <span>{formatDate(repository.analyzed_at)}</span>
                 </div>
-                <DetailAccordion title="Что нашёл агент" id={repository.id}>
+                <DetailAccordion title="Что нашёл агент" id={repository.id} level={4}>
                   <p>{repository.readme_excerpt}</p>
                   {list(repository.strength_suggestions).map(
                     (strength, index) => (
@@ -617,7 +633,7 @@ export function TacticsView({ state, ask }) {
                     <p >
                       Следующий шаг: {research.next_step}
                     </p>
-                    <DetailAccordion title="Подтверждения" id={research.id}>
+                    <DetailAccordion title="Подтверждения" id={research.id} level={4}>
                       {list(research.evidence).map((evidence, index) => (
                         <div className="flex flex-col gap-2 py-2" key={index}>
                           <Source value={evidence.source || evidence.url} />
@@ -687,7 +703,7 @@ export function SettingsView({ state, onConditions, runtime }) {
           </Button>
         </div>
       </Panel>
-      <DetailAccordion title="Дополнительно: встроенный исполнитель" id="embedded-runtime">{runtime}</DetailAccordion>
+      <DetailAccordion title="Дополнительно: встроенный исполнитель" id="embedded-runtime" level={2}>{runtime}</DetailAccordion>
       <div className="flex flex-col gap-4">
         <Panel title="Данные и подключения">
           <div className="flex flex-col gap-4">

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, Input, TextArea, Spinner, Link, Label, Typography, Alert, CloseButton, Separator, Surface, Accordion } from "@heroui/react";
+import { typographyVariants } from "@heroui/styles";
 import Overview, { ActivityLog, GoalComposer, RunHistory } from "./Overview.jsx";
 import ModelConnection from "./ModelConnection.jsx";
 import { composeGoal, readDraft, saveDraft } from "./goals.js";
@@ -12,10 +13,12 @@ import {
   DetailAccordion,
   Timestamp,
   Dialog,
+  Icon,
 } from "./ui.jsx";
 import { list, label, formatDate, safeURL, scheduleResult } from "./model.js";
 import {
   SearchView,
+  MarketView,
   SchedulesView,
   ExperimentsView,
   StrengthsView,
@@ -30,6 +33,7 @@ import {
 
 const navigation = [
   ["overview", "Обзор"],
+  ["market", "Рынок"],
   ["search", "Вакансии"],
   ["schedules", "Расписание"],
   ["experiments", "Эксперименты"],
@@ -138,9 +142,9 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
     const resource = list(state.resources).find((entry) => entry.id === detail.id);
     if (!resource) return <p>Ресурс не найден.</p>;
     return <>
-      <Typography.Heading level={2}>{resource.name}</Typography.Heading>
+      <h3 className={typographyVariants({ type: "h2", weight: "medium" }).base()}>{resource.name}</h3>
       {resource.notes ? <p>{resource.notes}</p> : null}
-      {safeURL(resource.url) ? <Link href={resource.url} target="_blank" rel="noreferrer">Открыть источник ↗</Link> : null}
+      {safeURL(resource.url) ? <Link href={resource.url} target="_blank" rel="noreferrer">Открыть источник<Icon name="external" className="size-4 shrink-0" /></Link> : null}
     </>;
   }
   if (detail.kind === "tool_call") {
@@ -148,7 +152,7 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
     if (!call) return <p>Вызов не найден.</p>;
     const target = resultTarget(call.related_id, state);
     return <>
-      <Typography.Heading level={2}>{call.tool}</Typography.Heading>
+      <h3 className={typographyVariants({ type: "h2", weight: "medium" }).base()}>{call.tool}</h3>
       <div className="flex flex-wrap items-center gap-3"><Status value={call.status} /><Timestamp value={call.started_at} />{Number.isFinite(call.duration_seconds) ? <span>{call.duration_seconds.toLocaleString("ru-RU", { maximumFractionDigits: 2 })} с</span> : null}</div>
       {call.summary ? <p>{call.summary}</p> : null}
       {call.error ? <Alert status="danger"><Alert.Content><Alert.Description>{call.error}</Alert.Description></Alert.Content></Alert> : null}
@@ -239,7 +243,7 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
     };
     return (
       <>
-        <Typography.Heading level={2}>{job.title}</Typography.Heading>
+        <h3 className={typographyVariants({ type: "h2", weight: "medium" }).base()}>{job.title}</h3>
         <div className="flex flex-wrap items-center gap-3"><Status value={job.blocked ? "blocked" : application?.stage || "new"} /><Timestamp value={job.fetched_at} /></div>
         {job.description ? <p>{job.description}</p> : null}
         <dl className="grid gap-3">
@@ -272,7 +276,7 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
             target="_blank"
             rel="noreferrer"
           >
-            Открыть источник ↗
+            Открыть источник<Icon name="external" className="size-4 shrink-0" />
           </Link>
         ) : null}
       </>
@@ -313,21 +317,21 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
   );
 }
 function Navigation({ page, onNavigate }) {
-  const primary = ["overview", "search", "employers", "schedules"];
+  const primary = ["overview", "market", "search", "employers", "schedules"];
   const groups = [
     ["materials", "Материалы", ["cv", "strengths", "repositories"]],
     ["tools", "Инструменты", ["resources", "accounts", "experiments", "tactics"]],
   ];
   const activeGroup = groups.find(([, , keys]) => keys.includes(page))?.[0];
-  const item = (key) => <Button key={key} fullWidth size="md" variant={page === key ? "secondary" : "ghost"} aria-current={page === key ? "page" : undefined} onPress={() => onNavigate(key)}>
-    <span className="flex w-full items-center justify-between">{navigation.find(([id]) => id === key)[1]}</span>
+  const item = (key) => <Button key={key} className="min-h-12 justify-start gap-5" fullWidth size="lg" variant={page === key ? "secondary" : "ghost"} aria-current={page === key ? "page" : undefined} onPress={() => onNavigate(key)}>
+    <Icon name={key} className="size-6 shrink-0" /><span>{navigation.find(([id]) => id === key)[1]}</span>
   </Button>;
   return <nav className="flex flex-col gap-5" aria-label="Разделы Worklife">
-    <div className="flex flex-col gap-1">{primary.map(item)}</div>
+    <div className="flex flex-col gap-2">{primary.map(item)}</div>
     <Separator />
     <Accordion key={activeGroup || "main"} defaultExpandedKeys={activeGroup ? [activeGroup] : []} hideSeparator>
       {groups.map(([id, title, keys]) => <Accordion.Item id={id} key={id}>
-        <Accordion.Heading><Accordion.Trigger>{title}<Accordion.Indicator /></Accordion.Trigger></Accordion.Heading>
+        <div className="flex"><Accordion.Trigger className="min-h-14 px-4"><span className="flex items-center gap-5"><Icon name={id} className="size-6 shrink-0" /><Typography.Paragraph>{title}</Typography.Paragraph></span><Accordion.Indicator /></Accordion.Trigger></div>
         <Accordion.Panel><Accordion.Body><div className="flex flex-col gap-1">{keys.map(item)}</div></Accordion.Body></Accordion.Panel>
       </Accordion.Item>)}
     </Accordion>
@@ -540,6 +544,7 @@ export default function App() {
     </div>,
   };
   const views = {
+    market: MarketView,
     search: SearchView,
     schedules: SchedulesView,
     experiments: ExperimentsView,
@@ -574,28 +579,29 @@ export default function App() {
                 ? "Вызов MCP"
               : "Подробности действия";
   return (
+    <>
+    <Link className="sr-only focus:not-sr-only" onPress={() => document.getElementById("app-main")?.focus()}>К содержанию</Link>
     <div className="flex min-h-dvh flex-col md:flex-row">
       <aside className="hidden md:sticky md:top-0 md:flex md:h-dvh md:w-60 md:shrink-0">
-        <Surface className="flex min-h-0 w-full flex-col gap-6 p-5">
-          <div className="flex shrink-0 flex-col gap-1 px-3 py-3">
-            <Link href="#overview" aria-label="Worklife — обзор"><Typography.Heading level={3}>Worklife</Typography.Heading></Link>
-            <Typography.Paragraph size="xs" color="muted">MCP-инструменты</Typography.Paragraph>
+        <Surface className="flex min-h-0 w-full flex-col gap-8 p-4">
+          <div className="flex shrink-0 flex-col gap-1 px-3 py-2">
+            <Link href="#overview" aria-label="Worklife — обзор"><p className={typographyVariants({ type: "h3", weight: "medium" }).base()}>Worklife</p></Link>
+            <Typography.Paragraph size="sm" color="muted">MCP-инструменты</Typography.Paragraph>
           </div>
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto"><Navigation page={page} onNavigate={navigate} /></div>
           <div className="mt-auto flex shrink-0 flex-col gap-3 px-3 py-3">
             <Separator />
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <Button variant="ghost" size="sm" aria-label="Обновить данные" onPress={refresh}>Обновить</Button>
+              <Button variant="ghost" size="sm" aria-label="Обновить данные" onPress={refresh}><Icon name="refresh" />Обновить</Button>
               <Typography.Paragraph size="xs" color="muted" aria-label="Время обновления данных">{error ? "Нет связи" : updated ? updated.toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" }) : "Загрузка…"}</Typography.Paragraph>
             </div>
           </div>
-          <Link className="sr-only focus:not-sr-only" onPress={() => document.getElementById("app-main")?.focus()}>К содержанию</Link>
         </Surface>
       </aside>
-      <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-1 flex-col gap-6 p-5 md:p-8 lg:p-10">
+      <div className="flex w-full min-w-0 flex-1 flex-col gap-6 p-5 md:p-8 md:py-6">
         <header className="flex items-center justify-between md:hidden">
-          <Button variant="secondary" aria-expanded={navigationOpen} onPress={() => setNavigationOpen(true)}>Разделы</Button>
-          <Button variant="ghost" size="sm" aria-label="Обновить данные" onPress={refresh}>Обновить</Button>
+          <Button variant="secondary" aria-expanded={navigationOpen} onPress={() => setNavigationOpen(true)}><Icon name="menu" />Разделы</Button>
+          <Button variant="ghost" size="sm" aria-label="Обновить данные" onPress={refresh}><Icon name="refresh" />Обновить</Button>
         </header>
         {message ? <Alert><Alert.Content><Alert.Description>{message}</Alert.Description></Alert.Content><CloseButton aria-label="Закрыть уведомление" onPress={() => setMessage("")} /></Alert> : null}
         <main id="app-main" className="flex flex-col gap-6" tabIndex={-1}>
@@ -763,5 +769,6 @@ export default function App() {
         </>
       ) : null}
     </div>
+    </>
   );
 }
