@@ -301,7 +301,7 @@ test('22 native unsolicited peers leave room for a useful locally selected peer'
   t.after(async () => {
     for (const socket of sockets) socket.destroy();
     const results = await Promise.allSettled([
-      victim?.close(), honest.destroy(), ...attackers.map(client => client.destroy())
+      victim?.close(), honest.destroy({force: true}), ...attackers.map(client => client.destroy({force: true}))
     ]);
     await bootstrap.destroy({force: true});
     await rm(directory, {recursive: true, force: true});
@@ -345,7 +345,9 @@ test('22 native unsolicited peers leave room for a useful locally selected peer'
     sockets.push(socket);
     socket.on('error', () => {});
     // Rejection can close the native stream before Hyperswarm emits a connection.
-    await new Promise(resolve => socket.once('close', resolve));
+    const closed = new Promise(resolve => socket.once('close', resolve));
+    socket.write('{"type":"native-unsolicited"}\n');
+    await closed;
   }
   const rejected = await stats();
   assert.equal(rejected.neighbors.roles.incoming, 22);
