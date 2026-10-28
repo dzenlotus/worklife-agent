@@ -1,6 +1,6 @@
 import { t, useLocale } from "./i18n.js";
 import LanguageSelect from "./LanguageSelect.jsx";
-import ProjectActions from "./ProjectActions.jsx";
+import ProjectActions, { ProjectStarLink } from "./ProjectActions.jsx";
 import { useRef, useState } from "react";
 import { Tabs } from "@heroui/react";
 import { ArrowDown, ArrowRight, ArrowUpRight, Copy, GitBranch, Code2, Globe2, LockKeyhole, Search, Terminal as TerminalIcon, UserRound, FileText, MessageSquare, Target, Waves } from "lucide-react";
@@ -74,6 +74,7 @@ const research = [
   return <div className="worklife-site" id="top">
     <ScrollProgress />
     <a className="wl-skip" href="#main">{t("К содержанию")}</a>
+    <ProjectStarLink />
     <header className="wl-header wl-container">
       <a href="#top" aria-label={t("Worklife — начало")}><Brand /></a>
       <nav aria-label={t("Основная навигация")}>
@@ -154,7 +155,7 @@ const research = [
             <AnimatedSpan className="wl-terminal-plan">{t("→ Настроит подключение к выбранному клиенту")}</AnimatedSpan>
           </Terminal>
           <p className="wl-copy-status" role="status" aria-live="polite">{copied}</p>
-          <p className="wl-package-state">{pypiPublished ? t("Доступно в PyPI · 0.5.0") : t("Пакет готовится к публикации в PyPI.")}</p>
+          <p className="wl-package-state">{pypiPublished ? t("Доступно в PyPI · 0.5.1") : t("Пакет готовится к публикации в PyPI.")}</p>
           <p className="wl-setup-next">{t("Дальше общайтесь с агентом о работе. Подготовку инструментов и ведение поиска он возьмёт на себя.")}</p>
           <div className="wl-agent-faq" aria-label={t("Вопросы о работе с агентом")}>{questions.map(([question, answer]) => <details className="wl-setup-details" key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div>
         </div>

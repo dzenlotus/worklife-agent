@@ -1,6 +1,6 @@
 import { t, getLocale, useLocale } from "./i18n.js";
 import LanguageSelect from "./LanguageSelect.jsx";
-import ProjectActions from "./ProjectActions.jsx";
+import ProjectActions, { ProjectStarLink } from "./ProjectActions.jsx";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Button,
@@ -932,9 +932,10 @@ export default function App() {
   return (
     <>
       <Link
-        className="sr-only focus:not-sr-only"
+        className="app-skip sr-only focus:not-sr-only"
         onPress={() => document.getElementById("app-main")?.focus()}
       >{t("К содержанию")}</Link>
+      <ProjectStarLink />
       <div className={`worklife-app${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
         <aside
           className={`app-sidebar${sidebarCollapsed ? " is-collapsed" : ""}`}
