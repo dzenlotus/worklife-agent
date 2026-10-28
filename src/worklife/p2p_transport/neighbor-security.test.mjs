@@ -269,7 +269,10 @@ test('an authenticated replacement stream keeps its locally selected role', {tim
   const start = victim.events.length;
   duplicate = dht.connect(Buffer.from(ready.public_key, 'hex'), {keyPair: native.keyPair});
   duplicate.on('error', () => {});
-  await once(duplicate, 'open');
+  const opened = once(duplicate, 'open');
+  // Worklife sends hello immediately; an idle native stream opens lazily.
+  duplicate.write('{"type":"replacement-hello"}\n');
+  await opened;
   await victim.wait(event => event.type === 'connected' && event.peer === peer, start);
   const after = await stats();
   assert.equal(after.peers.length, 1, 'replacement stream consumed a second connection slot');
@@ -317,19 +320,18 @@ test('22 native unsolicited peers leave room for a useful locally selected peer'
   };
   for (let index = 1; index <= 22; index++) {
     const keyPair = DHT.keyPair(Buffer.alloc(32, index));
-    const dht = new DHT({bootstrap: [`127.0.0.1:${port}`], port: [0, 0], host: '0.0.0.0', keyPair});
-    const attacker = new Hyperswarm({dht, keyPair, maxPeers: 1});
-    attacker.on('connection', socket => socket.on('error', () => {}));
+    const attacker = new DHT({bootstrap: [`127.0.0.1:${port}`], port: [0, 0], host: '0.0.0.0', keyPair});
     attackers.push(attacker);
-    await attacker.listen();
-    const connection = once(attacker, 'connection');
-    attacker.joinPeer(target);
-    const [socket] = await connection;
-    attacker.leavePeer(target);
+    await attacker.ready();
+    const socket = attacker.connect(target, {keyPair});
     sockets.push(socket);
     socket.on('error', () => {});
+    // Activate each authenticated native stream before waiting for the remote side.
     socket.write('{"type":"native-unsolicited"}\n');
-    await victim.wait(event => event.type === 'connected' && event.peer === keyPair.publicKey.toString('hex'));
+    const peer = keyPair.publicKey.toString('hex');
+    await victim.wait(event => event.type === 'connected' && event.peer === peer);
+    await victim.wait(event => event.type === 'message' && event.peer === peer &&
+      Buffer.from(event.payload, 'base64').toString() === '{"type":"native-unsolicited"}');
   }
   const full = await stats();
   assert.equal(full.neighbors.roles.incoming, 22);
