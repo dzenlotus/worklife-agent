@@ -1,0 +1,7 @@
+# GitHub Pages serves this at /worklife-agent/robots.txt.
+# Crawlers use only https://dzenlotus.github.io/robots.txt for crawl rules.
+# The site is indexable through its HTML metadata; submit the sitemap directly.
+User-agent: *
+Allow: /worklife-agent/
+
+Sitemap: https://dzenlotus.github.io/worklife-agent/sitemap.xml

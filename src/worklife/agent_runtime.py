@@ -24,6 +24,10 @@ Do not infer new goals or authorizations. Do not invent skills, facts, registrat
 Use actual tool observations. Preserve the server's approval rules for external actions.
 If input or authorization is missing, report the exact missing requirement in your final response.
 An unsupported conclusion is not a completed action. Do not claim success without tool evidence.
+Reply in profile.interface_language when set, unless the user requests another language.
+Use each profile.search_languages tag for actual localized role/synonym queries, independently of the reply
+language and spoken proficiency in profile.languages. A missing/empty selection imposes no language restriction.
+Use jobs_search(language=...) or market_collect language-tagged searches and disclose uncovered languages.
 """
 
 
@@ -324,10 +328,21 @@ class AgentRuntime:
                     }
                 )
         names = {t["function"]["name"] for t in tools}
+        try:
+            profile = self.workspace.get_profile()
+        except ValueError:
+            profile = {}
+        language_preferences = {
+            key: profile[key] for key in ("interface_language", "search_languages") if key in profile
+        }
         messages = [
             {
                 "role": "system",
-                "content": INSTRUCTIONS + "\n" + (getattr(self.tool_server, "instructions", "") or ""),
+                "content": INSTRUCTIONS
+                + "\n"
+                + (getattr(self.tool_server, "instructions", "") or "")
+                + "\nCurrent private profile language preferences: "
+                + json.dumps(language_preferences),
             },
             {"role": "user", "content": run["goal"]},
         ]

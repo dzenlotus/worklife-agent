@@ -116,7 +116,7 @@ def demo(workspace):
     }
 
 
-def worker_cycle(config, w, operations=None, network=None):
+def worker_cycle(config, w, operations=None, network=None, automation=None):
     peers = {
         **{p.get("name", p["url"]): p for p in config.peers},
         **{p["id"]: p["config"] for p in w.store.list("peer")},
@@ -130,6 +130,8 @@ def worker_cycle(config, w, operations=None, network=None):
                 "error": type(exc).__name__,
                 "message": "Peer sync failed; inspect configuration/connectivity",
             }
+    if automation:
+        automation.refresh()
     packet = {
         "at": now(),
         "due_tasks": w.due_tasks(),
@@ -364,7 +366,13 @@ def main():
             try:
                 while True:
                     previous = {r["id"] for r in server.worklife_runtime.status()["runs"]}
-                    packet = worker_cycle(config, w, server.worklife_operations, server.worklife_network)
+                    packet = worker_cycle(
+                        config,
+                        w,
+                        server.worklife_operations,
+                        server.worklife_network,
+                        server.worklife_automation,
+                    )
                     if args.once:
                         packet["agent_results"] = finish_started_runs(server, previous)
                     emit(packet)

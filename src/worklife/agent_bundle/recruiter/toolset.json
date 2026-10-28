@@ -9,6 +9,7 @@
     "pipeline_update", "conversation_record", "conversation_list", "conversation_update", "inbox_sync",
     "interview_brief", "interview_save", "offer_save", "offer_compare", "search_review",
     "task_add", "task_complete", "schedule_save", "schedule_toggle", "schedule_run",
+    "automation_status", "automation_configure", "automation_run",
     "experiment_create", "experiment_assign", "experiment_outcome", "experiment_report",
     "connectors_list", "connector_configure", "connector_read", "platform_save", "account_save",
     "credential_create", "browser_fill_credential", "browser_open", "browser_inspect",

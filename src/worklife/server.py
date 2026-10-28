@@ -30,6 +30,13 @@ Worker/candidate profiles, scores, CV strategies and personal experiment results
 Choose relevant sources yourself: job aggregators, employer sites and professional services; use API or browser.
 Use agency_brief for the current hiring board and next decisions. Ask for target_roles and sourced experience
 when missing; resume_import imports user-provided text and the UI accepts text/PDF/DOCX originals.
+Use profile.interface_language for replies unless the user requests another language. It is independent of
+profile.search_languages (language tags such as ru/en/de) and profile.languages (spoken proficiency).
+For each selected search language, prepare localized role names and synonyms and run explicit query variants
+via jobs_search(language=...) or market_collect searches with a language tag. Do not merely repeat an unchanged
+query under different tags. Keep original vacancy text and URLs. Report uncovered languages/source limits.
+Absent or empty search_languages adds no language restriction. Never infer geography, work authorization,
+spoken proficiency or a hard vacancy-language filter from the interface or search language.
 Collect a stated market scope before selecting favourites. Use market_collect for configured APIs or
 job_save plus market_snapshot for browser discoveries; market_report keeps currency/period/gross groups separate.
 Preserve source URLs, publication times, requirements/key_skills, role/level/location/work format and unknowns.
@@ -128,7 +135,9 @@ def create_server(config, profile=None):
     @mcp.tool(annotations=write)
     def profile_save(profile: dict) -> dict:
         """Save private profile. facts=[{id,text,source}]; constraints={remote,min_salary,currency,salary_period,
-        salary_gross,max_hours,max_hiring_stages,max_test_hours}; life_preferences=[...]. Salary units must be explicit."""
+        salary_gross,max_hours,max_hiring_stages,max_test_hours}; life_preferences=[...]. Salary units must be explicit.
+        search_languages=['ru','en'] chooses query languages; languages records spoken proficiency separately.
+        interface_language='en' chooses replies. Replaces the profile: merge existing fields before saving."""
         return w.save_profile(profile)
 
     @mcp.tool(annotations=read)
@@ -223,9 +232,16 @@ def create_server(config, profile=None):
         return w.save_job(job)
 
     @mcp.tool(annotations=external)
-    def jobs_search(connector: str, query: str = "", parameters: dict | None = None) -> list[dict]:
-        """Fetch and locally save actual HH/Greenhouse/Lever jobs. HH supports page/area; ATS supports board."""
-        return connectors.search(connector, query, **(parameters or {}))
+    def jobs_search(
+        connector: str, query: str = "", parameters: dict | None = None, language: str | None = None
+    ) -> list[dict]:
+        """Fetch and save actual HH/Greenhouse/Lever jobs. HH supports page/area; ATS supports board.
+        Supply localized query variants for profile.search_languages. language tags the query, not job requirements.
+        It does not translate query text or add a provider language filter."""
+        parameters = dict(parameters or {})
+        if language is not None:
+            parameters["language"] = language
+        return connectors.search(connector, query, **parameters)
 
     @mcp.tool(annotations=read)
     def job_assess(job_id: str) -> dict:

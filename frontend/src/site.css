@@ -199,7 +199,8 @@
   .wl-brand { font-size: 22px; }
   .wl-brand > svg { width: 22px; height: 22px; }
   .wl-header nav { gap: 17px; font-size: 12px; }
-  .wl-header nav > a:first-child, .wl-nav-github { display: none !important; }
+  .wl-header nav > a[href="#how"], .wl-header nav > a[href="#manifesto"], .wl-nav-github { display: none !important; }
+  .wl-header .wl-nav-start { white-space: nowrap; }
   .wl-nav-start { padding-inline: 11px; }
   .wl-hero { min-height: 100svh; padding: 120px 0 105px; }
   .wl-hero-image { object-position: 62% center; }

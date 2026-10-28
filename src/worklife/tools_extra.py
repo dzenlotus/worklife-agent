@@ -1,5 +1,6 @@
 """Job-search operations shared by the MCP host and the local application."""
 
+from .automation import Automation
 from .career import Career
 from .credentials import Credentials
 from .federation import sync_peer
@@ -34,9 +35,10 @@ def register_tools(mcp, workspace, connectors, peers):
         check_schedule_tool(tool)
         args = dict(arguments)
         if tool == "jobs_search":
-            return connectors.search(
-                args.pop("connector"), args.pop("query", ""), **args.pop("parameters", {})
-            )
+            parameters = dict(args.get("parameters") or {})
+            if args.get("language") is not None:
+                parameters["language"] = args["language"]
+            return connectors.search(args["connector"], args.get("query", ""), **parameters)
         if tool == "connector_read":
             return connectors.read(args["connector"], args["operation"], args.get("parameters", {}))
         if tool == "peer_sync":
@@ -63,6 +65,33 @@ def register_tools(mcp, workspace, connectors, peers):
         raise ValueError("Unsupported scheduled job-search operation")
 
     operations = Operations(w, scheduled)
+    automation = Automation(mcp, w, operations, connectors, runtime)
+
+    @mcp.tool()
+    def automation_status() -> dict:
+        """Read automatic-check settings, managed schedules, source/access warnings and executor requirement."""
+        return automation.status()
+
+    @mcp.tool()
+    def automation_configure(
+        enabled: bool,
+        interval_minutes: float = 60,
+        check_inbox: bool = True,
+        refresh_search: bool = True,
+        review: bool = True,
+        agent_goal: str = "",
+    ) -> dict:
+        """Set up recurring checks using saved explicit search/inbox settings and existing schedules.
+        Uses the running app/worker; no daemon. Preserves manual schedules and inbox cursors.
+        agent_goal requires the full operator profile and a configured model; adds no external permissions."""
+        return automation.configure(
+            enabled, interval_minutes, check_inbox, refresh_search, review, agent_goal
+        )
+
+    @mcp.tool()
+    def automation_run() -> dict:
+        """Run selected automatic checks now, even while recurring checks are paused. Retains actual results/errors."""
+        return automation.run()
 
     @mcp.tool()
     def credential_create(name: str, username: str = "") -> dict:
@@ -220,6 +249,7 @@ def register_tools(mcp, workspace, connectors, peers):
 
     mcp.worklife_workspace = w
     mcp.worklife_operations = operations
+    mcp.worklife_automation = automation
     mcp.worklife_career = career
     mcp.worklife_runtime = runtime
     mcp.worklife_connectors = connectors

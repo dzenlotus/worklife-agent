@@ -5,6 +5,7 @@ from mcp.types import ToolAnnotations
 from .advisor import Advisor
 from .agency import Agency
 from .inbox import InboxBridge
+from .languages import language_tag, search_languages
 from .market import Market
 from .storage import now
 
@@ -53,6 +54,16 @@ def register_agency_tools(mcp, workspace, connectors):
     def collect(name, searches, scope=None):
         if not isinstance(searches, list) or not searches or len(searches) > 20:
             raise ValueError("Укажите от 1 до 20 явных поисковых запросов к источникам")
+        if scope is not None and not isinstance(scope, dict):
+            raise ValueError("Поле scope должно быть объектом с описанием охвата выборки")
+        scope = dict(scope or {})
+        try:
+            profile = workspace.get_profile()
+        except ValueError:
+            profile = {}
+        requested = search_languages(scope.get("search_languages", profile.get("search_languages", [])))
+        if requested or "search_languages" in scope:
+            scope["search_languages"] = requested
         ids, sources, errors = [], [], []
         for search in searches:
             if not isinstance(search, dict) or not isinstance(search.get("connector"), str):
@@ -60,6 +71,9 @@ def register_agency_tools(mcp, workspace, connectors):
             parameters = search.get("parameters") or {}
             if not isinstance(parameters, dict):
                 raise ValueError("Параметры поиска должны быть объектом")
+            parameters = dict(parameters)
+            language = search.get("language", parameters.pop("language", None))
+            language = language_tag(language) if language is not None else None
             metadata, redacted = _search_metadata(parameters)
             source = {
                 "connector": search["connector"],
@@ -68,8 +82,11 @@ def register_agency_tools(mcp, workspace, connectors):
                 "local_blocklist_applied": True,
                 "parameters": metadata,
                 "parameters_redacted": redacted,
+                **({"language": language} if language else {}),
             }
             try:
+                if language is not None:
+                    parameters["language"] = language
                 rows = connectors.search(search["connector"], search.get("query", ""), **parameters)
                 ids.extend(row["id"] for row in rows)
                 source.update(status="collected", received=len(rows))
@@ -87,16 +104,21 @@ def register_agency_tools(mcp, workspace, connectors):
             sources,
             "Выборка собрана из явно выбранных доступных источников с учётом локальных исключений.",
         )
+        report = market.report(sample["id"])
+        coverage = report["language_coverage"]
         return {
-            "status": "partial" if errors else "completed",
+            "status": "partial" if errors or coverage["missing"] else "completed",
             "snapshot": sample,
-            "report": market.report(sample["id"]),
+            "report": report,
             "errors": errors,
+            "language_coverage": coverage,
         }
 
     @mcp.tool(annotations=external_read)
     def market_collect(name: str, searches: list[dict], scope: dict | None = None) -> dict:
-        """Collect explicit source searches then freeze a market sample. Each search: connector,query,parameters.
+        """Collect explicit source searches then freeze a market sample. Each search: connector,query,parameters,language.
+        Localize query text for each profile.search_languages tag. language records query provenance, not job language.
+        language_coverage shows selected languages without successful searches; zero results still count as searched.
         Source failures remain visible. For browser/custom APIs, use job_save then market_snapshot instead."""
         return collect(name, searches, scope)
 

@@ -7,6 +7,7 @@ from statistics import median
 from urllib.parse import unquote_plus, urlsplit, urlunsplit
 from uuid import uuid4
 
+from .languages import language_coverage, language_tag, search_languages
 from .storage import canonical, now
 
 PERIODS = {
@@ -236,6 +237,19 @@ class Market:
             raise ValueError("Поле scope должно быть объектом с описанием охвата выборки")
         if sources is not None and not isinstance(sources, list):
             raise ValueError("Поле sources должно быть списком источников")
+        scope, sources = deepcopy(scope or {}), deepcopy(sources)
+        if "search_languages" not in scope:
+            try:
+                profile = self.store.get("profile", "me")
+            except ValueError:
+                profile = {}
+            if "search_languages" in profile:
+                scope["search_languages"] = profile["search_languages"]
+        if "search_languages" in scope:
+            scope["search_languages"] = search_languages(scope["search_languages"])
+        for source in sources or []:
+            if isinstance(source, dict) and source.get("language") is not None:
+                source["language"] = language_tag(source["language"])
         ids = list(dict.fromkeys(job_ids))
         observations = [self.store.get("job", job_id) for job_id in ids]
         times = [job["fetched_at"] for job in observations if job.get("fetched_at")]
@@ -243,8 +257,8 @@ class Market:
             "id": uuid4().hex,
             "name": name.strip(),
             "created_at": now(),
-            "scope": {**dict.fromkeys(SCOPE_FIELDS), **deepcopy(scope or {})},
-            "sources": deepcopy(sources)
+            "scope": {**dict.fromkeys(SCOPE_FIELDS), **scope},
+            "sources": sources
             if sources is not None
             else list(dict.fromkeys(_text(job.get("platform")) or "unknown" for job in observations)),
             "notes": notes,
@@ -366,6 +380,9 @@ class Market:
             if any(g["n"] >= 5 for g in salaries)
             else "insufficient_data",
             "snapshot": _summary(snapshot) if snapshot else None,
+            "language_coverage": language_coverage(snapshot["scope"], snapshot["sources"])
+            if snapshot
+            else {"requested": [], "collected": [], "missing": []},
             "filters": deepcopy(filters),
             "counts": {
                 "observations": len(observations),

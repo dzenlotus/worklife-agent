@@ -38,3 +38,23 @@ test("missing and one-sided pay stay explicit", () => {
   );
   assert.match(salaryLabel({ salary_max: 200 }), /^до 200 валюта не указана$/);
 });
+
+test("location and source filters retain matching jobs across interface languages", async () => {
+  const { setLocale } = await import("./i18n.js");
+  const state = { jobs: [
+    { id: "remote", remote: true },
+    { id: "unknown" },
+    { id: "named", location: "Москва", source: "Мой источник" },
+  ] };
+  const original = structuredClone(state.jobs);
+  try {
+    for (const locale of ["ru", "en", "ru"]) {
+      setLocale(locale);
+      assert.deepEqual(selectJobs(state, { location: "Удалённо", source: "Не указан" }).map((job) => job.id), ["remote"]);
+      assert.deepEqual(selectJobs(state, { location: "Не указано" }).map((job) => job.id), ["unknown"]);
+      assert.deepEqual(selectJobs(state, { source: "Не указан" }).map((job) => job.id), ["remote", "unknown"]);
+      assert.deepEqual(selectJobs(state, { location: "Москва", source: "Мой источник" }).map((job) => job.id), ["named"]);
+    }
+    assert.deepEqual(state.jobs, original);
+  } finally { setLocale("ru"); }
+});

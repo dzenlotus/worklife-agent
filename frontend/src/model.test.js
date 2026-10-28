@@ -152,3 +152,38 @@ test("failure, cancellation and step-limit activity do not borrow a later run st
   }
   assert.equal(activitySummary({ kind: "agent_started", related_id: "missing" }).text, "Агент начал поручение");
 });
+
+test("backend market explanations translate known copy while preserving unknown evidence", async () => {
+  const { marketText } = await import("./model.js");
+  const { setLocale } = await import("./i18n.js");
+  const counts = "В 2 из 5 уникальных вакансий (40%) зарплата не указана; некорректные вилки: 1.";
+  const evidence = "Мои наблюдения: работодатель обещает бонус за квартал.";
+  try {
+    setLocale("en");
+    assert.equal(marketText(counts), "2 of 5 unique jobs (40%) have no salary listed; invalid ranges: 1.");
+    assert.equal(marketText("В выбранном снимке или группе нет наблюдений; сначала соберите явную выборку."), "There are no observations in the selected snapshot or group. First collect an explicit sample.");
+    assert.equal(marketText(evidence), evidence);
+    setLocale("ru");
+    assert.equal(marketText(counts), counts);
+  } finally { setLocale("ru"); }
+});
+
+test("advisor templates translate system sentences and preserve captured roles, languages and amounts", async () => {
+  const { advisorText } = await import("./model.js");
+  const { setLocale } = await import("./i18n.js");
+  const examples = [
+    ["Уточните, соответствуют ли реальные обязанности вашим целевым ролям: Python developer, Rust {0}.", "Confirm whether the actual responsibilities match your target roles: Python developer, Rust {0}."],
+    ["Уточните требуемый уровень языка Deutsch C1 и добавьте сведения о вашем фактическом владении им.", "Confirm the required proficiency in Deutsch C1 and add details of your actual proficiency."],
+    ["Верхняя граница зарплаты 4000.0 ниже вашего минимума 5000.0 EUR/month при одинаковом учёте налогов.", "The upper salary bound of 4000.0 is below your minimum of 5000.0 EUR/month, using the same tax basis."],
+    ["Условие «рабочие часы в неделю» в объявлении (40) превышает ваш предел (35).", "The advertised “working hours per week” (40) exceeds your limit (35)."],
+  ];
+  const originalEvidence = "Python developer: опыт в компании «Пример», источник /мой/проект.";
+  try {
+    setLocale("en");
+    for (const [source, translated] of examples) assert.equal(advisorText(source), translated);
+    assert.equal(advisorText(originalEvidence), originalEvidence);
+    assert.equal(advisorText("Добавьте факты опыта с источниками, целевые роли."), "Add sourced experience facts and target roles.");
+    setLocale("ru");
+    for (const [source] of examples) assert.equal(advisorText(source), source);
+  } finally { setLocale("ru"); }
+});

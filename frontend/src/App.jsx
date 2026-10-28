@@ -1,3 +1,5 @@
+import { t, getLocale, useLocale } from "./i18n.js";
+import LanguageSelect from "./LanguageSelect.jsx";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Button,
@@ -32,7 +34,7 @@ import Overview, {
 import ModelConnection from "./ModelConnection.jsx";
 import { composeGoal, readDraft, saveDraft } from "./goals.js";
 import { documentBlocks } from "./document.js";
-import { resultTarget } from "./activity.js";
+import { callSummary, resultTarget } from "./activity.js";
 import {
   Panel,
   PageHeading,
@@ -84,7 +86,7 @@ const stringify = (value) => JSON.stringify(value, null, 2);
 function errorText(error) {
   const text = error?.message || String(error);
   if (text.includes("Agent not configured"))
-    return "Модель агента ещё не подключена. Откройте настройки и инструкцию по подключению.";
+    return t("Модель агента ещё не подключена. Откройте настройки и инструкцию по подключению.");
   return text;
 }
 async function invoke(name, args) {
@@ -100,24 +102,24 @@ async function invoke(name, args) {
   try {
     result = await response.json();
   } catch {
-    throw new Error("Не удалось прочитать ответ локального приложения.");
+    throw new Error(t("Не удалось прочитать ответ локального приложения."));
   }
   if (!response.ok || result.ok === false)
     throw new Error(
       typeof result.error === "string"
         ? result.error
-        : "Не удалось выполнить поручение.",
+        : t("Не удалось выполнить поручение."),
     );
   return result.result;
 }
 function RunDetails({ run }) {
-  if (!run) return <p>Запуск не найден.</p>;
+  if (!run) return <p>{t("Запуск не найден.")}</p>;
   return (
     <>
       <p>{run.goal}</p>
       <div className="flex flex-wrap items-center gap-3">
         <Status value={run.status} />
-        <span>{list(run.steps).length} шагов</span>
+        <span>{list(run.steps).length}{t(" шагов")}</span>
         <span>{run.model}</span>
         <Timestamp value={run.started_at || run.created_at} />
       </div>
@@ -127,7 +129,7 @@ function RunDetails({ run }) {
         list(run.steps).map((step) => (
           <section className="flex flex-col gap-3 py-3" key={step.index}>
             <Typography.Heading level={3}>
-              <span>Шаг {step.index}</span>
+              <span>{t("Шаг ")}{step.index}</span>
               <time>{formatDate(step.started_at, true)}</time>
             </Typography.Heading>
             {step.assistant?.content ? <p>{step.assistant.content}</p> : null}
@@ -135,7 +137,7 @@ function RunDetails({ run }) {
               <DetailAccordion
                 key={call.id || index}
                 id={call.id || `call-${index}`}
-                title={call.function?.name || "Действие агента"}
+                title={call.function?.name || t("Действие агента")}
               >
                 <pre>{call.function?.arguments}</pre>
               </DetailAccordion>
@@ -143,7 +145,7 @@ function RunDetails({ run }) {
             {list(step.tool_results).length ? (
               <DetailAccordion
                 id={`results-${step.index}`}
-                title="Результаты действий"
+                title={t("Результаты действий")}
               >
                 <pre>{stringify(step.tool_results)}</pre>
               </DetailAccordion>
@@ -151,7 +153,7 @@ function RunDetails({ run }) {
           </section>
         ))
       ) : (
-        <p>Агент ещё не начал выполнять шаги.</p>
+        <p>{t("Агент ещё не начал выполнять шаги.")}</p>
       )}
     </>
   );
@@ -170,7 +172,7 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
     const resource = list(state.resources).find(
       (entry) => entry.id === detail.id,
     );
-    if (!resource) return <p>Ресурс не найден.</p>;
+    if (!resource) return <p>{t("Ресурс не найден.")}</p>;
     return (
       <>
         <h3
@@ -183,9 +185,7 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
         </h3>
         {resource.notes ? <p>{resource.notes}</p> : null}
         {safeURL(resource.url) ? (
-          <Link href={resource.url} target="_blank" rel="noreferrer">
-            Открыть источник
-            <Icon name="external" className="size-4 shrink-0" />
+          <Link href={resource.url} target="_blank" rel="noreferrer">{t("Открыть источник")}<Icon name="external" className="size-4 shrink-0" />
           </Link>
         ) : null}
       </>
@@ -193,7 +193,7 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
   }
   if (detail.kind === "tool_call") {
     const call = list(state.tool_calls).find((entry) => entry.id === detail.id);
-    if (!call) return <p>Вызов не найден.</p>;
+    if (!call) return <p>{t("Вызов не найден.")}</p>;
     const target = resultTarget(call.related_id, state);
     return (
       <>
@@ -210,14 +210,12 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
           <Timestamp value={call.started_at} />
           {Number.isFinite(call.duration_seconds) ? (
             <span>
-              {call.duration_seconds.toLocaleString("ru-RU", {
+              {call.duration_seconds.toLocaleString(getLocale(), {
                 maximumFractionDigits: 2,
-              })}{" "}
-              с
-            </span>
+              })}{" "}{t("с")}</span>
           ) : null}
         </div>
-        {call.summary ? <p>{call.summary}</p> : null}
+        {call.summary ? <p>{callSummary(call.summary)}</p> : null}
         {call.error ? (
           <Alert status="danger">
             <Alert.Content>
@@ -226,17 +224,14 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
           </Alert>
         ) : null}
         {call.finished_at ? (
-          <Typography.Paragraph size="sm" color="muted">
-            Завершён: <Timestamp value={call.finished_at} />
+          <Typography.Paragraph size="sm" color="muted">{t("Завершён: ")}<Timestamp value={call.finished_at} />
           </Typography.Paragraph>
         ) : null}
         {target ? (
           <Button
             variant="outline"
             onPress={() => onInspect(target.kind, target.id)}
-          >
-            Открыть сохранённый результат
-          </Button>
+          >{t("Открыть сохранённый результат")}</Button>
         ) : null}
       </>
     );
@@ -272,7 +267,7 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
             ),
           )}
         </Typography.Prose>
-        <DetailAccordion title="Исходный Markdown" id="cv-source">
+        <DetailAccordion title={t("Исходный Markdown")} id="cv-source">
           <div className="overflow-x-auto">
             <pre>{cv.markdown}</pre>
           </div>
@@ -285,8 +280,7 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
               key={format}
               isPending={pending === `download:${format}`}
               onPress={() => onDownload(cv.id, format)}
-            >
-              Скачать {format.toUpperCase()}
+            >{t("Скачать ")}{format.toUpperCase()}
             </Button>
           ))}
         </div>
@@ -297,22 +291,22 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
     const report = list(state.experiment_reports).find(
       (report) => report.experiment?.id === detail.id,
     );
-    if (!report) return <p>Результат ещё не рассчитан.</p>;
+    if (!report) return <p>{t("Результат ещё не рассчитан.")}</p>;
     return (
       <>
         <p>{report.experiment.hypothesis}</p>
         <div className="flex flex-wrap items-center gap-3">
           <Status value={report.conclusion} />
-          <span>Окно: {report.experiment.horizon_hours} ч.</span>
+          <span>{t("Окно: ")}{report.experiment.horizon_hours}{t(" ч.")}</span>
         </div>
         <DataTable
           headers={[
             "CV",
-            "Назначено",
-            "Отправлено",
-            "Созрело",
-            "Успехи",
-            "Доля",
+            t("Назначено"),
+            t("Отправлено"),
+            t("Созрело"),
+            t("Успехи"),
+            t("Доля"),
           ]}
           rows={list(report.variants).map((variant) => [
             list(state.cvs).find((cv) => cv.id === variant.variant_id)?.name ||
@@ -324,10 +318,7 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
             variant.rate == null ? "—" : `${Math.round(variant.rate * 100)}%`,
           ])}
         />
-        <p>
-          В расчёт входят отправленные отклики с завершённым окном наблюдения.
-          Малое количество данных не доказывает эффективность подхода.
-        </p>
+        <p>{t("В расчёт входят отправленные отклики с завершённым окном наблюдения. Малое количество данных не доказывает эффективность подхода.")}</p>
       </>
     );
   }
@@ -342,17 +333,17 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
       ),
       cv = list(state.cvs).find((entry) => entry.id === application?.cv_id);
     const fields = {
-      employer: "Компания",
-      remote: "Удалённо",
-      salary_min: "Зарплата от",
-      salary_max: "Зарплата до",
-      currency: "Валюта",
-      salary_period: "Период оплаты",
-      hours: "Часов в неделю",
-      hiring_stages: "Этапов найма",
-      test_hours: "Объём тестового, часов",
-      employer_domain: "Домен компании",
-      notes: "Заметки",
+      employer: t("Компания"),
+      remote: t("Удалённо"),
+      salary_min: t("Зарплата от"),
+      salary_max: t("Зарплата до"),
+      currency: t("Валюта"),
+      salary_period: t("Период оплаты"),
+      hours: t("Часов в неделю"),
+      hiring_stages: t("Этапов найма"),
+      test_hours: t("Объём тестового, часов"),
+      employer_domain: t("Домен компании"),
+      notes: t("Заметки"),
     };
     return (
       <>
@@ -380,8 +371,8 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
                 <dd>
                   {typeof job[key] === "boolean"
                     ? job[key]
-                      ? "Да"
-                      : "Нет"
+                      ? t("Да")
+                      : t("Нет")
                     : typeof job[key] === "object"
                       ? job[key].name
                       : String(job[key])}
@@ -391,7 +382,7 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
         </dl>
         {application ? (
           <section className="flex flex-col gap-3">
-            <Typography.Heading level={3}>Ваш отклик</Typography.Heading>
+            <Typography.Heading level={3}>{t("Ваш отклик")}</Typography.Heading>
             {cv ? (
               <Button
                 variant="ghost"
@@ -421,23 +412,16 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
                   size="sm"
                   key={action.id}
                   onPress={() => onInspect("action", action.id)}
-                >
-                  Открыть действие · {label(action.status)}
+                >{t("Открыть действие · ")}{label(action.status)}
                 </Button>
               ))
             ) : (
-              <Typography.Paragraph size="sm" color="muted">
-                Показана сохранённая история отклика. Связанного журнала
-                отправки в локальных данных нет; содержание сообщения здесь не
-                подтверждено.
-              </Typography.Paragraph>
+              <Typography.Paragraph size="sm" color="muted">{t("Показана сохранённая история отклика. Связанного журнала отправки в локальных данных нет; содержание сообщения здесь не подтверждено.")}</Typography.Paragraph>
             )}
           </section>
         ) : null}
         {safeURL(job.url) ? (
-          <Link href={safeURL(job.url)} target="_blank" rel="noreferrer">
-            Открыть источник
-            <Icon name="external" className="size-4 shrink-0" />
+          <Link href={safeURL(job.url)} target="_blank" rel="noreferrer">{t("Открыть источник")}<Icon name="external" className="size-4 shrink-0" />
           </Link>
         ) : null}
       </>
@@ -476,7 +460,7 @@ function DetailContent({ detail, state, onDownload, pending, onInspect }) {
           ) : null}
         </>
       ) : null}
-      <DetailAccordion title="Технические подробности" id="record-data">
+      <DetailAccordion title={t("Технические подробности")} id="record-data">
         <pre>{stringify(record)}</pre>
       </DetailAccordion>
     </>
@@ -500,7 +484,7 @@ function Navigation({
   ];
   const [materialsOpen, setMaterialsOpen] = useState(secondary.includes(page));
   const item = (key) => {
-    const title = navigation.find(([id]) => id === key)[1];
+    const title = t(navigation.find(([id]) => id === key)[1]);
     return (
       <button
         key={key}
@@ -519,14 +503,14 @@ function Navigation({
     );
   };
   return (
-    <nav id={id} className="navigation" aria-label="Разделы Worklife">
+    <nav id={id} className="navigation" aria-label={t("Разделы Worklife")}>
       <div className="nav-primary">{primary.map(item)}</div>
       <div className="nav-secondary">
         <button
           className={`nav-item ${materialsOpen && !collapsed ? "expanded" : ""} ${secondary.includes(page) ? "selected" : ""}`}
           data-page="more"
-          title={collapsed ? "Ещё разделы" : undefined}
-          aria-label="Ещё разделы"
+          title={collapsed ? t("Ещё разделы") : undefined}
+          aria-label={t("Ещё разделы")}
           aria-expanded={materialsOpen && !collapsed}
           aria-controls={`${id}-more`}
           onClick={() => {
@@ -541,7 +525,7 @@ function Navigation({
           <span className="nav-icon nav-icon-more" aria-hidden="true">
             <Icon name="materials" />
           </span>
-          <span className="nav-label">Ещё</span>
+          <span className="nav-label">{t("Ещё")}</span>
           <Icon name="next" className="nav-chevron" />
         </button>
         {materialsOpen && !collapsed ? (
@@ -556,6 +540,7 @@ function Navigation({
 }
 
 export default function App() {
+  const [locale] = useLocale();
   const [state, setState] = useState(null),
     [error, setError] = useState(""),
     [page, setPage] = useState(pageFromHash),
@@ -579,6 +564,7 @@ export default function App() {
     [targetRoles, setTargetRoles] = useState(""),
     [targetLocations, setTargetLocations] = useState(""),
     [languages, setLanguages] = useState(""),
+    [searchLanguages, setSearchLanguages] = useState([]),
     [searchRules, setSearchRules] = useState({}),
     [incomeDeadline, setIncomeDeadline] = useState(""),
     [blockOpen, setBlockOpen] = useState(false),
@@ -619,10 +605,10 @@ export default function App() {
   const refresh = useCallback(async () => {
     try {
       const response = await fetch("/api/state", { cache: "no-store" });
-      if (!response.ok) throw new Error("Локальное приложение недоступно.");
+      if (!response.ok) throw new Error(t("Локальное приложение недоступно."));
       const value = await response.json();
       if (value.ok === false)
-        throw new Error(value.error || "Не удалось загрузить данные.");
+        throw new Error(value.error || t("Не удалось загрузить данные."));
       setState(value.result || value);
       setError("");
       setUpdated(new Date());
@@ -661,16 +647,22 @@ export default function App() {
       await refresh();
       notify(
         name === "agent_cancel"
-          ? "Остановка запрошена."
+          ? t("Остановка запрошена.")
+          : name === "automation_configure"
+            ? args.enabled ? t("Автопроверки сохранены и включены.") : t("Настройки сохранены. Автопроверки выключены.")
+          : name === "automation_run"
+            ? result.status === "success" ? t("Проверки запущены. Результаты — в истории запусков.") : t("Часть проверок требует внимания. Посмотрите результат в расписании.")
+          : name === "schedule_run"
+            ? result.status === "success" ? t("Проверка выполнена.") : t("Проверка требует внимания. Посмотрите результат в истории запусков.")
           : name === "schedule_toggle"
             ? args.enabled
-              ? "Поиск по расписанию продолжится."
-              : "Поиск по расписанию на паузе."
+              ? t("Поиск по расписанию продолжится.")
+              : t("Поиск по расписанию на паузе.")
             : name === "employer_block"
               ? args.blocked
-                ? "Компания исключена из вашего поиска."
-                : "Блокировка снята."
-              : "Сохранено.",
+                ? t("Компания исключена из вашего поиска.")
+                : t("Блокировка снята.")
+              : t("Сохранено."),
       );
       return result;
     } catch (error) {
@@ -696,16 +688,19 @@ export default function App() {
     if (!text.trim()) return;
     if (text.length > 16000) {
       notify(
-        "Поручение слишком длинное. Сократите цель или уточнение до 16 000 знаков вместе.",
+        t("Поручение слишком длинное. Сократите цель или уточнение до 16 000 знаков вместе."),
       );
       return;
     }
     setPending("agent");
     try {
+      if (state.profile?.interface_language !== locale) {
+        await invoke("profile_save", { profile: { ...(state.profile || {}), interface_language: locale } });
+      }
       await invoke("agent_run", { goal: text.trim(), max_steps: 8 });
       await refresh();
       setContext(null);
-      notify("Агент принял поручение. Ход работы появится ниже.");
+      notify(t("Агент принял поручение. Ход работы появится ниже."));
     } catch (error) {
       notify(errorText(error));
     } finally {
@@ -717,6 +712,7 @@ export default function App() {
     setTargetRoles(list(state?.profile?.target_roles).join(", "));
     setTargetLocations(list(state?.profile?.target_locations).join(", "));
     setLanguages(list(state?.profile?.languages).join(", "));
+    setSearchLanguages(list(state?.profile?.search_languages));
     setSearchRules(state?.profile?.constraints || {});
     setIncomeDeadline(state?.profile?.income_deadline || "");
     setConditionsOpen(true);
@@ -743,6 +739,8 @@ export default function App() {
         {
           profile: {
             ...(state.profile || {}),
+            interface_language: locale,
+            search_languages: searchLanguages,
             constraints: searchRules,
             income_deadline: incomeDeadline || null,
             target_roles: targetRoles
@@ -792,7 +790,7 @@ export default function App() {
       );
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Не удалось сформировать файл.");
+        throw new Error(error.error || t("Не удалось сформировать файл."));
       }
       const objectURL = URL.createObjectURL(await response.blob()),
         link = document.createElement("a");
@@ -825,24 +823,19 @@ export default function App() {
     onModel: () => openModel(false),
     runtime: (
       <div className="flex flex-col gap-4">
-        <Typography.Paragraph>
-          Необязательный автономный исполнитель Worklife. Его подключение не
-          требуется для работы через вашего MCP-агента.
-        </Typography.Paragraph>
+        <Typography.Paragraph>{t("Необязательный автономный исполнитель Worklife. Его подключение не требуется для работы через вашего MCP-агента.")}</Typography.Paragraph>
         <div className="flex flex-wrap items-center gap-3">
           <Status value={state?.agent?.configured ? "success" : "planned"}>
             {state?.agent?.configured
-              ? "Модель настроена"
-              : "Модель не подключена"}
+              ? t("Модель настроена")
+              : t("Модель не подключена")}
           </Status>
           {state?.agent?.configured ? (
             <Button
               variant="outline"
               size="sm"
               onPress={() => openModel(false)}
-            >
-              Изменить модель исполнителя
-            </Button>
+            >{t("Изменить модель исполнителя")}</Button>
           ) : null}
         </div>
         <GoalComposer
@@ -877,7 +870,7 @@ export default function App() {
     settings: SettingsView,
   };
   const View = views[page];
-  const title = navigation.find(([key]) => key === page)?.[1] || "Обзор";
+  const title = t(navigation.find(([key]) => key === page)?.[1] || "Обзор");
   const navigate = (key) => {
     location.hash = key;
     setPage(key);
@@ -885,34 +878,32 @@ export default function App() {
   };
   const detailTitle =
     detail?.kind === "run"
-      ? "Ход работы агента"
+      ? t("Ход работы агента")
       : detail?.kind === "cv"
-        ? "Ваше CV"
+        ? t("Ваше CV")
         : detail?.kind === "job"
-          ? "Условия вакансии"
+          ? t("Условия вакансии")
           : detail?.kind === "experiment"
-            ? "Результаты эксперимента"
+            ? t("Результаты эксперимента")
             : detail?.kind === "activity"
-              ? "Журнал работы"
+              ? t("Журнал работы")
               : detail?.kind === "tool_call"
-                ? "Вызов MCP"
-                : "Подробности действия";
+                ? t("Вызов MCP")
+                : t("Подробности действия");
   return (
     <>
       <Link
         className="sr-only focus:not-sr-only"
         onPress={() => document.getElementById("app-main")?.focus()}
-      >
-        К содержанию
-      </Link>
+      >{t("К содержанию")}</Link>
       <div className={`worklife-app${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
         <aside
           className={`app-sidebar${sidebarCollapsed ? " is-collapsed" : ""}`}
-          aria-label="Боковая панель"
+          aria-label={t("Боковая панель")}
         >
           <div className="sidebar-top">
             <div className="brand">
-              <a href="#overview" aria-label="Worklife — обзор" title="Worklife — обзор">
+              <a href="#overview" aria-label={t("Worklife — обзор")} title={t("Worklife — обзор")}>
                 <span className="brand-mark" aria-hidden="true">w</span>
                 <span className="brand-name">Worklife</span>
               </a>
@@ -922,8 +913,8 @@ export default function App() {
               variant="ghost"
               size="sm"
               isIconOnly
-              aria-label={sidebarCollapsed ? "Развернуть боковую панель" : "Свернуть боковую панель"}
-              title={sidebarCollapsed ? "Развернуть боковую панель" : "Свернуть боковую панель"}
+              aria-label={sidebarCollapsed ? t("Развернуть боковую панель") : t("Свернуть боковую панель")}
+              title={sidebarCollapsed ? t("Развернуть боковую панель") : t("Свернуть боковую панель")}
               aria-expanded={!sidebarCollapsed}
               aria-controls="sidebar-navigation"
               onPress={() => setSidebar(!sidebarCollapsed)}
@@ -944,15 +935,16 @@ export default function App() {
             />
           </div>
           <div className="sidebar-footer">
-            <button aria-label="Обновить данные" title="Обновить данные" onClick={refresh}>
+            <LanguageSelect onChange={(value) => state && safeCommand("profile_save", { profile: { ...(state.profile || {}), interface_language: value } })} />
+            <button aria-label={t("Обновить данные")} title={t("Обновить данные")} onClick={refresh}>
               <Icon name="refresh" />
-              <span className="sidebar-footer-label">Обновить</span>
+              <span className="sidebar-footer-label">{t("Обновить")}</span>
             </button>
-            <time className="sidebar-updated" aria-label="Время обновления данных">
+            <time className="sidebar-updated" aria-label={t("Время обновления данных")}>
               {error
-                ? "Нет связи"
+                ? t("Нет связи")
                 : updated
-                  ? updated.toLocaleTimeString("ru", {
+                  ? updated.toLocaleTimeString(getLocale(), {
                       hour: "2-digit",
                       minute: "2-digit",
                     })
@@ -963,22 +955,19 @@ export default function App() {
         <div className="app-content">
           {state?.demo ? (
             <div className="demo-notice" role="note">
-              <span>Демонстрация</span>
-              Вымышленные вакансии и переписка · отдельная база
-            </div>
+              <span>{t("Демонстрация")}</span>{t("Вымышленные вакансии и переписка · отдельная база")}</div>
           ) : null}
           <header className="mobile-header">
+            <LanguageSelect onChange={(value) => state && safeCommand("profile_save", { profile: { ...(state.profile || {}), interface_language: value } })} />
             <Button
               variant="secondary"
               aria-expanded={navigationOpen}
               onPress={() => setNavigationOpen(true)}
             >
-              <Icon name="menu" />
-              Разделы
-            </Button>
+              <Icon name="menu" />{t("Разделы")}</Button>
             <Button
               variant="ghost"
-              aria-label="Обновить данные"
+              aria-label={t("Обновить данные")}
               onPress={refresh}
             >
               <Icon name="refresh" />
@@ -990,7 +979,7 @@ export default function App() {
                 <Alert.Description>{message}</Alert.Description>
               </Alert.Content>
               <CloseButton
-                aria-label="Закрыть уведомление"
+                aria-label={t("Закрыть уведомление")}
                 onPress={() => setMessage("")}
               />
             </Alert>
@@ -999,24 +988,18 @@ export default function App() {
             {!state ? (
               <>
                 <PageHeading
-                  title={page === "overview" ? "Поиск работы" : title}
+                  title={page === "overview" ? t("Поиск работы") : title}
                 />
                 {error ? (
                   <>
                     <p>
-                      {error} Проверьте, что Worklife запущен на вашем
-                      компьютере.
-                    </p>
-                    <Button variant="outline" onPress={refresh}>
-                      Попробовать ещё раз
-                    </Button>
+                      {error}{t(" Проверьте, что Worklife запущен на вашем компьютере.")}</p>
+                    <Button variant="outline" onPress={refresh}>{t("Попробовать ещё раз")}</Button>
                   </>
                 ) : (
                   <div role="status" className="flex items-center gap-3">
                     <Spinner size="sm" />
-                    <Typography.Paragraph color="muted">
-                      Загружаем вашу историю поиска.
-                    </Typography.Paragraph>
+                    <Typography.Paragraph color="muted">{t("Загружаем вашу историю поиска.")}</Typography.Paragraph>
                   </div>
                 )}
               </>
@@ -1041,7 +1024,7 @@ export default function App() {
         <Dialog
           open={navigationOpen}
           onClose={() => setNavigationOpen(false)}
-          title="Разделы Worklife"
+          title={t("Разделы Worklife")}
         >
           <Navigation id="dialog-navigation" page={page} onNavigate={navigate} />
         </Dialog>
@@ -1050,22 +1033,18 @@ export default function App() {
             <Dialog
               open={conditionsOpen}
               onClose={() => setConditionsOpen(false)}
-              title="Мои условия"
+              title={t("Мои условия")}
               footer={
                 <>
                   <Button
                     variant="ghost"
                     onPress={() => setConditionsOpen(false)}
-                  >
-                    Отмена
-                  </Button>
+                  >{t("Отмена")}</Button>
                   <Button
                     type="submit"
                     form="conditions-form"
                     isPending={pending === "conditions"}
-                  >
-                    Сохранить условия
-                  </Button>
+                  >{t("Сохранить условия")}</Button>
                 </>
               }
             >
@@ -1075,29 +1054,25 @@ export default function App() {
                 onSubmit={saveConditions}
               >
                 <fieldset className="form-section">
-                  <legend>Работа</legend>
+                  <legend>{t("Работа")}</legend>
                   <div className="form-section-fields">
-                    <label className="form-field">
-                      Желаемые должности
-                      <Input
+                    <label className="form-field">{t("Желаемые должности")}<Input
                         value={targetRoles}
                         onChange={(event) => setTargetRoles(event.target.value)}
-                        placeholder="Например, frontend-разработчик, руководитель команды"
+                        placeholder={t("Например, frontend-разработчик, руководитель команды")}
                       />
                     </label>
                     <div className="detail-grid">
-                      <label className="form-field">
-                        Города и страны
-                        <Input
+                      <label className="form-field">{t("Города и страны")}<Input
                           value={targetLocations}
                           onChange={(event) =>
                             setTargetLocations(event.target.value)
                           }
-                          placeholder="Москва, удалённо"
+                          placeholder={t("Москва, удалённо")}
                         />
                       </label>
                       <SelectField
-                        label="Удалённая работа"
+                        label={t("Удалённая работа")}
                         value={
                           searchRules.remote === true
                             ? "yes"
@@ -1109,19 +1084,17 @@ export default function App() {
                           setRule("remote", value === "" ? "" : value === "yes")
                         }
                       >
-                        <option value="">Не задано</option>
-                        <option value="yes">Обязательна</option>
-                        <option value="no">Не обязательна</option>
+                        <option value="">{t("Не задано")}</option>
+                        <option value="yes">{t("Обязательна")}</option>
+                        <option value="no">{t("Не обязательна")}</option>
                       </SelectField>
                     </div>
                   </div>
                 </fieldset>
                 <fieldset className="form-section">
-                  <legend>Оплата</legend>
+                  <legend>{t("Оплата")}</legend>
                   <div className="form-section-fields detail-grid">
-                    <label className="form-field">
-                      Доход от
-                      <Input
+                    <label className="form-field">{t("Доход от")}<Input
                         type="number"
                         min="0"
                         value={searchRules.min_salary ?? ""}
@@ -1131,31 +1104,31 @@ export default function App() {
                             e.target.value === "" ? "" : Number(e.target.value),
                           )
                         }
-                        placeholder="Не задан"
+                        placeholder={t("Не задан")}
                       />
                     </label>
                     <SelectField
-                      label="Валюта"
+                      label={t("Валюта")}
                       value={searchRules.currency || ""}
                       onChange={(value) => setRule("currency", value)}
                     >
-                      <option value="">Не задана</option>
+                      <option value="">{t("Не задана")}</option>
                       {["RUB", "USD", "EUR"].map((value) => (
                         <option key={value}>{value}</option>
                       ))}
                     </SelectField>
                     <SelectField
-                      label="Период оплаты"
+                      label={t("Период оплаты")}
                       value={searchRules.salary_period || ""}
                       onChange={(value) => setRule("salary_period", value)}
                     >
-                      <option value="">Не задан</option>
-                      <option value="month">Месяц</option>
-                      <option value="year">Год</option>
-                      <option value="hour">Час</option>
+                      <option value="">{t("Не задан")}</option>
+                      <option value="month">{t("Месяц")}</option>
+                      <option value="year">{t("Год")}</option>
+                      <option value="hour">{t("Час")}</option>
                     </SelectField>
                     <SelectField
-                      label="Налоги"
+                      label={t("Налоги")}
                       value={
                         searchRules.salary_gross === true
                           ? "gross"
@@ -1170,25 +1143,35 @@ export default function App() {
                         )
                       }
                     >
-                      <option value="">Не задано</option>
-                      <option value="gross">До налогов</option>
-                      <option value="net">На руки</option>
+                      <option value="">{t("Не задано")}</option>
+                      <option value="gross">{t("До налогов")}</option>
+                      <option value="net">{t("На руки")}</option>
                     </SelectField>
                   </div>
                 </fieldset>
-                <DetailAccordion title="Дополнительно" id="conditions-additional">
-                  <label className="form-field">
-                    Языки работы
-                    <Input
+                <DetailAccordion title={t("Дополнительно")} id="conditions-additional">
+                  <fieldset className="search-language-options">
+                    <legend>{t("Языки поиска")}</legend>
+                    <p className="muted">{t("Агент будет искать вакансии на выбранных языках. Если ничего не выбрано, ограничений по языку нет.")}</p>
+                    <div>
+                      {[["ru", "Русский"], ["en", "Английский"], ["de", "Немецкий"], ["es", "Испанский"], ["fr", "Французский"], ["it", "Итальянский"], ["pt", "Португальский"], ["zh", "Китайский"], ["ja", "Японский"], ["ar", "Арабский"]]
+                        .concat(searchLanguages.filter((code) => !["ru", "en", "de", "es", "fr", "it", "pt", "zh", "ja", "ar"].includes(code)).map((code) => [code, code]))
+                        .map(([code, name]) => (
+                        <label key={code}>
+                          <input type="checkbox" checked={searchLanguages.includes(code)} onChange={(event) => setSearchLanguages((previous) => event.target.checked ? [...previous, code] : previous.filter((language) => language !== code))} />
+                          {t(name)}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                  <label className="form-field">{t("Языки работы")}<Input
                       value={languages}
                       onChange={(event) => setLanguages(event.target.value)}
-                      placeholder="Русский, английский"
+                      placeholder={t("Русский, английский")}
                     />
                   </label>
                   <div className="detail-grid">
-                    <label className="form-field">
-                      Часов в неделю, не больше
-                      <Input
+                    <label className="form-field">{t("Часов в неделю, не больше")}<Input
                         type="number"
                         min="0"
                         value={searchRules.max_hours ?? ""}
@@ -1198,12 +1181,10 @@ export default function App() {
                             e.target.value === "" ? "" : Number(e.target.value),
                           )
                         }
-                        placeholder="Не задано"
+                        placeholder={t("Не задано")}
                       />
                     </label>
-                    <label className="form-field">
-                      Получить первый доход до
-                      <input
+                    <label className="form-field">{t("Получить первый доход до")}<input
                         className="native-input"
                         type="date"
                         value={incomeDeadline}
@@ -1211,13 +1192,13 @@ export default function App() {
                       />
                     </label>
                   </div>
-                  <Label>Дополнительные условия</Label>
+                  <Label>{t("Дополнительные условия")}</Label>
                   <TextArea
-                    aria-label="Условия поиска работы"
+                    aria-label={t("Условия поиска работы")}
                     rows={3}
                     value={conditions}
                     onChange={(event) => setConditions(event.target.value)}
-                    placeholder="Хочу работать удалённо, до 40 часов в неделю. Важно…"
+                    placeholder={t("Хочу работать удалённо, до 40 часов в неделю. Важно…")}
                   />
                 </DetailAccordion>
               </form>
@@ -1225,20 +1206,16 @@ export default function App() {
             <Dialog
               open={blockOpen}
               onClose={() => setBlockOpen(false)}
-              title="Блокировать компанию"
+              title={t("Блокировать компанию")}
               footer={
                 <>
-                  <Button variant="ghost" onPress={() => setBlockOpen(false)}>
-                    Отмена
-                  </Button>
+                  <Button variant="ghost" onPress={() => setBlockOpen(false)}>{t("Отмена")}</Button>
                   <Button
                     variant="danger"
                     type="submit"
                     form="block-form"
                     isPending={pending === "block"}
-                  >
-                    Блокировать
-                  </Button>
+                  >{t("Блокировать")}</Button>
                 </>
               }
             >
@@ -1247,11 +1224,8 @@ export default function App() {
                 className="flex flex-col gap-3"
                 onSubmit={saveBlock}
               >
-                <p>
-                  Это ваше локальное исключение. Агент учитывает его, когда
-                  связь вакансии или контакта с компанией установлена.
-                </p>
-                <Label htmlFor="block-domain">Домен компании</Label>
+                <p>{t("Это ваше локальное исключение. Агент учитывает его, когда связь вакансии или контакта с компанией установлена.")}</p>
+                <Label htmlFor="block-domain">{t("Домен компании")}</Label>
                 <Input
                   id="block-domain"
                   value={blockDomain}
@@ -1259,7 +1233,7 @@ export default function App() {
                   placeholder="company.example"
                   required
                 />
-                <Label htmlFor="block-reason">Причина</Label>
+                <Label htmlFor="block-reason">{t("Причина")}</Label>
                 <TextArea
                   id="block-reason"
                   rows={3}
@@ -1267,9 +1241,7 @@ export default function App() {
                   onChange={(event) => setBlockReason(event.target.value)}
                   required
                 />
-                <Label htmlFor="block-evidence">
-                  Ссылка на источник · необязательно
-                </Label>
+                <Label htmlFor="block-evidence">{t("Ссылка на источник · необязательно")}</Label>
                 <Input
                   id="block-evidence"
                   type="url"
@@ -1311,7 +1283,7 @@ export default function App() {
                   if (continueGoal) await runGoal(true);
                   else
                     notify(
-                      "Параметры модели сохранены. Теперь можно запустить поручение.",
+                      t("Параметры модели сохранены. Теперь можно запустить поручение."),
                     );
                 }}
               />

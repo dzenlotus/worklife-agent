@@ -153,6 +153,24 @@ def test_runtime_calls_real_tool_and_finishes_with_observations(tmp_path, monkey
             agent.close()
 
 
+def test_runtime_receives_separate_current_search_and_reply_languages(tmp_path, monkeypatch):
+    with endpoint(lambda payload, number: (200, response("Ready"))) as (base, requests):
+        workspace, agent = runtime(tmp_path, monkeypatch, base)
+        try:
+            workspace.save_profile(
+                {"facts": [], "interface_language": "en", "search_languages": ["ru", "de"]}
+            )
+            run = agent.start("Continue the saved search", 1)
+            assert finished(agent, run["id"])["status"] == "completed"
+            system = requests[0]["payload"]["messages"][0]["content"]
+            assert '"interface_language": "en"' in system
+            assert '"search_languages": ["ru", "de"]' in system
+            assert "localized" in system
+            assert "unless the user" in system
+        finally:
+            agent.close()
+
+
 def test_runtime_requires_explicit_provider_and_model(tmp_path, monkeypatch):
     _, agent = runtime(tmp_path, monkeypatch)
     try:

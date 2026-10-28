@@ -1,4 +1,55 @@
-# Worklife
+# Worklife — MCP server for AI job search
+
+<!-- mcp-name: io.github.dzenlotus/worklife-agent -->
+
+Worklife is a local-first **Model Context Protocol (MCP) server and career assistant** for
+job seekers. Connect an AI agent to search job boards and employer websites, compare vacancies
+with your experience, prepare truthful resumes and CVs, and track applications, email,
+interviews, and offers.
+
+It provides salary and job-market analysis, a local application tracker, browser and API tools,
+and a shared network of signed employer observations. Your profile, CVs, and correspondence are
+stored in your personal workspace; the shared knowledge base is for employer information.
+The agent runs in your MCP client, with an optional built-in model runner.
+
+[Website](https://dzenlotus.github.io/worklife-agent/) ·
+[PyPI](https://pypi.org/project/worklife-agent/) ·
+[MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.dzenlotus%2Fworklife-agent) ·
+[Agent setup](https://github.com/dzenlotus/worklife-agent/blob/main/docs/recruiter-agent.md) ·
+[Discovery and registry publishing](https://github.com/dzenlotus/worklife-agent/blob/main/docs/discovery.md) ·
+[Документация на русском](#worklife-на-русском)
+
+Install the career agent for your client with Python 3.12+ and
+[uv](https://docs.astral.sh/uv/getting-started/installation/):
+
+```sh
+uvx --python 3.12 worklife-agent --target codex
+```
+
+The setup command supports project adapters for Codex, Claude Code, Cursor, and OpenCode;
+`--target generic` exports MCP configuration for manual setup. It creates a persistent runtime,
+installs Chromium, and prepares `~/worklife-career`. Open that folder in your client and ask:
+“Use Worklife. Start with `recruiter_start` and ask about my job-search goals.”
+See the [client support and setup limits](https://github.com/dzenlotus/worklife-agent/blob/main/docs/recruiter-agent.md#клиенты-и-область-установки).
+
+For an existing stdio MCP client, the career tools can also run directly from PyPI:
+
+```json
+{
+  "mcpServers": {
+    "worklife_recruiter": {
+      "command": "uvx",
+      "args": ["--python", "3.12", "--from", "worklife-agent==0.4.1", "worklife-recruiter", "mcp"]
+    }
+  }
+}
+```
+
+This starts the MCP server with local storage at `~/.worklife`. Browser automation additionally
+needs the `browser` extra and Chromium; the setup command above installs both. Accounts and
+connectors are configured separately. Worklife does not provide unrestricted access to job platforms.
+
+## Worklife на русском
 
 Новая сеть без монет и комиссий: [протокол](docs/blockchain.md) и
 [подготовка публичного испытания](docs/public-network-launch.md).
@@ -140,6 +191,15 @@ uv run --env-file .env worklife --config config.toml app
 публичная страница GitHub Pages знакомит с проектом и не получает личные данные.
 
 Для работы через внешнего MCP-агента отдельная модель Worklife не нужна.
+Язык сайта и локального интерфейса переключается в меню «Русский / English» и сохраняется в браузере;
+при первом открытии учитываются языки браузера. В «Мои условия → Дополнительно → Языки поиска»
+можно независимо выбрать языки запросов. Агент подбирает названия должностей и синонимы для каждого
+выбранного языка, сохраняя оригинальные вакансии. Пустой выбор не ограничивает язык поиска.
+В отчёте рынка видны выполненные и пропущенные языки запросов.
+Через MCP это поля личного профиля `interface_language: "en"` и `search_languages: ["ru", "en"]`;
+`languages` по-прежнему описывает владение языками. `profile_save` заменяет профиль целиком:
+перед сохранением объединяйте новые настройки с существующими полями.
+
 Необязательный встроенный исполнитель находится в «Настройки → Встроенный исполнитель».
 Для него укажите адрес сервиса, выберите модель и при необходимости ключ. Подключение сохраняется; после настройки можно продолжить исходную цель.
 Альтернатива для развёртывания — переменные `.env`:
@@ -206,6 +266,25 @@ GitHub служит транспортом и дополнительной ко�
 Личные данные этих инструментов не попадают в общую базу работодателей.
 
 ### Расписания и мониторинг
+
+В локальном приложении откройте **Расписание → Автоматические проверки**. Выберите период,
+обновление вакансий, входящие и проверку следующих шагов, затем включите автоматический запуск.
+«Проверить сейчас» выполняет выбранные проверки и сохраняет результаты в истории, даже если
+регулярный запуск выключен. Настройки и курсоры входящих сохраняются после перезапуска.
+Повторный поиск использует сохранённые запросы, источники и языки; параметры площадок и почтовых
+ящиков не угадываются. Недостающий доступ или отсутствие запросов видны в настройках.
+Для обычных проверок модель не нужна; отдельное поручение встроенному исполнителю требует его подключения.
+
+Через MCP доступны `automation_status`, `automation_configure` и `automation_run`:
+
+```json
+{"enabled":true,"interval_minutes":60,"refresh_search":true,"check_inbox":true,"review":true}
+```
+
+Передайте этот объект в `automation_configure` после настройки источников. App или worker
+подхватит доступные источники и поддержит расписания. Ручные задания сохраняют свои настройки;
+проверки, уже выполняемые ручным расписанием, повторно не запускаются автоматически.
+Остановка автопроверок не отключает отдельные ручные задания.
 
 `schedule_save` сохраняет периодическое задание; оно переживает перезапуск. Поддерживаются `agent_cycle`,
 `jobs_search`, `connector_read`, `peer_sync`, `repository_analyze`, `reminder`, `market_collect`,

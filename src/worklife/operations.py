@@ -208,6 +208,7 @@ class Operations:
                             "limitations",
                             "job_ids",
                             "filters",
+                            "language_coverage",
                         )
                     }
                     meaningful["scope"] = (

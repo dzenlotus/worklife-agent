@@ -1,8 +1,9 @@
 // Adapted from https://magicui.design/r/{blur-fade,number-ticker,border-beam}.json
 // Magic UI (MIT), verified against the official registry on 2026-10-27.
-// Local adaptations: Russian number formatting, reduced motion, semantic a11y count.
+// Local adaptations: locale-aware number formatting, reduced motion, semantic a11y count.
 // Layout and colors follow the measured quiet-graphite reference.
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { getLocale } from "./i18n.js";
 import { motion, useInView, useMotionValue, useSpring } from "motion/react";
 
 function subscribeMotionPreference(callback) {
@@ -51,7 +52,7 @@ export function BlurFade({
   );
 }
 
-const formatCount = (value) => new Intl.NumberFormat("ru-RU").format(value);
+const formatCount = (value) => new Intl.NumberFormat(getLocale()).format(value);
 
 export function NumberTicker({ value, className = "" }) {
   const ref = useRef(null);

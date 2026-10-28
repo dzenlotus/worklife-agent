@@ -1,3 +1,5 @@
+import { t, getLocale } from "./i18n.js";
+
 export const list = (value) => (Array.isArray(value) ? value : []);
 export const labels = {
   partial: "Частично",
@@ -43,14 +45,14 @@ export const labels = {
 };
 export const label = (value) =>
   value === "step_limit"
-    ? "Достигнут предел шагов"
-    : labels[value] || value || "—";
+    ? t("Достигнут предел шагов")
+    : labels[value] ? t(labels[value]) : value || "—";
 export function formatDate(value, clockOnly = false) {
   if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(+d)) return "—";
   return d.toLocaleString(
-    "ru-RU",
+    getLocale(),
     clockOnly
       ? { hour: "2-digit", minute: "2-digit" }
       : { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" },
@@ -119,15 +121,15 @@ export function exchangeSummary(network = {}) {
   const value = network.summary || network;
   const attention = value.status === "attention",
     detail = attention
-      ? `Проверенные записи сохранены. ${value.auto ? "Продолжайте работу, повторим проверку автоматически." : "Сохранённая база остаётся доступна."}`
-      : value.detail || "Состояние обмена появится после подключения.";
+      ? t`Проверенные записи сохранены. ${value.auto ? t("Продолжайте работу, повторим проверку автоматически.") : t("Сохранённая база остаётся доступна.")}`
+      : t(value.detail || "Состояние обмена появится после подключения.");
   return {
     status: value.status || "pending",
     label: attention
-      ? value.invalid > 0 ? "Изменённая запись отклонена"
-        : value.rollback || value.incomplete > 0 ? "В общей базе не хватает части истории"
-          : "Повторяем проверку общей базы"
-      : value.label || "Обмен подготавливается",
+      ? value.invalid > 0 ? t("Изменённая запись отклонена")
+        : value.rollback || value.incomplete > 0 ? t("В общей базе не хватает части истории")
+          : t("Повторяем проверку общей базы")
+      : t(value.label || "Обмен подготавливается"),
     detail,
     employers: value.employers,
     protected_copies: value.protected_copies,
@@ -143,45 +145,46 @@ export const conditionLabels = {
 };
 export function currentConditions(profile = {}) {
   const rules = profile.constraints || {}, rows = [...list(profile.life_preferences)];
-  if (typeof rules.remote === "boolean") rows.push(rules.remote ? "Только удалённая работа" : "Удалённая работа не обязательна");
-  if (rules.min_salary != null) rows.push(`Доход от: ${rules.min_salary} ${rules.currency || "(валюта не указана)"}${rules.salary_period ? ` / ${humanLabel(rules.salary_period)}` : ""}${typeof rules.salary_gross === "boolean" ? rules.salary_gross ? " до вычета налогов" : " после вычета налогов" : ""}`);
+  if (typeof rules.remote === "boolean") rows.push(rules.remote ? t("Только удалённая работа") : t("Удалённая работа не обязательна"));
+  if (rules.min_salary != null) rows.push(t`Доход от: ${rules.min_salary} ${rules.currency || t("(валюта не указана)")}${rules.salary_period ? ` / ${humanLabel(rules.salary_period)}` : ""}${typeof rules.salary_gross === "boolean" ? rules.salary_gross ? t(" до вычета налогов") : t(" после вычета налогов") : ""}`);
   for (const key of ["max_hours", "max_hiring_stages", "max_test_hours"]) {
-    if (rules[key] != null) rows.push(`${conditionLabels[key]}: ${rules[key]}`);
+    if (rules[key] != null) rows.push(`${t(conditionLabels[key])}: ${rules[key]}`);
   }
   return rows;
 }
 export function humanLabel(value) {
-  return ({ source: "Источник", service: "Сервис", material: "Материал", learning: "Обучение", time: "Время",
+  const names = { source: "Источник", service: "Сервис", material: "Материал", learning: "Обучение", time: "Время",
     job_search: "Поиск вакансий", jobs_search: "Поиск вакансий", account_profile: "Профиль аккаунта",
     email: "Почта", mail: "Почта", registration: "Регистрация", search: "Поиск", read: "Чтение", write: "Действия",
-    month: "месяц", year: "год", hour: "час", week: "неделя", day: "день", send: "Отправка", reminder: "Напоминание" })[value] || String(value);
+    month: "месяц", year: "год", hour: "час", week: "неделя", day: "день", send: "Отправка", reminder: "Напоминание" };
+  return names[value] ? t(names[value]) : String(value);
 }
 export function usageMetric(key, value) {
   const names = { total_tokens: "Токены", tokens: "Токены", prompt_tokens: "Входящие токены", completion_tokens: "Исходящие токены",
     duration_seconds: "Время работы, секунд", cost: "Стоимость, единица не указана", cost_usd: "Стоимость, USD", applications: "Отклики", jobs_reviewed: "Изучено вакансий" };
-  return [names[key] || key.replaceAll("_", " "), Number(value).toLocaleString("ru-RU", { maximumFractionDigits: key === "duration_seconds" ? 2 : 4 })];
+  return [names[key] ? t(names[key]) : key.replaceAll("_", " "), Number(value).toLocaleString(getLocale(), { maximumFractionDigits: key === "duration_seconds" ? 2 : 4 })];
 }
 export function observationBasis(entry) {
   const kind = entry.payload?.evidence_kind;
   return {
-    label: ({ advertised: "По объявлению работодателя", observed: "Наблюдение участника", hypothesis: "Предположение", confirmed_author: "Подтверждено автором записи" })[kind] || "Основание не указано",
-    verification: entry.trust === "confirmed_author" ? "Автор подтверждает запись. Независимая проверка не проводилась." : "Независимая проверка не проводилась.",
+    label: t(({ advertised: "По объявлению работодателя", observed: "Наблюдение участника", hypothesis: "Предположение", confirmed_author: "Подтверждено автором записи" })[kind] || "Основание не указано"),
+    verification: entry.trust === "confirmed_author" ? t("Автор подтверждает запись. Независимая проверка не проводилась.") : t("Независимая проверка не проводилась."),
   };
 }
 export function scheduleResult(run, state = {}) {
   const schedule = list(state.schedules).find((item) => item.id === run.schedule_id),
     result = run.result,
-    title = schedule?.name || run.name || "Поручение по расписанию";
+    title = schedule?.name || run.name || t("Поручение по расписанию");
   let text;
-  if (run.error || run.status === "failed") text = `Не удалось выполнить поручение. ${run.error || "Причина не сохранена."}`;
-  else if (run.tool === "reminder" && result?.title) text = `Создано напоминание: «${result.title}».`;
-  else if (run.tool === "agent_cycle") text = "Поручение передано агенту. Ход работы и итог смотрите в журнале агента.";
-  else if (run.tool === "jobs_search" && Array.isArray(result)) text = `Получено вакансий: ${result.length}.`;
-  else if (run.tool === "repository_analyze" && result?.scanned_file_count != null) text = `Изучен проект «${result.name || "локальный проект"}», файлов: ${result.scanned_file_count}.`;
+  if (run.error || run.status === "failed") text = t`Не удалось выполнить поручение. ${run.error || t("Причина не сохранена.")}`;
+  else if (run.tool === "reminder" && result?.title) text = t`Создано напоминание: «${result.title}».`;
+  else if (run.tool === "agent_cycle") text = t("Поручение передано агенту. Ход работы и итог смотрите в журнале агента.");
+  else if (run.tool === "jobs_search" && Array.isArray(result)) text = t`Получено вакансий: ${result.length}.`;
+  else if (run.tool === "repository_analyze" && result?.scanned_file_count != null) text = t`Изучен проект «${result.name || t("локальный проект")}», файлов: ${result.scanned_file_count}.`;
   else if (typeof result?.summary === "string") text = result.summary;
   else if (typeof result?.message === "string") text = result.message;
-  else text = run.changed === false ? "Запуск завершён. Сохранённый результат не изменился." : "Запуск завершён. Сохранённый результат обновлён.";
-  return { title, text, error: Boolean(run.error || run.status === "failed"), next: result?.due_at ? `Срок напоминания: ${formatDate(result.due_at)}.` : null };
+  else text = run.changed === false ? t("Запуск завершён. Сохранённый результат не изменился.") : t("Запуск завершён. Сохранённый результат обновлён.");
+  return { title, text, error: Boolean(run.error || run.status === "failed"), next: result?.due_at ? t`Срок напоминания: ${formatDate(result.due_at)}.` : null };
 }
 export function goalExcerpt(goal = "") {
   let text = typeof goal === "string" ? goal.trim() : "";
@@ -217,23 +220,23 @@ export function activitySummary(event, state = {}) {
     const target = run ? { kind: "run", id: run.id } : null;
     if (["agent_tool", "agent_tool_failed"].includes(event.kind)) {
       const name = event.tool || event.summary?.match(/^Agent tool:\s*(\S+)/)?.[1];
-      return { text: `${event.kind === "agent_tool_failed" ? "Ошибка действия агента" : "Действие агента"}: ${toolDescriptions[name] || "Работа с поручением"}`, target };
+      return { text: `${event.kind === "agent_tool_failed" ? t("Ошибка действия агента") : t("Действие агента")}: ${t(toolDescriptions[name] || "Работа с поручением")}`, target };
     }
-    const title = ({ agent_started: "Агент начал поручение", agent_queued: "Поручение в очереди", agent_completed: "Поручение завершено",
+    const title = t(({ agent_started: "Агент начал поручение", agent_queued: "Поручение в очереди", agent_completed: "Поручение завершено",
       agent_failed: "Поручение завершилось ошибкой", agent_cancelled: "Поручение остановлено", agent_cancelling: "Остановка запрошена",
-      agent_step_limit: "Достигнут предел шагов" })[event.kind] || "Событие агента";
+      agent_step_limit: "Достигнут предел шагов" })[event.kind] || "Событие агента");
     const excerpt = goalExcerpt(run?.goal);
     return { text: excerpt ? `${title}: ${excerpt}` : title, target };
   }
   const schedule = list(state.schedules).find((item) => item.id === event.related_id);
   if (schedule) {
     const latest = list(state.schedule_runs).filter((item) => item.schedule_id === schedule.id && (!event.at || item.started_at <= event.at)).sort((a, b) => (b.started_at || "").localeCompare(a.started_at || ""))[0];
-    return { text: `${schedule.name}: ${latest ? scheduleResult(latest, state).text : "результат обновлён"}`, target: latest ? { kind: "schedule_run", id: latest.id } : null };
+    return { text: `${schedule.name}: ${latest ? scheduleResult(latest, state).text : t("результат обновлён")}`, target: latest ? { kind: "schedule_run", id: latest.id } : null };
   }
   const action = list(state.actions).find((item) => item.id === event.related_id);
   if (action) return { text: `${humanLabel(action.operation)}: ${label(action.status)}`, target: { kind: "action", id: action.id } };
   const resource = list(state.resources).find((item) => item.id === event.related_id);
-  return { text: resource ? `${resource.name}: ${event.summary || "обновлено"}` : (event.summary || event.title || label(event.kind)).replaceAll("result changed", "результат обновлён"), target: null };
+  return { text: resource ? `${resource.name}: ${event.summary || t("обновлено")}` : (event.summary || event.title || label(event.kind)).replaceAll("result changed", t("результат обновлён")), target: null };
 }
 export const topicGoals = {
   search:
@@ -256,3 +259,47 @@ export const topicGoals = {
   tactics:
     "Оцени результаты моего поиска и предложи следующую тактику: гипотезу, действия и измеряемый результат. Сохрани её локально.",
 };
+
+// Only the backend's numeric sample limitation is interpolated; other copy uses exact matches.
+export function marketText(value) {
+  if (typeof value !== "string") return value;
+  const counts = value.match(/^В (\d+) из (\d+) уникальных вакансий \((\d+)%\) зарплата не указана; некорректные вилки: (\d+)\.$/);
+  return counts
+    ? t`В ${counts[1]} из ${counts[2]} уникальных вакансий (${counts[3]}%) зарплата не указана; некорректные вилки: ${counts[4]}.`
+    : t(value);
+}
+
+// Match only the deterministic sentences emitted by Advisor; captured record values stay verbatim.
+export function advisorText(value) {
+  if (typeof value !== "string") return value;
+  let match;
+  if ((match = value.match(/^Уточните язык этого резюме: для отклика запрошен (.+)\.$/s)))
+    return t`Уточните язык этого резюме: для отклика запрошен ${match[1]}.`;
+  if ((match = value.match(/^Нужен проверенный перевод резюме на язык (.+)\.$/s)))
+    return t`Нужен проверенный перевод резюме на язык ${match[1]}.`;
+  if ((match = value.match(/^Верхняя граница зарплаты ([\d.]+) ниже вашего минимума ([\d.]+) (.+) при одинаковом учёте налогов\.$/s)))
+    return t`Верхняя граница зарплаты ${match[1]} ниже вашего минимума ${match[2]} ${match[3]} при одинаковом учёте налогов.`;
+  if ((match = value.match(/^Может ли работодатель гарантировать не менее ([\d.]+) (.+) с указанным вами учётом налогов\?$/s)))
+    return t`Может ли работодатель гарантировать не менее ${match[1]} ${match[2]} с указанным вами учётом налогов?`;
+  if ((match = value.match(/^Уточните условие «(рабочие часы в неделю|число этапов отбора|часы на тестовое задание)» с учётом вашего предела \((.+)\)\.$/s)))
+    return t`Уточните условие «${t(match[1])}» с учётом вашего предела (${match[2]}).`;
+  if ((match = value.match(/^Условие «(рабочие часы в неделю|число этапов отбора|часы на тестовое задание)» в объявлении \((.+)\) превышает ваш предел \((.+)\)\.$/s)))
+    return t`Условие «${t(match[1])}» в объявлении (${match[2]}) превышает ваш предел (${match[3]}).`;
+  if ((match = value.match(/^Условие «(рабочие часы в неделю|число этапов отбора|часы на тестовое задание)» в объявлении \((.+)\) соответствует вашему пределу \((.+)\)\.$/s)))
+    return t`Условие «${t(match[1])}» в объявлении (${match[2]}) соответствует вашему пределу (${match[3]}).`;
+  if ((match = value.match(/^Уточните, соответствуют ли реальные обязанности вашим целевым ролям: (.+)\.$/s)))
+    return t`Уточните, соответствуют ли реальные обязанности вашим целевым ролям: ${match[1]}.`;
+  if ((match = value.match(/^Можно ли выполнять эту работу из выбранных вами мест: (.+)\?$/s)))
+    return t`Можно ли выполнять эту работу из выбранных вами мест: ${match[1]}?`;
+  if ((match = value.match(/^Уточните требуемый уровень языка (.+) и добавьте сведения о вашем фактическом владении им\.$/s)))
+    return t`Уточните требуемый уровень языка ${match[1]} и добавьте сведения о вашем фактическом владении им.`;
+  if ((match = value.match(/^Позволят ли сроки отбора, выхода на работу и первой выплаты получить доход к нужной вам дате (.+)\?$/s)))
+    return t`Позволят ли сроки отбора, выхода на работу и первой выплаты получить доход к нужной вам дате ${match[1]}?`;
+  if ((match = value.match(/^Проверьте дополнительное условие «(.+)»: (.+)\. Оно не оценивалось автоматически\.$/s)))
+    return t`Проверьте дополнительное условие «${match[1]}»: ${match[2]}. Оно не оценивалось автоматически.`;
+  if ((match = value.match(/^Проверьте, какие факты опыта можно подтвердить для требований: (.+)\. Уточните обязательные требования и добавьте только реальный опыт\.$/s)))
+    return t`Проверьте, какие факты опыта можно подтвердить для требований: ${match[1]}. Уточните обязательные требования и добавьте только реальный опыт.`;
+  if ((match = value.match(/^Требований с буквальным упоминанием в фактах профиля: (\d+)\. Проверьте приведённые цитаты и источники\.$/)))
+    return t`Требований с буквальным упоминанием в фактах профиля: ${match[1]}. Проверьте приведённые цитаты и источники.`;
+  return t(value);
+}

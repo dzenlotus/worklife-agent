@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 from uuid import uuid4
 
+from .languages import language_tag, search_languages
 from .ledger import Ledger, employer_domain
 from .storage import Store, canonical, now
 
@@ -44,6 +45,11 @@ class Workspace:
             not f.get("text") or not f.get("source") for f in facts
         ):
             raise ValueError("Facts require unique IDs, text, and a source")
+        profile = dict(profile)
+        if "search_languages" in profile:
+            profile["search_languages"] = search_languages(profile["search_languages"])
+        if "interface_language" in profile:
+            profile["interface_language"] = language_tag(profile["interface_language"])
         return self.store.put("profile", "me", profile)
 
     def get_profile(self):
@@ -126,6 +132,10 @@ class Workspace:
             "last_seen_at": at,
             "first_seen_at": previous.get("first_seen_at") or previous.get("fetched_at") or at,
         }
+        if "search_languages" in job or "search_languages" in previous:
+            value["search_languages"] = search_languages(
+                previous.get("search_languages", []) + job.get("search_languages", [])
+            )
         observation = {"id": uid(), "job_id": key, "observed_at": at, "job": value}
         with self.store.connect() as db:
             for bucket, identifier, document in (

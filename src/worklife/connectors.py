@@ -17,6 +17,7 @@ from urllib.parse import quote
 import httpx
 
 from .config import secret
+from .languages import language_tag
 
 
 def plain(value):
@@ -106,7 +107,9 @@ class Connectors:
         except httpx.TransportError as exc:
             raise ConnectionError(f"Provider transport failure: {type(exc).__name__}") from None
 
-    def search(self, name, query="", **parameters):
+    def search(self, name, query="", language=None, **parameters):
+        # This labels the query, not a provider locale or the vacancy's required language.
+        language = language_tag(language) if language is not None else None
         c = self.config(name)
         kind = c["type"]
         jobs = []
@@ -208,6 +211,7 @@ class Connectors:
                 {
                     **j,
                     "platform": platform,
+                    **({"search_languages": [language]} if language else {}),
                     **({"employer_domain": c["employer_domain"]} if c.get("employer_domain") else {}),
                 }
             )

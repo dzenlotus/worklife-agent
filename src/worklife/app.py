@@ -120,6 +120,8 @@ def snapshot(server):
             },
         },
         "statistics": server.worklife_operations.statistics(),
+        "automation": server.worklife_automation.status(),
+        "scheduler": {"running": getattr(server, "worklife_scheduler_running", False)},
         "connectors": server.worklife_connectors.capabilities(),
         "agent": {
             **server.worklife_runtime.status(),
@@ -135,6 +137,7 @@ def create_app(config, scheduler=True):
     async def tick():
         while True:
             try:
+                await asyncio.to_thread(server.worklife_automation.refresh)
                 await asyncio.to_thread(server.worklife_operations.run_due)
             except Exception as exc:
                 server.worklife_operations.activity_record("scheduler_error", type(exc).__name__)
@@ -150,9 +153,11 @@ def create_app(config, scheduler=True):
     async def lifespan(app):
         task = asyncio.create_task(tick()) if scheduler else None
         network_task = asyncio.create_task(network_tick()) if scheduler else None
+        server.worklife_scheduler_running = bool(scheduler)
         try:
             yield
         finally:
+            server.worklife_scheduler_running = False
             if task:
                 task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):

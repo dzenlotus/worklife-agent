@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import {
   Card,
   Chip,
@@ -148,11 +149,7 @@ export function PrivateNote() {
   return (
     <Alert>
       <Alert.Content>
-        <Alert.Description>
-          Личная база хранится на этом устройстве. Подключённый MCP-агент
-          получает данные для поручения. В общую базу передаются только
-          наблюдения о работодателях.
-        </Alert.Description>
+        <Alert.Description>{t("Личная база хранится на этом устройстве. Подключённый MCP-агент получает данные для поручения. В общую базу передаются только наблюдения о работодателях.")}</Alert.Description>
       </Alert.Content>
     </Alert>
   );
@@ -196,7 +193,7 @@ export function DataTable({ headers, rows }) {
                     id={`column-${index}`}
                     isRowHeader={index === 0}
                   >
-                    {header || "Действия"}
+                    {header || t("Действия")}
                   </Table.Column>
                 ))}
               </Table.Header>
@@ -216,7 +213,7 @@ export function DataTable({ headers, rows }) {
     </>
   );
 }
-export function AgentButton({ onPress, children = "Подготовить поручение" }) {
+export function AgentButton({ onPress, children = t("Подготовить поручение") }) {
   return (
     <Button variant="outline" size="sm" onPress={onPress}>
       {children}
@@ -285,7 +282,7 @@ export function Dialog({
     >
       <Modal.Container size={size}>
         <Modal.Dialog>
-          <Modal.CloseTrigger aria-label="Закрыть" />
+          <Modal.CloseTrigger aria-label={t("Закрыть")} />
           <Modal.Header>
             <Modal.Heading>{title}</Modal.Heading>
           </Modal.Header>

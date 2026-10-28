@@ -1,0 +1,24 @@
+# Worklife
+
+> A local-first Model Context Protocol (MCP) server and career assistant for AI-assisted job search.
+
+Worklife helps a job seeker's agent search job boards and employer websites, match vacancies to experience, prepare truthful resumes and CVs, track applications, work with email, and schedule follow-ups. The personal workspace stays local; shared employer observations are a separate feature. It can connect to an existing MCP client or use its optional built-in model runner.
+
+## Installation
+
+Requires Python 3.12+ and uv. Install and configure the career agent for Codex:
+
+`uvx --python 3.12 worklife-agent --target codex`
+
+The installer also supports `claude-code`, `cursor`, `opencode`, and `generic`. The generic target exports configuration for manual MCP setup. Browser automation additionally requires the browser extra and Chromium; see the setup guide for client-specific limits.
+
+## Documentation
+
+- [Project website](https://dzenlotus.github.io/worklife-agent/): Product overview and installation.
+- [README](https://github.com/dzenlotus/worklife-agent#readme): Features, configuration, MCP usage, and operating limits.
+- [Career agent setup](https://github.com/dzenlotus/worklife-agent/blob/main/docs/recruiter-agent.md): Supported clients, installation, and scope.
+- [Agent instructions](https://github.com/dzenlotus/worklife-agent/blob/main/agent/INSTRUCTIONS.md): Career-search workflow and tool use.
+- [PyPI package](https://pypi.org/project/worklife-agent/): Python distribution.
+- [Source and issues](https://github.com/dzenlotus/worklife-agent): Repository and issue tracker.
+
+This file is a documentation index, not a guarantee of indexing, recommendations, or job-search results.
