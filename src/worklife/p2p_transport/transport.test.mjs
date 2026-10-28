@@ -119,7 +119,7 @@ async function freePort() {
   return port;
 }
 
-function sidecar(args) {
+function sidecar(args, initialMessage = null) {
   const child = spawn(process.execPath, [new URL('./swarm.mjs', import.meta.url).pathname, ...args], {stdio: ['pipe', 'pipe', 'pipe']});
   const events = [], waiters = new Set();
   let stderr = '', buffer = '';
@@ -130,15 +130,19 @@ function sidecar(args) {
       const event = JSON.parse(buffer.slice(0, index));
       buffer = buffer.slice(index + 1);
       events.push(event);
+      if (event.type === 'connected' && initialMessage) {
+        // Native streams open lazily; BlockSwarm also sends hello on every connection.
+        child.stdin.write(`${JSON.stringify({type: 'send', peer: event.peer, message: initialMessage})}\n`);
+      }
       for (const check of waiters) check();
     }
   });
   return {
     child, events,
     send: message => child.stdin.write(`${JSON.stringify(message)}\n`),
-    wait(predicate, timeout = 20000) {
+    wait(predicate, timeout = 20000, label = 'event') {
       return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => { waiters.delete(check); reject(new Error(`Sidecar timed out: ${JSON.stringify(events)} ${stderr}`)); }, timeout);
+        const timer = setTimeout(() => { waiters.delete(check); reject(new Error(`Sidecar timed out waiting for ${label}: ${JSON.stringify(events)} ${stderr}`)); }, timeout);
         const check = () => {
           const found = events.find(predicate);
           if (found) { clearTimeout(timer); waiters.delete(check); resolve(found); }
@@ -173,8 +177,9 @@ test('three isolated local peers exchange objects without executing payload cont
   });
   await bootstrap.ready();
   const topic = '42'.repeat(32);
+  const initialMessage = {type: 'transport-test-hello'};
   for (let index = 0; index < 3; index++) {
-    const peer = sidecar(['--topic', topic, '--key-file', join(directory, `${index}.seed`), '--bootstrap', `127.0.0.1:${bootstrap.address().port}`, '--isolated']);
+    const peer = sidecar(['--topic', topic, '--key-file', join(directory, `${index}.seed`), '--bootstrap', `127.0.0.1:${bootstrap.address().port}`, '--isolated'], initialMessage);
     peers.push(peer);
     const ready = await peer.wait(event => event.type === 'ready');
     assert.match(ready.public_key, /^[0-9a-f]{64}$/);
@@ -182,26 +187,30 @@ test('three isolated local peers exchange objects without executing payload cont
     assert.ok(ready.address.port > 0);
   }
   const keys = peers.map(peer => peer.events.find(event => event.type === 'ready').public_key);
-  await Promise.all(peers.flatMap((peer, index) => keys.filter(key => key !== keys[index]).map(key => peer.wait(event => event.type === 'connected' && event.peer === key))));
-  peers[0].send({type: 'send', peer: keys[1], message: {type: 'shutdown', arbitrary: 'ordinary peer payload'}});
-  const received = await peers[1].wait(event => event.type === 'message' && event.peer === keys[0]);
-  assert.deepEqual(JSON.parse(Buffer.from(received.payload, 'base64')), {type: 'shutdown', arbitrary: 'ordinary peer payload'});
+  await Promise.all(peers.flatMap((peer, index) => keys.filter(key => key !== keys[index]).map(key => peer.wait(event => event.type === 'connected' && event.peer === key, 20000, `initial mesh peer ${index} to ${key}`))));
+  const ordinary = {type: 'shutdown', arbitrary: 'ordinary peer payload'};
+  peers[0].send({type: 'send', peer: keys[1], message: ordinary});
+  const ordinaryPayload = Buffer.from(JSON.stringify(ordinary)).toString('base64');
+  const received = await peers[1].wait(event => event.type === 'message' && event.peer === keys[0] && event.payload === ordinaryPayload, 20000, 'ordinary payload at peer 1');
+  assert.deepEqual(JSON.parse(Buffer.from(received.payload, 'base64')), ordinary);
   const raw = Buffer.from('{"n":1152921504606846977}');
   peers[0].send({type: 'send_raw', peer: keys[1], payload: raw.toString('base64')});
-  const exact = await peers[1].wait(event => event.type === 'message' && event.payload === raw.toString('base64'));
+  const exact = await peers[1].wait(event => event.type === 'message' && event.payload === raw.toString('base64'), 20000, 'raw payload at peer 1');
   assert.deepEqual(Buffer.from(exact.payload, 'base64'), raw);
   assert.equal('message' in exact, false);
-  peers[1].send({type: 'send', peer: keys[2], message: {type: 'hello', blocks: []}});
-  assert.deepEqual(JSON.parse(Buffer.from((await peers[2].wait(event => event.type === 'message' && event.peer === keys[1])).payload, 'base64')), {type: 'hello', blocks: []});
+  const hello = {type: 'hello', blocks: []};
+  peers[1].send({type: 'send', peer: keys[2], message: hello});
+  const helloPayload = Buffer.from(JSON.stringify(hello)).toString('base64');
+  assert.deepEqual(JSON.parse(Buffer.from((await peers[2].wait(event => event.type === 'message' && event.peer === keys[1] && event.payload === helloPayload, 20000, 'hello payload at peer 2')).payload, 'base64')), hello);
   peers[0].send({type: 'disconnect', peer: keys[1]});
   await peers[0].wait(event => event.type === 'disconnected' && event.peer === keys[1]);
   await peers[0].close();
-  const restarted = sidecar(['--topic', '99'.repeat(32), '--key-file', join(directory, '0.seed'), '--bootstrap', `127.0.0.1:${bootstrap.address().port}`, '--peer', keys[2]]);
+  const restarted = sidecar(['--topic', '99'.repeat(32), '--key-file', join(directory, '0.seed'), '--bootstrap', `127.0.0.1:${bootstrap.address().port}`, '--peer', keys[2]], initialMessage);
   peers.push(restarted);
   assert.equal((await restarted.wait(event => event.type === 'ready')).public_key, keys[0]);
-  await restarted.wait(event => event.type === 'connected' && event.peer === keys[2]);
+  await restarted.wait(event => event.type === 'connected' && event.peer === keys[2], 20000, 'restart explicit peer 2');
   restarted.send({type: 'join_peer', peer: keys[1]});
-  await restarted.wait(event => event.type === 'connected' && event.peer === keys[1]);
+  await restarted.wait(event => event.type === 'connected' && event.peer === keys[1], 20000, 'restart joined peer 1');
 });
 
 test('peer shuts down promptly when its only bootstrap router has gone offline', {timeout: 15000}, async t => {

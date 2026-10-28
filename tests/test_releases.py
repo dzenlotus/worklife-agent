@@ -46,7 +46,13 @@ def test_new_stable_release_is_compared_numerically_with_safe_upgrade_command(re
     assert result["release_url"] == "https://pypi.org/project/worklife-agent/0.4.10/"
     assert result["checked_at"].endswith("Z")
     assert shlex.split(result["update_command"]) == [
-        "uv", "pip", "install", "--python", sys.executable, "--upgrade", "worklife-agent"
+        "uv",
+        "pip",
+        "install",
+        "--python",
+        sys.executable,
+        "--upgrade",
+        "worklife-agent",
     ]
     assert str(requests[0].url) == "https://pypi.org/pypi/worklife-agent/json"
     assert not requests[0].content
@@ -85,14 +91,17 @@ def test_failed_check_is_unavailable_and_throttled_for_a_day(release_check):
     assert len(requests) == 1
 
 
-@pytest.mark.parametrize("payload", [
-    {"info": {"version": "0.5.0rc1"}},
-    {"info": {"version": "0.5.0", "yanked": True}},
-    {"info": {"version": "not-a-version"}},
-    {"info": {"version": 5}},
-    {"info": []},
-    [],
-])
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"info": {"version": "0.5.0rc1"}},
+        {"info": {"version": "0.5.0", "yanked": True}},
+        {"info": {"version": "not-a-version"}},
+        {"info": {"version": 5}},
+        {"info": []},
+        [],
+    ],
+)
 def test_invalid_prerelease_or_yanked_response_never_announces_update(release_check, payload):
     releases, store, _, state, _, _ = release_check
     state.payload = payload

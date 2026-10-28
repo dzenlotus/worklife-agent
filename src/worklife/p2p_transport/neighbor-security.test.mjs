@@ -9,6 +9,7 @@ import {once} from 'node:events';
 import DHT from 'hyperdht';
 import Hyperswarm from 'hyperswarm';
 import {NeighborPolicy, networkGroup} from './neighbors.mjs';
+import {jsonLines} from './swarm.mjs';
 
 const key = number => BigInt(number).toString(16).padStart(64, '0');
 const host = number => `10.${number >> 8}.${number % 256}.1`;
@@ -258,9 +259,12 @@ test('an authenticated replacement stream keeps its locally selected role', {tim
   socket.write('{"type":"before-replacement"}\n');
   await victim.wait(event => event.type === 'message' &&
     Buffer.from(event.payload, 'base64').toString().includes('before-replacement'));
-  const reply = once(socket, 'data');
+  // The native stream may still hold the initial hello; wait for the actual reply.
+  const reply = new Promise((resolve, reject) => socket.on('data', jsonLines(message => {
+    if (message.type === 'reply-before-replacement') resolve(message);
+  }, reject)));
   victim.send({type: 'send', peer, message: {type: 'reply-before-replacement'}});
-  await reply;
+  assert.deepEqual(await reply, {type: 'reply-before-replacement'});
 
   const start = victim.events.length;
   duplicate = dht.connect(Buffer.from(ready.public_key, 'hex'), {keyPair: native.keyPair});
@@ -332,17 +336,13 @@ test('22 native unsolicited peers leave room for a useful locally selected peer'
   assert.equal(full.peers.length, 22);
   for (let index = 23; index <= 24; index++) {
     const keyPair = DHT.keyPair(Buffer.alloc(32, index));
-    const dht = new DHT({bootstrap: [`127.0.0.1:${port}`], port: [0, 0], host: '0.0.0.0', keyPair});
-    const attacker = new Hyperswarm({dht, keyPair, maxPeers: 1});
-    attacker.on('connection', socket => socket.on('error', () => {}));
+    const attacker = new DHT({bootstrap: [`127.0.0.1:${port}`], port: [0, 0], host: '0.0.0.0', keyPair});
     attackers.push(attacker);
-    await attacker.listen();
-    const connection = once(attacker, 'connection');
-    attacker.joinPeer(target);
-    const [socket] = await connection;
-    attacker.leavePeer(target);
+    await attacker.ready();
+    const socket = attacker.connect(target, {keyPair});
     sockets.push(socket);
     socket.on('error', () => {});
+    // Rejection can close the native stream before Hyperswarm emits a connection.
     await new Promise(resolve => socket.once('close', resolve));
   }
   const rejected = await stats();

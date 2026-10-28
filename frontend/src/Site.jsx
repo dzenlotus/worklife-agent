@@ -154,7 +154,7 @@ const research = [
             <AnimatedSpan className="wl-terminal-plan">{t("→ Настроит подключение к выбранному клиенту")}</AnimatedSpan>
           </Terminal>
           <p className="wl-copy-status" role="status" aria-live="polite">{copied}</p>
-          <p className="wl-package-state">{pypiPublished ? t("Доступно в PyPI · 0.4.1") : t("Пакет готовится к публикации в PyPI.")}</p>
+          <p className="wl-package-state">{pypiPublished ? t("Доступно в PyPI · 0.5.0") : t("Пакет готовится к публикации в PyPI.")}</p>
           <p className="wl-setup-next">{t("Дальше общайтесь с агентом о работе. Подготовку инструментов и ведение поиска он возьмёт на себя.")}</p>
           <div className="wl-agent-faq" aria-label={t("Вопросы о работе с агентом")}>{questions.map(([question, answer]) => <details className="wl-setup-details" key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div>
         </div>

@@ -95,15 +95,22 @@ def main(argv=None):
         print(f"Telegram: вход проверен, настройки сохранены в {path}. Перезапустите MCP с этим .env.")
         return 0
     except ModuleNotFoundError:
-        print("Установите worklife-agent[telegram] в окружение Worklife и повторите команду.", file=sys.stderr)
+        print(
+            "Установите worklife-agent[telegram] в окружение Worklife и повторите команду.", file=sys.stderr
+        )
     except InputError as exc:
         print(str(exc), file=sys.stderr)
     except OSError:
-        print("Не удалось завершить вход или сохранить личный .env. Проверьте доступ и повторите.", file=sys.stderr)
+        print(
+            "Не удалось завершить вход или сохранить личный .env. Проверьте доступ и повторите.",
+            file=sys.stderr,
+        )
     except (KeyboardInterrupt, EOFError):
         print("Вход отменён; настройки не сохранены.", file=sys.stderr)
     except Exception:
-        print("Не удалось войти в Telegram. Проверьте подключение и данные в своём терминале.", file=sys.stderr)
+        print(
+            "Не удалось войти в Telegram. Проверьте подключение и данные в своём терминале.", file=sys.stderr
+        )
     return 1
 
 

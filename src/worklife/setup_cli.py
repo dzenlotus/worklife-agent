@@ -114,7 +114,9 @@ def main(argv=None):
             print(f"Добавьте MCP из {destination}/.worklife/recruiter-mcp.json в свой клиент.")
         else:
             print(f"Откройте {destination} в {args.target} и включите Worklife Recruiter.")
-        print("Первое поручение: «Используй worklife-onboarding. Быстро подключи всё нужное, включая Telegram».")
+        print(
+            "Первое поручение: «Используй worklife-onboarding. Быстро подключи всё нужное, включая Telegram»."
+        )
         return 0
     except subprocess.CalledProcessError as exc:
         print(f"Worklife: {step}: команда завершилась с кодом {exc.returncode}.", file=sys.stderr)
