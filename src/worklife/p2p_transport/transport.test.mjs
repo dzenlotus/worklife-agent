@@ -167,19 +167,25 @@ function sidecar(args, initialMessage = null) {
 test('three isolated local peers exchange objects without executing payload control messages', {timeout: 40000}, async t => {
   assert.ok(transport, 'the transport module must exist');
   const directory = await mkdtemp(join(tmpdir(), 'worklife-swarm-'));
-  const bootstrap = DHT.bootstrapper(await freePort(), '127.0.0.1');
+  const bootstraps = [];
   const peers = [];
   t.after(async () => {
     const results = await Promise.allSettled(peers.map(peer => peer.close()));
-    await bootstrap.destroy({force: true});
+    await Promise.all(bootstraps.map(bootstrap => bootstrap.destroy({force: true})));
     await rm(directory, {recursive: true, force: true});
     for (const result of results) if (result.status === 'rejected') throw result.reason;
   });
-  await bootstrap.ready();
+  // HyperDHT samples four distinct observer endpoints before classifying a NAT route.
+  for (let index = 0; index < 4; index++) {
+    const bootstrap = DHT.bootstrapper(await freePort(), '127.0.0.1', {host: '127.0.0.1'});
+    bootstraps.push(bootstrap);
+    await bootstrap.ready();
+  }
+  const bootstrapArgs = bootstraps.flatMap(bootstrap => ['--bootstrap', `127.0.0.1:${bootstrap.address().port}`]);
   const topic = '42'.repeat(32);
   const initialMessage = {type: 'transport-test-hello'};
   for (let index = 0; index < 3; index++) {
-    const peer = sidecar(['--topic', topic, '--key-file', join(directory, `${index}.seed`), '--bootstrap', `127.0.0.1:${bootstrap.address().port}`, '--isolated'], initialMessage);
+    const peer = sidecar(['--topic', topic, '--key-file', join(directory, `${index}.seed`), ...bootstrapArgs, '--isolated'], initialMessage);
     peers.push(peer);
     const ready = await peer.wait(event => event.type === 'ready');
     assert.match(ready.public_key, /^[0-9a-f]{64}$/);
@@ -188,6 +194,8 @@ test('three isolated local peers exchange objects without executing payload cont
   }
   const keys = peers.map(peer => peer.events.find(event => event.type === 'ready').public_key);
   await Promise.all(peers.flatMap((peer, index) => keys.filter(key => key !== keys[index]).map(key => peer.wait(event => event.type === 'connected' && event.peer === key, 20000, `initial mesh peer ${index} to ${key}`))));
+  const initialPayload = Buffer.from(JSON.stringify(initialMessage)).toString('base64');
+  await Promise.all(peers.flatMap((peer, index) => keys.filter(key => key !== keys[index]).map(key => peer.wait(event => event.type === 'message' && event.peer === key && event.payload === initialPayload, 20000, `initial hello at peer ${index} from ${key}`))));
   const ordinary = {type: 'shutdown', arbitrary: 'ordinary peer payload'};
   peers[0].send({type: 'send', peer: keys[1], message: ordinary});
   const ordinaryPayload = Buffer.from(JSON.stringify(ordinary)).toString('base64');
@@ -205,7 +213,7 @@ test('three isolated local peers exchange objects without executing payload cont
   peers[0].send({type: 'disconnect', peer: keys[1]});
   await peers[0].wait(event => event.type === 'disconnected' && event.peer === keys[1]);
   await peers[0].close();
-  const restarted = sidecar(['--topic', '99'.repeat(32), '--key-file', join(directory, '0.seed'), '--bootstrap', `127.0.0.1:${bootstrap.address().port}`, '--peer', keys[2]], initialMessage);
+  const restarted = sidecar(['--topic', '99'.repeat(32), '--key-file', join(directory, '0.seed'), ...bootstrapArgs, '--peer', keys[2]], initialMessage);
   peers.push(restarted);
   assert.equal((await restarted.wait(event => event.type === 'ready')).public_key, keys[0]);
   await restarted.wait(event => event.type === 'connected' && event.peer === keys[2], 20000, 'restart explicit peer 2');
