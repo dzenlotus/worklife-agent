@@ -1,5 +1,6 @@
 import { t, useLocale } from "./i18n.js";
 import LanguageSelect from "./LanguageSelect.jsx";
+import ProjectActions from "./ProjectActions.jsx";
 import { useRef, useState } from "react";
 import { Tabs } from "@heroui/react";
 import { ArrowDown, ArrowRight, ArrowUpRight, Copy, GitBranch, Code2, Globe2, LockKeyhole, Search, Terminal as TerminalIcon, UserRound, FileText, MessageSquare, Target, Waves } from "lucide-react";
@@ -163,6 +164,6 @@ const research = [
         <MagicCard className="wl-delegation-card" contentClassName="wl-delegation-content" style={{"--magic-card-bg":"#202a33"}}><div className="wl-delegation-label"><Waves aria-hidden="true" /><span>{t("Поручение вашему агенту")}</span></div><blockquote>{firstGoal}</blockquote><button className="wl-copy" type="button" onClick={() => copy(firstGoal, t("Поручение скопировано — передайте его своему агенту."), setGoalCopyStatus)}><Copy aria-hidden="true" />{t(" Скопировать поручение")}</button><p className="wl-goal-copy-status" role="status" aria-live="polite">{goalCopyStatus}</p></MagicCard>
       </section>
     </main>
-    <footer className="wl-footer wl-container"><a href="#top" aria-label={t("Worklife — к началу")}><Brand /></a><span>{t("Создан, чтобы быть на вашей стороне.")}</span><div><a href="#manifesto">{t("Манифест")}</a><a href={github}>{t("Открытый код ")}<ArrowUpRight aria-hidden="true" /></a></div></footer>
+    <footer className="wl-footer wl-container"><a href="#top" aria-label={t("Worklife — к началу")}><Brand /></a><span>{t("Создан, чтобы быть на вашей стороне.")}</span><div><a href="#manifesto">{t("Манифест")}</a><ProjectActions /></div></footer>
   </div>;
 }
