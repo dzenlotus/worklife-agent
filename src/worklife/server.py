@@ -13,6 +13,7 @@ from .chain_tools import register_chain_tools
 from .connectors import Connectors
 from .federation import sync_peer
 from .observability import ObservedMCP
+from .releases import ReleaseUpdates
 from .storage import now
 from .workspace import Workspace, uid
 
@@ -65,6 +66,12 @@ Keep conflicting claims with provenance; use local trust decisions instead of a 
 knowledge_publish creates a pending proposal. knowledge_query returns only chain-confirmed protocol-valid records.
 Use blockchain_challenge / blockchain_qualify to earn monthly rights and blockchain_mine with a bounded budget.
 Use blockchain_connect / blockchain_sync for open v2 peers; raw v1 GitHub data is never silently confirmed.
+Telegram is opt-in: each user registers their own Telegram API application and authorizes their own account.
+Missing Telegram credentials do not block other Worklife features; start setup only when the user wants it.
+Telegram can deliver the same verified public blocks: blockchain_telegram_connect selects a joined shared service
+group and blockchain_sync exchanges its files. blockchain_telegram_create_group creates a service supergroup
+only when the user asks. Account session/API credentials come from configured environment variables.
+Never copy employer correspondence or personal records into the synchronization chat.
 Qualification and PoW do not prove autonomous identity or factual employer truth. Inspect evidence separately.
 """
 
@@ -81,7 +88,7 @@ def create_server(config, profile=None):
             **{p["id"]: p["config"] for p in w.store.list("peer")},
         }
 
-    network = BlockchainNetwork(w, peers)
+    network = BlockchainNetwork(w, peers, telegram=config.telegram_sync)
 
     async def network_loop():
         while True:
@@ -108,6 +115,7 @@ def create_server(config, profile=None):
         log_level="WARNING",
     )
     mcp.worklife_profile = profile
+    mcp.worklife_releases = ReleaseUpdates(w.store)
     read = ToolAnnotations(readOnlyHint=True, destructiveHint=False)
     write = ToolAnnotations(readOnlyHint=False, destructiveHint=False)
     external = ToolAnnotations(readOnlyHint=False, destructiveHint=False, openWorldHint=True)
@@ -121,6 +129,7 @@ def create_server(config, profile=None):
             profile = None
         return {
             "profile": profile,
+            "release": mcp.worklife_releases.status(),
             "due_tasks": w.due_tasks(),
             "actions": w.actions(),
             "applications": w.store.list("application"),
@@ -461,6 +470,7 @@ def create_server(config, profile=None):
             current_profile = None
         return {
             "agent": load_agent_profile(),
+            "release": mcp.worklife_releases.status(),
             "profile": current_profile,
             "actions": w.actions(),
             "agency": mcp.worklife_agency.brief(),

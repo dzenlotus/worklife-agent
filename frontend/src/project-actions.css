@@ -1,0 +1,31 @@
+.project-actions { min-width: 0; color: var(--app-secondary, #a9b4bf); }
+.project-actions-buttons { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; }
+.project-actions .project-actions-buttons > .project-action { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 8px 10px; border: 0; border-radius: 6px; color: inherit; background: transparent; font: inherit; font-size: 12px; font-weight: 400; line-height: 20px; white-space: nowrap; text-decoration: none; }
+.project-actions .project-actions-buttons > .project-action:hover { background: rgb(160 190 220 / 9%); color: var(--foreground, #e5e9e9); }
+.project-actions :is(button, a, input):focus-visible { outline: 2px solid var(--accent, #abc9e1); outline-offset: 3px; }
+.project-actions .project-action svg { width: 15px; height: 15px; flex: 0 0 15px; stroke-width: 1.75; }
+.project-actions-feedback { margin: 0; max-width: 38ch; font-size: 11px; line-height: 1.5; }
+.project-actions-feedback:empty { display: none; }
+.project-actions-fallback { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 10px; max-width: 100%; }
+.project-actions-fallback a { font-size: 12px; }
+.project-actions-fallback input { width: 100%; min-width: 0; min-height: 36px; border: 1px solid var(--separator, #ffffff30); border-radius: 5px; padding: 6px 8px; background: transparent; color: inherit; font: inherit; font-size: 11px; }
+.project-actions-fallback button { min-height: 36px; }
+.project-actions--sidebar { margin: 0 16px; padding: 10px 0; flex-shrink: 0; }
+.project-actions--sidebar .project-actions-buttons { align-items: stretch; flex-direction: column; gap: 0; }
+.project-actions--sidebar .project-actions-buttons > .project-action { justify-content: flex-start; padding-inline: 6px; }
+.project-actions--sidebar .project-actions-feedback { padding-inline: 6px; }
+.sidebar-collapsed .project-actions--sidebar { margin-inline: 12px; position: relative; }
+.sidebar-collapsed .project-actions--sidebar .project-action { width: 40px; padding-inline: 0; justify-content: center; }
+.sidebar-collapsed .project-actions--sidebar .project-action-label { display: none; }
+.sidebar-collapsed .project-actions--sidebar .project-actions-notice:has(.project-actions-feedback:not(:empty)) { position: absolute; left: 48px; bottom: 0; z-index: 20; width: 240px; padding: 12px; border: 1px solid var(--separator); border-radius: 8px; background: var(--surface); box-shadow: 0 5px 18px rgb(0 0 0 / 20%); }
+.project-actions--menu { border-top: 1px solid var(--separator); margin-top: 20px; padding-top: 12px; }
+.project-actions--menu .project-actions-buttons > .project-action { font-size: 13px; }
+.worklife-site .project-actions { color: #a9b4bf; }
+.wl-footer > div:has(.project-actions) { align-items: flex-start; flex-wrap: wrap; }
+.wl-footer .project-actions { font-size: 12px; }
+.wl-footer .project-actions .project-action svg { width: 15px; height: 15px; }
+@media (max-width: 760px) {
+  .wl-footer > div:has(.project-actions) { width: 100%; margin: 0; gap: 8px 16px; }
+  .wl-footer .project-actions-buttons { gap: 4px; }
+  .project-actions .project-actions-buttons > .project-action { min-height: 44px; }
+}

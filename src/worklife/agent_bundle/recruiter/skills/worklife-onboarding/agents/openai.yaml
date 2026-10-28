@@ -1,0 +1,11 @@
+interface:
+  display_name: "Быстрый старт Worklife"
+  short_description: "Онбординг, площадки, почта и Telegram"
+  default_prompt: "Используй $worklife-onboarding. Быстро проверь готовность Worklife и подключи нужные площадки, почту и Telegram."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "worklife_recruiter"
+      description: "Карьерный профиль MCP Worklife"
+policy:
+  allow_implicit_invocation: true

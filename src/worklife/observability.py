@@ -56,6 +56,8 @@ SUMMARIES = {
     "blockchain_mine": "Проверка работы для блока завершена",
     "blockchain_connect": "Узел новой сети подключён",
     "blockchain_sync": "Обмен блоками завершён",
+    "blockchain_telegram_connect": "Служебная группа Telegram выбрана для обмена блоками",
+    "blockchain_telegram_create_group": "Служебная группа Telegram создана и подключена",
     "credential_create": "Доступ сохранён в системном хранилище",
     "browser_fill_credential": "Сохранённый доступ подставлен в страницу",
     "resource_save": "Ресурс поиска сохранён",

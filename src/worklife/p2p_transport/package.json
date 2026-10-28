@@ -1,0 +1,12 @@
+{
+  "name": "worklife-p2p-transport",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=22"},
+  "scripts": {"test": "node --test"},
+  "dependencies": {
+    "hyperdht": "6.34.1",
+    "hyperswarm": "4.17.2"
+  }
+}

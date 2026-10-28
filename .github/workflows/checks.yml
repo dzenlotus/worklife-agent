@@ -16,9 +16,14 @@ jobs:
         working-directory: frontend
       - run: npm test
         working-directory: frontend
+      - uses: astral-sh/setup-uv@v6
       - run: npm run build
         working-directory: frontend
-      - uses: astral-sh/setup-uv@v6
+      - run: npm ci --omit=dev
+        working-directory: src/worklife/p2p_transport
+      - run: npm test
+        working-directory: src/worklife/p2p_transport
+      - run: node scripts/simulate_p2p_neighbors.mjs
       - run: uv sync --locked --python 3.12 --extra dev --extra browser
       - run: uv run playwright install --with-deps chromium
       - run: uv run ruff check src tests

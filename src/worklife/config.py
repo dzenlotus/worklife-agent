@@ -15,6 +15,7 @@ class Config:
         "https://raw.githubusercontent.com/dzenlotus/worklife-employers/main/snapshot.json"
     )
     network_relay_repo: str = "dzenlotus/worklife-employers"
+    telegram_sync: dict = field(default_factory=dict)
 
 
 def load_config(path=None):
@@ -41,6 +42,7 @@ def load_config(path=None):
         network.get("auto", True) and os.getenv("WORKLIFE_NETWORK_OFFLINE") != "1",
         network.get("relay_url", Config.network_relay_url),
         network.get("relay_repo", Config.network_relay_repo),
+        network.get("telegram", {}),
     )
 
 

@@ -1,5 +1,6 @@
 """Agent-facing operations for the tokenless chain; no manual enrollment or payments."""
 
+import asyncio
 from urllib.parse import urlparse
 
 
@@ -7,7 +8,7 @@ def register_chain_tools(mcp, workspace, network):
     @mcp.tool()
     def blockchain_status() -> dict:
         """Verified work/chain state and current monthly qualification; confirmations are protocol validity."""
-        return workspace.blockchain.status()
+        return {**workspace.blockchain.status(), "synchronization": network.status()}
 
     @mcp.tool()
     def blockchain_challenge() -> dict:
@@ -61,6 +62,20 @@ def register_chain_tools(mcp, workspace, network):
         return value
 
     @mcp.tool()
-    def blockchain_sync() -> dict:
-        """Exchange verified blocks with configured public v2 peers now; never uploads raw proposals to GitHub."""
-        return network.tick(force=True)
+    async def blockchain_sync() -> dict:
+        """Sync verified public blocks via configured Telegram service group and v2 peers; no private data."""
+        return await asyncio.to_thread(network.tick, force=True)
+
+    @mcp.tool()
+    def blockchain_telegram_connect(chat: str) -> dict:
+        """Select a joined Telegram service group for automatic public block exchange.
+        Requires user authorization to publish the public employer database to that group.
+        Telegram account credentials are environment references, never tool arguments."""
+        return network.connect_telegram(chat)
+
+    @mcp.tool()
+    async def blockchain_telegram_create_group(title: str = "Worklife — общая база") -> dict:
+        """Create a private service supergroup and select it for public block synchronization.
+        Requires explicit user authorization to create a group. Invites nobody and sends no private data.
+        An authorized Telegram user session must already be configured in the environment."""
+        return await network.create_telegram_group(title)

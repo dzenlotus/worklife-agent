@@ -1,0 +1,744 @@
+{
+  "blocks": [
+    {
+      "author": "6f1c71ad9aec1a3a1588c21bdf0dfd254ca93c3f3b16c61edd03bc652b0a80d6",
+      "block_id": "0000001f797d57a2b4a04a8e18cd5c6f52229a0286b6278a5f796b6c74b51f72",
+      "created_at": "2026-10-27T18:15:03.311969Z",
+      "events": [],
+      "height": 1,
+      "network": "worklife-public-testnet-v1",
+      "nonce": 184680,
+      "parent": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+      "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+      "qualification": {
+        "anchor": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+        "answers": [
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4440,
+            "salary_min": 1410
+          },
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765 Notice",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4540,
+            "salary_min": 1510
+          },
+          {
+            "errors": [
+              "currency"
+            ],
+            "valid": false
+          }
+        ],
+        "expires_at": "2026-11-01T00:00:00Z",
+        "month": "2026-10",
+        "network": "worklife-public-testnet-v1",
+        "nonce": 242067,
+        "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+        "scope": "confirm-employer",
+        "signature": "4e43b9d38d3ed0e2c48fd73d8a8e86f4ad3a9ae1a7235470b5f998eda3d5861bd47305cea7bfe7326a96cdeb36fff65f20f45cee208ea04c064efe61e5277b08",
+        "version": 1
+      },
+      "signature": "f567b18fed9b5fec510b88e5bc464b2687bb54bfebb0c05ac3eca1e0049d92d52c1d71ea7e4bf518903729133d875a7e5ed053872de805827fa76a9caa50fa00",
+      "version": 1
+    },
+    {
+      "author": "6f1c71ad9aec1a3a1588c21bdf0dfd254ca93c3f3b16c61edd03bc652b0a80d6",
+      "block_id": "00000053117c999c005d9300b4382ba45cf6e3b2e39bc60ab95bc1592a7d6923",
+      "created_at": "2026-10-27T18:15:24.588515Z",
+      "events": [],
+      "height": 2,
+      "network": "worklife-public-testnet-v1",
+      "nonce": 180238,
+      "parent": "0000001f797d57a2b4a04a8e18cd5c6f52229a0286b6278a5f796b6c74b51f72",
+      "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+      "qualification": {
+        "anchor": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+        "answers": [
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4440,
+            "salary_min": 1410
+          },
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765 Notice",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4540,
+            "salary_min": 1510
+          },
+          {
+            "errors": [
+              "currency"
+            ],
+            "valid": false
+          }
+        ],
+        "expires_at": "2026-11-01T00:00:00Z",
+        "month": "2026-10",
+        "network": "worklife-public-testnet-v1",
+        "nonce": 242067,
+        "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+        "scope": "confirm-employer",
+        "signature": "4e43b9d38d3ed0e2c48fd73d8a8e86f4ad3a9ae1a7235470b5f998eda3d5861bd47305cea7bfe7326a96cdeb36fff65f20f45cee208ea04c064efe61e5277b08",
+        "version": 1
+      },
+      "signature": "e04d8769207c50650d1daf23143dfdb9c097dbb234c752020c4bc8341873cb6102d83e161687c5a267c26ea7f6bfd9ae82bd45c611093072db0765289042f303",
+      "version": 1
+    },
+    {
+      "author": "c033e157646364dfae2517c347954316c03aee1dd0c3bebc203d9b347a43b3e5",
+      "block_id": "000000432f941be362cdac53c67b9934a57a8a74fccc8e88e0aa922a0985d3e1",
+      "created_at": "2026-10-27T18:16:00.789786Z",
+      "events": [],
+      "height": 3,
+      "network": "worklife-public-testnet-v1",
+      "nonce": 87082,
+      "parent": "00000053117c999c005d9300b4382ba45cf6e3b2e39bc60ab95bc1592a7d6923",
+      "public_key": "0d5eda70a4696d5058993a4c96f11aefcb3d253249252ef1d8bca141ffa6ead3",
+      "qualification": {
+        "anchor": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+        "answers": [
+          {
+            "currency": "USD",
+            "employer": "Synthetic Employer 7778dcab7494ed75",
+            "remote": false,
+            "role": "Researcher",
+            "salary_max": 6200,
+            "salary_min": 2200
+          },
+          {
+            "currency": "USD",
+            "employer": "Synthetic Employer 7778dcab7494ed75 Notice",
+            "remote": false,
+            "role": "Researcher",
+            "salary_max": 6300,
+            "salary_min": 2300
+          },
+          {
+            "errors": [
+              "remote"
+            ],
+            "valid": false
+          }
+        ],
+        "expires_at": "2026-11-01T00:00:00Z",
+        "month": "2026-10",
+        "network": "worklife-public-testnet-v1",
+        "nonce": 418618,
+        "public_key": "0d5eda70a4696d5058993a4c96f11aefcb3d253249252ef1d8bca141ffa6ead3",
+        "scope": "confirm-employer",
+        "signature": "d7fb680ed6158124de766f818c0a2fc0a14366831caf2e938be8720d9304a1d965ab60c0c03ca1b92f3318d3f829e4cfb3637fd20e4af3b6f3d654ad5c80ca09",
+        "version": 1
+      },
+      "signature": "a51195f6330117fd3c66e22f84e8cbf667f9bdb683cb73264b2918d21047f3d51463e65475cd7dfe2f7b99bdc19c1d53019369b4cb3f2a7e37ac5568f5fe2203",
+      "version": 1
+    },
+    {
+      "author": "6f1c71ad9aec1a3a1588c21bdf0dfd254ca93c3f3b16c61edd03bc652b0a80d6",
+      "block_id": "0000005a3ae0dba608ad33d87ad5933bec252b6d8d7b0578b98c8aebc175b2cd",
+      "created_at": "2026-10-27T18:16:29.195669Z",
+      "events": [],
+      "height": 4,
+      "network": "worklife-public-testnet-v1",
+      "nonce": 5226,
+      "parent": "000000432f941be362cdac53c67b9934a57a8a74fccc8e88e0aa922a0985d3e1",
+      "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+      "qualification": {
+        "anchor": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+        "answers": [
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4440,
+            "salary_min": 1410
+          },
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765 Notice",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4540,
+            "salary_min": 1510
+          },
+          {
+            "errors": [
+              "currency"
+            ],
+            "valid": false
+          }
+        ],
+        "expires_at": "2026-11-01T00:00:00Z",
+        "month": "2026-10",
+        "network": "worklife-public-testnet-v1",
+        "nonce": 242067,
+        "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+        "scope": "confirm-employer",
+        "signature": "4e43b9d38d3ed0e2c48fd73d8a8e86f4ad3a9ae1a7235470b5f998eda3d5861bd47305cea7bfe7326a96cdeb36fff65f20f45cee208ea04c064efe61e5277b08",
+        "version": 1
+      },
+      "signature": "bc05bbc44ab7d6afd06590f8d511e349654b713d2fc6ab40391e267bbf65b583e0ae2459a000908ce28d871d08b1dfb801af2cb8eec0a6a59f5f3c040d208a0d",
+      "version": 1
+    },
+    {
+      "author": "6f1c71ad9aec1a3a1588c21bdf0dfd254ca93c3f3b16c61edd03bc652b0a80d6",
+      "block_id": "000000234341428d2171402271b495f4e92d0e9641f653cc4b2ae999682be2d9",
+      "created_at": "2026-10-27T18:16:32.974283Z",
+      "events": [],
+      "height": 5,
+      "network": "worklife-public-testnet-v1",
+      "nonce": 80129,
+      "parent": "0000005a3ae0dba608ad33d87ad5933bec252b6d8d7b0578b98c8aebc175b2cd",
+      "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+      "qualification": {
+        "anchor": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+        "answers": [
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4440,
+            "salary_min": 1410
+          },
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765 Notice",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4540,
+            "salary_min": 1510
+          },
+          {
+            "errors": [
+              "currency"
+            ],
+            "valid": false
+          }
+        ],
+        "expires_at": "2026-11-01T00:00:00Z",
+        "month": "2026-10",
+        "network": "worklife-public-testnet-v1",
+        "nonce": 242067,
+        "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+        "scope": "confirm-employer",
+        "signature": "4e43b9d38d3ed0e2c48fd73d8a8e86f4ad3a9ae1a7235470b5f998eda3d5861bd47305cea7bfe7326a96cdeb36fff65f20f45cee208ea04c064efe61e5277b08",
+        "version": 1
+      },
+      "signature": "5b5b83d26d359b6d7ce204b577070f98efa6ed22da9cb13193c587b2605bb10ca4627c1f80be58813a2c35545dba53f1a354737bf60b665e2f9c3f07b27d3100",
+      "version": 1
+    },
+    {
+      "author": "6f1c71ad9aec1a3a1588c21bdf0dfd254ca93c3f3b16c61edd03bc652b0a80d6",
+      "block_id": "00000033f0d6d07f3e550cd19ed3c7ec4eff497842d81a1ea8a04dad1fc2ce0e",
+      "created_at": "2026-10-27T18:16:33.220289Z",
+      "events": [],
+      "height": 6,
+      "network": "worklife-public-testnet-v1",
+      "nonce": 223992,
+      "parent": "000000234341428d2171402271b495f4e92d0e9641f653cc4b2ae999682be2d9",
+      "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+      "qualification": {
+        "anchor": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+        "answers": [
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4440,
+            "salary_min": 1410
+          },
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765 Notice",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4540,
+            "salary_min": 1510
+          },
+          {
+            "errors": [
+              "currency"
+            ],
+            "valid": false
+          }
+        ],
+        "expires_at": "2026-11-01T00:00:00Z",
+        "month": "2026-10",
+        "network": "worklife-public-testnet-v1",
+        "nonce": 242067,
+        "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+        "scope": "confirm-employer",
+        "signature": "4e43b9d38d3ed0e2c48fd73d8a8e86f4ad3a9ae1a7235470b5f998eda3d5861bd47305cea7bfe7326a96cdeb36fff65f20f45cee208ea04c064efe61e5277b08",
+        "version": 1
+      },
+      "signature": "db7c37a91f2d68afa796fd70ab3930c04326df3b0cdf903e6e2aacc91a43316010eef04be78350e816e841cb2d6e0e8e2c3763806c2d911ae0855df3c51f7f00",
+      "version": 1
+    },
+    {
+      "author": "c033e157646364dfae2517c347954316c03aee1dd0c3bebc203d9b347a43b3e5",
+      "block_id": "00000068d0e35b6176768fec685111b4049aba38f08f41a6e499389b41d91d24",
+      "created_at": "2026-10-27T18:16:37.783501Z",
+      "events": [],
+      "height": 7,
+      "network": "worklife-public-testnet-v1",
+      "nonce": 33437,
+      "parent": "00000033f0d6d07f3e550cd19ed3c7ec4eff497842d81a1ea8a04dad1fc2ce0e",
+      "public_key": "0d5eda70a4696d5058993a4c96f11aefcb3d253249252ef1d8bca141ffa6ead3",
+      "qualification": {
+        "anchor": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+        "answers": [
+          {
+            "currency": "USD",
+            "employer": "Synthetic Employer 7778dcab7494ed75",
+            "remote": false,
+            "role": "Researcher",
+            "salary_max": 6200,
+            "salary_min": 2200
+          },
+          {
+            "currency": "USD",
+            "employer": "Synthetic Employer 7778dcab7494ed75 Notice",
+            "remote": false,
+            "role": "Researcher",
+            "salary_max": 6300,
+            "salary_min": 2300
+          },
+          {
+            "errors": [
+              "remote"
+            ],
+            "valid": false
+          }
+        ],
+        "expires_at": "2026-11-01T00:00:00Z",
+        "month": "2026-10",
+        "network": "worklife-public-testnet-v1",
+        "nonce": 418618,
+        "public_key": "0d5eda70a4696d5058993a4c96f11aefcb3d253249252ef1d8bca141ffa6ead3",
+        "scope": "confirm-employer",
+        "signature": "d7fb680ed6158124de766f818c0a2fc0a14366831caf2e938be8720d9304a1d965ab60c0c03ca1b92f3318d3f829e4cfb3637fd20e4af3b6f3d654ad5c80ca09",
+        "version": 1
+      },
+      "signature": "46b7295fd0f1bdd248b17de5606de5da3fceb690baa9b066c49b6649d1a6e78c5e338873c3880dd456a65fee45be6bb6fbe702811a0d8e488ff2381dba4fa203",
+      "version": 1
+    },
+    {
+      "author": "23cedb6f39418288a91b3518e558c3fd6b2633e87327a095d9e540b1d4f56343",
+      "block_id": "0000007d9a348de70d7141ad31272595875f1841f0b4139b5b01d25cbebb9172",
+      "created_at": "2026-10-27T18:19:01.225512Z",
+      "events": [
+        {
+          "author": "23cedb6f39418288a91b3518e558c3fd6b2633e87327a095d9e540b1d4f56343",
+          "created_at": "2026-10-27T18:14:34.523361Z",
+          "event_id": "b3a8b2dddc350b6c1a0beacbae9cc89fe152cc30ffe25bae1bec9a347897d8fa",
+          "kind": "employer",
+          "payload": {
+            "claim": "SYNTHETIC local Docker acceptance proposal; no real employer claim",
+            "evidence_kind": "hypothesis",
+            "observed_at": "2026-10-27T18:14:34.241659Z",
+            "source_url": "https://synthetic.example/local-acceptance"
+          },
+          "prev": "0000000000000000000000000000000000000000000000000000000000000000",
+          "public_key": "a6b37a49e7be134609da16210332943d7af5bf5b0b73fcdd45fb82396eb5d57a",
+          "seq": 1,
+          "signature": "0bf37caa1446296e1e3f581b46b21b1e60244fb8a45f78572a21d8709dda1431fe8eaef99188d69d555fc98142e70d2243bff5e113480f4388f67ca27cadd50b",
+          "subject": "synthetic.example",
+          "version": 1
+        }
+      ],
+      "height": 8,
+      "network": "worklife-public-testnet-v1",
+      "nonce": 156294,
+      "parent": "00000068d0e35b6176768fec685111b4049aba38f08f41a6e499389b41d91d24",
+      "public_key": "a6b37a49e7be134609da16210332943d7af5bf5b0b73fcdd45fb82396eb5d57a",
+      "qualification": {
+        "anchor": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+        "answers": [
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 43399cad65d55af1",
+            "remote": true,
+            "role": "Researcher",
+            "salary_max": 5560,
+            "salary_min": 1570
+          },
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 43399cad65d55af1 Notice",
+            "remote": true,
+            "role": "Researcher",
+            "salary_max": 5660,
+            "salary_min": 1670
+          },
+          {
+            "errors": [
+              "salary_max"
+            ],
+            "valid": false
+          }
+        ],
+        "expires_at": "2026-11-01T00:00:00Z",
+        "month": "2026-10",
+        "network": "worklife-public-testnet-v1",
+        "nonce": 404826,
+        "public_key": "a6b37a49e7be134609da16210332943d7af5bf5b0b73fcdd45fb82396eb5d57a",
+        "scope": "confirm-employer",
+        "signature": "79c8033e1aed37ae428e09efbec7fe2d35d25249b20d519cfef3f3a89c6fb8d5eaf8ba8b23f7d658dbce6c181ae317670e0a41f7305a4d72abe803d603fa160a",
+        "version": 1
+      },
+      "signature": "c0eec85f8abe8145a0bb288a2c023a722eb8e35849961c58e78b76c495f53c80216d80e751f770d8682b5893edb2a5e787a8289363fddded81fb2e033caa6b03",
+      "version": 1
+    },
+    {
+      "author": "c033e157646364dfae2517c347954316c03aee1dd0c3bebc203d9b347a43b3e5",
+      "block_id": "000000481135adcab55f64f2e491e6f77f0aabe1272fbfa6a3544872319ac702",
+      "created_at": "2026-10-27T18:19:14.502148Z",
+      "events": [],
+      "height": 9,
+      "network": "worklife-public-testnet-v1",
+      "nonce": 183417,
+      "parent": "0000007d9a348de70d7141ad31272595875f1841f0b4139b5b01d25cbebb9172",
+      "public_key": "0d5eda70a4696d5058993a4c96f11aefcb3d253249252ef1d8bca141ffa6ead3",
+      "qualification": {
+        "anchor": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+        "answers": [
+          {
+            "currency": "USD",
+            "employer": "Synthetic Employer 7778dcab7494ed75",
+            "remote": false,
+            "role": "Researcher",
+            "salary_max": 6200,
+            "salary_min": 2200
+          },
+          {
+            "currency": "USD",
+            "employer": "Synthetic Employer 7778dcab7494ed75 Notice",
+            "remote": false,
+            "role": "Researcher",
+            "salary_max": 6300,
+            "salary_min": 2300
+          },
+          {
+            "errors": [
+              "remote"
+            ],
+            "valid": false
+          }
+        ],
+        "expires_at": "2026-11-01T00:00:00Z",
+        "month": "2026-10",
+        "network": "worklife-public-testnet-v1",
+        "nonce": 418618,
+        "public_key": "0d5eda70a4696d5058993a4c96f11aefcb3d253249252ef1d8bca141ffa6ead3",
+        "scope": "confirm-employer",
+        "signature": "d7fb680ed6158124de766f818c0a2fc0a14366831caf2e938be8720d9304a1d965ab60c0c03ca1b92f3318d3f829e4cfb3637fd20e4af3b6f3d654ad5c80ca09",
+        "version": 1
+      },
+      "signature": "35717dfb45f329be6a055d23595ff6597ab291e22558405b5863bfe7836f57460a5adc4800de6d7f8f0e7ee33ef838d41926ae7905e85ce43b62595733edb206",
+      "version": 1
+    },
+    {
+      "author": "23cedb6f39418288a91b3518e558c3fd6b2633e87327a095d9e540b1d4f56343",
+      "block_id": "00000047bc8c8b391b655b2b280b6032b7c58791a2f572556f34a05b1b72c068",
+      "created_at": "2026-10-27T18:20:17.497873Z",
+      "events": [],
+      "height": 10,
+      "network": "worklife-public-testnet-v1",
+      "nonce": 90171,
+      "parent": "000000481135adcab55f64f2e491e6f77f0aabe1272fbfa6a3544872319ac702",
+      "public_key": "a6b37a49e7be134609da16210332943d7af5bf5b0b73fcdd45fb82396eb5d57a",
+      "qualification": {
+        "anchor": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+        "answers": [
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 43399cad65d55af1",
+            "remote": true,
+            "role": "Researcher",
+            "salary_max": 5560,
+            "salary_min": 1570
+          },
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 43399cad65d55af1 Notice",
+            "remote": true,
+            "role": "Researcher",
+            "salary_max": 5660,
+            "salary_min": 1670
+          },
+          {
+            "errors": [
+              "salary_max"
+            ],
+            "valid": false
+          }
+        ],
+        "expires_at": "2026-11-01T00:00:00Z",
+        "month": "2026-10",
+        "network": "worklife-public-testnet-v1",
+        "nonce": 404826,
+        "public_key": "a6b37a49e7be134609da16210332943d7af5bf5b0b73fcdd45fb82396eb5d57a",
+        "scope": "confirm-employer",
+        "signature": "79c8033e1aed37ae428e09efbec7fe2d35d25249b20d519cfef3f3a89c6fb8d5eaf8ba8b23f7d658dbce6c181ae317670e0a41f7305a4d72abe803d603fa160a",
+        "version": 1
+      },
+      "signature": "311d8c975b48e3bd23d546234da254379f6c38524536645bd79c9fe8650aae4bf4f1383c6a183a69ca0248928f0b9b05386f819349901e2e7c7566ece12a810c",
+      "version": 1
+    },
+    {
+      "author": "6f1c71ad9aec1a3a1588c21bdf0dfd254ca93c3f3b16c61edd03bc652b0a80d6",
+      "block_id": "000000768aeabd2ba88f1e0cac1fc64eee049c802907d42c69d04a6af8c0eb2c",
+      "created_at": "2026-10-27T18:20:36.110460Z",
+      "events": [],
+      "height": 11,
+      "network": "worklife-public-testnet-v1",
+      "nonce": 51671,
+      "parent": "00000047bc8c8b391b655b2b280b6032b7c58791a2f572556f34a05b1b72c068",
+      "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+      "qualification": {
+        "anchor": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+        "answers": [
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4440,
+            "salary_min": 1410
+          },
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765 Notice",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4540,
+            "salary_min": 1510
+          },
+          {
+            "errors": [
+              "currency"
+            ],
+            "valid": false
+          }
+        ],
+        "expires_at": "2026-11-01T00:00:00Z",
+        "month": "2026-10",
+        "network": "worklife-public-testnet-v1",
+        "nonce": 242067,
+        "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+        "scope": "confirm-employer",
+        "signature": "4e43b9d38d3ed0e2c48fd73d8a8e86f4ad3a9ae1a7235470b5f998eda3d5861bd47305cea7bfe7326a96cdeb36fff65f20f45cee208ea04c064efe61e5277b08",
+        "version": 1
+      },
+      "signature": "a1c64e6ff783447efd8168b25056a18a937d181356fa30015a30d650e63d957cf0db0aed45327fb9b20810d717695873c5f7a364dd1f91406555405c23333801",
+      "version": 1
+    },
+    {
+      "author": "23cedb6f39418288a91b3518e558c3fd6b2633e87327a095d9e540b1d4f56343",
+      "block_id": "00000028feea7415c7ba23fa380105e5fd3bc2d2b58feddc8336f1ff6cf5e5d3",
+      "created_at": "2026-10-27T18:20:38.694968Z",
+      "events": [],
+      "height": 12,
+      "network": "worklife-public-testnet-v1",
+      "nonce": 64818,
+      "parent": "000000768aeabd2ba88f1e0cac1fc64eee049c802907d42c69d04a6af8c0eb2c",
+      "public_key": "a6b37a49e7be134609da16210332943d7af5bf5b0b73fcdd45fb82396eb5d57a",
+      "qualification": {
+        "anchor": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+        "answers": [
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 43399cad65d55af1",
+            "remote": true,
+            "role": "Researcher",
+            "salary_max": 5560,
+            "salary_min": 1570
+          },
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 43399cad65d55af1 Notice",
+            "remote": true,
+            "role": "Researcher",
+            "salary_max": 5660,
+            "salary_min": 1670
+          },
+          {
+            "errors": [
+              "salary_max"
+            ],
+            "valid": false
+          }
+        ],
+        "expires_at": "2026-11-01T00:00:00Z",
+        "month": "2026-10",
+        "network": "worklife-public-testnet-v1",
+        "nonce": 404826,
+        "public_key": "a6b37a49e7be134609da16210332943d7af5bf5b0b73fcdd45fb82396eb5d57a",
+        "scope": "confirm-employer",
+        "signature": "79c8033e1aed37ae428e09efbec7fe2d35d25249b20d519cfef3f3a89c6fb8d5eaf8ba8b23f7d658dbce6c181ae317670e0a41f7305a4d72abe803d603fa160a",
+        "version": 1
+      },
+      "signature": "216e834910e090beca281dfb4b305e235fefe8553262d5d3b6dee98961ff63c1b130b09b487ad845f5d19310e4586e36939a45941affdc8da1ebc26e160a3c0f",
+      "version": 1
+    },
+    {
+      "author": "6f1c71ad9aec1a3a1588c21bdf0dfd254ca93c3f3b16c61edd03bc652b0a80d6",
+      "block_id": "0000007a2bb977024e748769763a7d94698f0d1d32dd21b3162dea4301da8cb1",
+      "created_at": "2026-10-27T18:21:00.388539Z",
+      "events": [],
+      "height": 13,
+      "network": "worklife-public-testnet-v1",
+      "nonce": 190237,
+      "parent": "00000028feea7415c7ba23fa380105e5fd3bc2d2b58feddc8336f1ff6cf5e5d3",
+      "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+      "qualification": {
+        "anchor": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+        "answers": [
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4440,
+            "salary_min": 1410
+          },
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765 Notice",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4540,
+            "salary_min": 1510
+          },
+          {
+            "errors": [
+              "currency"
+            ],
+            "valid": false
+          }
+        ],
+        "expires_at": "2026-11-01T00:00:00Z",
+        "month": "2026-10",
+        "network": "worklife-public-testnet-v1",
+        "nonce": 242067,
+        "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+        "scope": "confirm-employer",
+        "signature": "4e43b9d38d3ed0e2c48fd73d8a8e86f4ad3a9ae1a7235470b5f998eda3d5861bd47305cea7bfe7326a96cdeb36fff65f20f45cee208ea04c064efe61e5277b08",
+        "version": 1
+      },
+      "signature": "f0e0773fb97da3520c03f739d23c90096d74b96c4b1bcad34c2d0c37db0f57fe029dd1536063d6775a60ad0b29cf5af156e0fd91d449793c9ba048fa09d63407",
+      "version": 1
+    },
+    {
+      "author": "6f1c71ad9aec1a3a1588c21bdf0dfd254ca93c3f3b16c61edd03bc652b0a80d6",
+      "block_id": "0000007e2f89c64d8e5c4898e08b041ab30554f5e92cb62e5e135188d265ea85",
+      "created_at": "2026-10-27T18:22:54.589872Z",
+      "events": [],
+      "height": 14,
+      "network": "worklife-public-testnet-v1",
+      "nonce": 23504,
+      "parent": "0000007a2bb977024e748769763a7d94698f0d1d32dd21b3162dea4301da8cb1",
+      "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+      "qualification": {
+        "anchor": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+        "answers": [
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4440,
+            "salary_min": 1410
+          },
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765 Notice",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4540,
+            "salary_min": 1510
+          },
+          {
+            "errors": [
+              "currency"
+            ],
+            "valid": false
+          }
+        ],
+        "expires_at": "2026-11-01T00:00:00Z",
+        "month": "2026-10",
+        "network": "worklife-public-testnet-v1",
+        "nonce": 242067,
+        "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+        "scope": "confirm-employer",
+        "signature": "4e43b9d38d3ed0e2c48fd73d8a8e86f4ad3a9ae1a7235470b5f998eda3d5861bd47305cea7bfe7326a96cdeb36fff65f20f45cee208ea04c064efe61e5277b08",
+        "version": 1
+      },
+      "signature": "1786b2e8be75b2734d462b08107012e8e483c28ad875aeaa2d0fd2b5fe3f0a8813f2484f22d23531cb57b3cef89c888758830a02b52c2e5d7c1a9759f86fe904",
+      "version": 1
+    },
+    {
+      "author": "6f1c71ad9aec1a3a1588c21bdf0dfd254ca93c3f3b16c61edd03bc652b0a80d6",
+      "block_id": "0000001e41a0098e6f32ebe84b5822b41bd171f8dd75c17c956f3c1c3b9cbc29",
+      "created_at": "2026-10-27T18:23:28.200199Z",
+      "events": [],
+      "height": 15,
+      "network": "worklife-public-testnet-v1",
+      "nonce": 48905,
+      "parent": "0000007e2f89c64d8e5c4898e08b041ab30554f5e92cb62e5e135188d265ea85",
+      "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+      "qualification": {
+        "anchor": "03d51853c1f02cebbc2b239509075bba1da136e6c252d8d18ea75f87b623a00a",
+        "answers": [
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4440,
+            "salary_min": 1410
+          },
+          {
+            "currency": "GBP",
+            "employer": "Synthetic Employer 51292c6bc6fe3765 Notice",
+            "remote": false,
+            "role": "Designer",
+            "salary_max": 4540,
+            "salary_min": 1510
+          },
+          {
+            "errors": [
+              "currency"
+            ],
+            "valid": false
+          }
+        ],
+        "expires_at": "2026-11-01T00:00:00Z",
+        "month": "2026-10",
+        "network": "worklife-public-testnet-v1",
+        "nonce": 242067,
+        "public_key": "f1302d95be38388d511df2f0301185ec14698629f0de86e892c62e9688026a62",
+        "scope": "confirm-employer",
+        "signature": "4e43b9d38d3ed0e2c48fd73d8a8e86f4ad3a9ae1a7235470b5f998eda3d5861bd47305cea7bfe7326a96cdeb36fff65f20f45cee208ea04c064efe61e5277b08",
+        "version": 1
+      },
+      "signature": "bc3714866f5b74b7c4d0a1bd4b219e4de55c1296debc043d4475ab6efd37bc95e3c4886c8a4dc0488ce93c8966308ed17d4c5adfdab2fec62e16543e836ad40c",
+      "version": 1
+    }
+  ],
+  "event_id": "b3a8b2dddc350b6c1a0beacbae9cc89fe152cc30ffe25bae1bec9a347897d8fa"
+}

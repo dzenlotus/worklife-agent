@@ -392,7 +392,7 @@ def _agent_files(plan, target, destination, scope, user_root, environment, instr
             else _user_path(location, target["id"], user_root, environment)
         )
         for source in (BUNDLE_DIR / "skills").rglob("*"):
-            if source.is_file():
+            if source.is_file() and "__pycache__" not in source.parts and source.suffix != ".pyc":
                 plan.add(root / source.relative_to(BUNDLE_DIR / "skills"), source.read_bytes())
 
 
@@ -442,7 +442,7 @@ def install_agent(
         args.extend(["--env-file", str(env_file)])
     plan = _Plan()
     for source in BUNDLE_DIR.rglob("*"):
-        if source.is_file():
+        if source.is_file() and "__pycache__" not in source.parts and source.suffix != ".pyc":
             plan.add(
                 destination / ".worklife" / "recruiter" / source.relative_to(BUNDLE_DIR), source.read_bytes()
             )

@@ -1,4 +1,5 @@
 import json
+import shutil
 import stat
 import subprocess
 import sys
@@ -10,7 +11,7 @@ from json5.loader import loads as json5_loads
 from ruamel.yaml import YAML
 
 from worklife.agent_install import AGENT_NAME, SERVER_NAME, doctor, install_agent, load_catalog, merge_config
-from worklife.agent_profile import load_agent_profile
+from worklife.agent_profile import BUNDLE_DIR, load_agent_profile
 from worklife.recruiter_cli import main
 
 
@@ -51,6 +52,9 @@ def test_all_project_adapters_bundle_and_idempotence_without_home_writes(tmp_pat
     assert len(result["targets"]) == len(ids)
     assert (destination / ".agents/skills/worklife-market/SKILL.md").exists()
     assert (destination / ".claude/skills/worklife-market/SKILL.md").exists()
+    helper = "worklife-onboarding/scripts/telegram_login.py"
+    assert (destination / ".agents/skills" / helper).is_file()
+    assert (destination / ".claude/skills" / helper).is_file()
     codex = tomllib.loads((destination / ".codex/config.toml").read_text())
     assert codex["mcp_servers"][SERVER_NAME]["command"] == sys.executable
     native = tomllib.loads((destination / ".codex/agents/worklife-recruiter.toml").read_text())
@@ -71,6 +75,22 @@ def test_all_project_adapters_bundle_and_idempotence_without_home_writes(tmp_pat
         text=True,
     )
     assert completed.returncode == 0, completed.stderr
+
+
+def test_skill_install_ignores_python_bytecode(tmp_path, monkeypatch):
+    bundle = tmp_path / "bundle"
+    shutil.copytree(BUNDLE_DIR, bundle)
+    cache = bundle / "skills/worklife-onboarding/scripts/__pycache__/telegram_login.cpython-312.pyc"
+    cache.parent.mkdir(parents=True)
+    cache.write_bytes(b"\xff\x00compiled code")
+    monkeypatch.setattr("worklife.agent_install.BUNDLE_DIR", bundle)
+    destination = tmp_path / "agent"
+    install_agent(destination, ["codex"], environment={})
+    assert not list(destination.rglob("*.pyc"))
+    assert all(
+        item["action"] == "unchanged"
+        for item in install_agent(destination, ["codex"], environment={})["files"]
+    )
 
 
 def test_dry_run_writes_nothing_and_reports_export(tmp_path):

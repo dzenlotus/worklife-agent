@@ -48,12 +48,19 @@ def run_cycle(workspace, network, batch_attempts=250000):
 
 
 def worker_cycles(
-    workspace, peers_callable, *, cpu_fraction=0.25, batch_attempts=250000, sync_seconds=30, once=False
+    workspace,
+    peers_callable,
+    *,
+    cpu_fraction=0.25,
+    batch_attempts=250000,
+    sync_seconds=30,
+    once=False,
+    telegram=None,
 ):
     cpu_pause(0, 0, cpu_fraction)
     if not isinstance(sync_seconds, (int, float)) or not math.isfinite(sync_seconds) or sync_seconds < 1:
         raise ValueError("Sync interval must be at least one second")
-    network = BlockchainNetwork(workspace, peers_callable, interval_seconds=sync_seconds)
+    network = BlockchainNetwork(workspace, peers_callable, interval_seconds=sync_seconds, telegram=telegram)
     while True:
         started, cpu_started = time.monotonic(), time.process_time()
         packet = run_cycle(workspace, network, batch_attempts)

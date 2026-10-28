@@ -192,6 +192,13 @@ body:has(.worklife-app) .modal .button--outline { border-color: var(--border); b
 .page-heading > div:first-child, .overview-header > div { min-width: 0; }
 .page-heading h1, .overview-header h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.7px; line-height: 34px; }
 .page-heading p, .overview-intro { font-size: 14px; color: var(--app-secondary); line-height: 22px; margin-top: 6px; max-width: 68ch; }
+.employer-database-summary { display: flex; flex-direction: column; gap: 14px; padding: 20px 0; border-block: 1px solid var(--separator); }
+.employer-database-counts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+.employer-database-counts > div { display: flex; flex-direction: column; gap: 7px; }
+.employer-database-counts dt { font-size: 12px; line-height: 18px; color: var(--muted); }
+.employer-database-counts dd { font-size: 28px; line-height: 34px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.5px; }
+.employer-database-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+@media (max-width: 640px) { .employer-database-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 14px; } }
 .page-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; padding-top: 2px; }
 .page-actions:empty { display: none; }
 .demo-badge { padding: 4px 9px; border: 1px solid var(--separator); border-radius: 6px; color: var(--app-secondary); font-size: 12px; line-height: 18px; }

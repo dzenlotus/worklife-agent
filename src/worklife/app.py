@@ -47,9 +47,11 @@ def snapshot(server):
     try:
         integrity = w.ledger.verify()
         employers = w.shared_records(confirmed_only=True)
+        employer_proposals = w.pending_records()
         chain = w.blockchain.status()
     except ValueError as exc:
         integrity, employers = {"valid": False, "events": None, "heads": {}, "error": str(exc)}, []
+        employer_proposals = []
         chain = {"valid": False, "error": str(exc)}
     peers = [
         {"name": name, **{k: v for k, v in config.items() if k in {"url", "author", "token_env"}}}
@@ -79,6 +81,7 @@ def snapshot(server):
     tool_calls = sorted(w.store.list("tool_call"), key=lambda call: call["started_at"], reverse=True)
     return {
         **result,
+        "release": server.worklife_releases.status(),
         "market": {
             "snapshots": server.worklife_market.snapshots(),
             "report": server.worklife_market.report(),
@@ -98,6 +101,7 @@ def snapshot(server):
         "profile": profile,
         "actions": w.actions(),
         "employers": employers,
+        "employer_proposals": employer_proposals,
         "experiment_reports": [w.experiment_report(e["id"]) for e in result["experiments"]],
         "network": {
             **integrity,
@@ -106,8 +110,8 @@ def snapshot(server):
             "last_sync": w.store.list("sync"),
             "scope": "employers_only",
             "chain": chain,
-            "proposals": len(w.pending_records()) if integrity["valid"] else None,
-            "summary": server.worklife_network.status()
+            "proposals": len(employer_proposals),
+            "summary": {**server.worklife_network.status(), "auto": server.worklife_network_auto}
             if integrity["valid"]
             else {
                 "status": "recovering",
@@ -116,7 +120,7 @@ def snapshot(server):
                 "employers": 0,
                 "protected_copies": 0,
                 "last_sync": None,
-                "auto": True,
+                "auto": server.worklife_network_auto,
             },
         },
         "statistics": server.worklife_operations.statistics(),

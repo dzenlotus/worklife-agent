@@ -15,6 +15,7 @@
     "credential_create", "browser_fill_credential", "browser_open", "browser_inspect",
     "browser_prepare", "browser_screenshot", "action_draft", "action_approve", "action_execute",
     "action_cancel", "action_reconcile", "knowledge_query", "knowledge_proposals", "knowledge_publish",
-    "employer_block", "employer_block_status", "agent_status"
+    "employer_block", "employer_block_status", "agent_status",
+    "blockchain_status", "blockchain_sync", "blockchain_telegram_connect", "blockchain_telegram_create_group"
   ]
 }

@@ -7,8 +7,8 @@ import time
 from pathlib import Path
 
 from .config import load_config
-from .federation import create_app, sync_peer
 from .storage import now
+from .telegram_transport import TelegramTransportError
 from .workspace import Workspace
 
 
@@ -117,6 +117,8 @@ def demo(workspace):
 
 
 def worker_cycle(config, w, operations=None, network=None, automation=None):
+    from .federation import sync_peer
+
     peers = {
         **{p.get("name", p["url"]): p for p in config.peers},
         **{p["id"]: p["config"] for p in w.store.list("peer")},
@@ -188,6 +190,29 @@ def main():
     parser.add_argument("--config", help="TOML configuration path (or WORKLIFE_CONFIG)")
     parser.add_argument("--home", help="Private local state directory (or WORKLIFE_HOME)")
     sub = parser.add_subparsers(dest="command", required=True)
+    telegram = sub.add_parser("telegram", help="Synchronize public blocks through a Telegram service group")
+    telegram_sub = telegram.add_subparsers(dest="telegram_command", required=True)
+    for name in ("status", "sync"):
+        telegram_sub.add_parser(name)
+    telegram_connect = telegram_sub.add_parser("connect", help="Select a joined service group")
+    telegram_connect.add_argument("chat")
+    telegram_create = telegram_sub.add_parser(
+        "create-group", help="Create and select a private service group"
+    )
+    telegram_create.add_argument("--title", default="Worklife — общая база")
+    p2p = sub.add_parser("p2p", help="Zero-rental DHT discovery and direct encrypted block exchange")
+    p2p_sub = p2p.add_subparsers(dest="p2p_command", required=True)
+    for name in ("setup", "status", "invite"):
+        p2p_sub.add_parser(name)
+    p2p_run = p2p_sub.add_parser("run")
+    p2p_run.add_argument("--bootstrap", action="append")
+    p2p_run.add_argument("--isolated", action="store_true")
+    p2p_run.add_argument("--port", type=int, default=0)
+    p2p_run.add_argument("--room", default="")
+    p2p_run.add_argument("--join")
+    p2p_run.add_argument("--mine", action="store_true")
+    p2p_run.add_argument("--cpu-fraction", type=float, default=0.25)
+    p2p_run.add_argument("--status-file")
     chain = sub.add_parser("chain", help="Tokenless blockchain with monthly qualification and bounded PoW")
     chain_sub = chain.add_subparsers(dest="chain_command", required=True)
     for name in ("status", "challenge"):
@@ -244,9 +269,41 @@ def main():
     worker.add_argument("--once", action="store_true")
     args = parser.parse_args()
     try:
+        if args.command == "p2p":
+            # Select before importing consensus modules; legacy commands keep their development default.
+            os.environ.setdefault("WORKLIFE_CHAIN_PROFILE", "public-testnet-v1")
         config = load_config(args.config)
         if args.home:
             config.home = Path(args.home).expanduser().resolve()
+        if args.command == "p2p":
+            from .p2p import prepare_transport, read_status, run_p2p
+
+            if not (args.home or os.getenv("WORKLIFE_HOME") or args.config or os.getenv("WORKLIFE_CONFIG")):
+                config.home = config.home / ("p2p-" + os.environ["WORKLIFE_CHAIN_PROFILE"])
+            workspace = Workspace(config.home)
+            if args.p2p_command == "setup":
+                emit({"transport": str(prepare_transport(workspace.home)), "payments_required": False})
+            elif args.p2p_command in {"status", "invite"}:
+                state = read_status(workspace)
+                if args.p2p_command == "invite":
+                    if not state.get("invite"):
+                        raise ValueError("Start p2p run once to create this device's transport identity")
+                    emit({"invite": state["invite"], "running": state["running"]})
+                else:
+                    emit(state)
+            else:
+                run_p2p(
+                    workspace,
+                    bootstrap=args.bootstrap,
+                    isolated=args.isolated,
+                    port=args.port,
+                    room=args.room,
+                    join=args.join,
+                    mine=args.mine,
+                    cpu_fraction=args.cpu_fraction,
+                    status_file=args.status_file,
+                )
+            return
         if args.command == "chain" and args.chain_command == "simulate":
             from .chain_simulation import simulate
 
@@ -296,6 +353,21 @@ def main():
                 server.worklife_browser.close()
             return
         w = Workspace(config.home)
+        if args.command == "telegram":
+            from .chain_network import BlockchainNetwork
+
+            network = BlockchainNetwork(w, lambda: [], telegram=config.telegram_sync)
+            if args.telegram_command == "connect":
+                emit(network.connect_telegram(args.chat))
+            elif args.telegram_command == "create-group":
+                emit(asyncio.run(network.create_telegram_group(args.title)))
+            elif args.telegram_command == "sync":
+                if not network.telegram.get("chat"):
+                    raise ValueError("Create or connect a Telegram service group before synchronization")
+                emit(network.tick(force=True))
+            else:
+                emit(network.status())
+            return
         if args.command == "chain" and args.chain_command == "worker":
             from .chain_worker import worker_cycles
 
@@ -313,6 +385,7 @@ def main():
                 batch_attempts=args.batch_attempts,
                 sync_seconds=args.sync_seconds,
                 once=args.once,
+                telegram=config.telegram_sync,
             ):
                 current = time.monotonic()
                 if (
@@ -347,9 +420,13 @@ def main():
         elif args.command == "serve":
             import uvicorn
 
+            from .federation import create_app
+
             token = os.getenv(config.network_token_env, "")
             uvicorn.run(create_app(w, token), host=args.host, port=args.port, log_level="info")
         elif args.command == "sync":
+            from .federation import sync_peer
+
             peers = {
                 **{p.get("name", p["url"]): p for p in config.peers},
                 **{p["id"]: p["config"] for p in w.store.list("peer")},
@@ -388,7 +465,7 @@ def main():
         # Full transport exception URLs can contain secrets (e.g. Telegram bot tokens).
         message = (
             str(exc)
-            if isinstance(exc, (ValueError, FileNotFoundError))
+            if isinstance(exc, (ValueError, FileNotFoundError, TelegramTransportError))
             else "Operation failed; check provider/configuration"
         )
         print(

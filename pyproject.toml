@@ -48,6 +48,7 @@ dependencies = [
 
 [project.optional-dependencies]
 browser = ["playwright>=1.50,<2"]
+telegram = ["telethon>=1.45,<2"]
 dev = ["pytest>=8,<10", "pytest-asyncio>=0.24,<2", "ruff>=0.9"]
 
 [project.scripts]

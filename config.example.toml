@@ -30,6 +30,40 @@ from_env = "MAIL_FROM"
 username_env = "MAIL_USERNAME"
 password_env = "MAIL_PASSWORD"
 
+# Agent-owned addresses and incoming mail through the existing HTTP connector.
+[connectors.agentmail]
+type = "http"
+base_url = "https://api.agentmail.to"
+token_env = "AGENTMAIL_API_KEY"
+[connectors.agentmail.operations.inboxes]
+method = "GET"
+path = "/v0/inboxes"
+effect = "read"
+[connectors.agentmail.operations.inbox]
+method = "GET"
+path = "/v0/inboxes/{inbox_id}"
+effect = "read"
+[connectors.agentmail.operations.messages]
+method = "GET"
+path = "/v0/inboxes/{inbox_id}/messages"
+effect = "read"
+[connectors.agentmail.operations.message]
+method = "GET"
+path = "/v0/inboxes/{inbox_id}/messages/{message_id}"
+effect = "read"
+[connectors.agentmail.operations.create_inbox]
+method = "POST"
+path = "/v0/inboxes"
+effect = "write"
+[connectors.agentmail.operations.send]
+method = "POST"
+path = "/v0/inboxes/{inbox_id}/messages/send"
+effect = "write"
+[connectors.agentmail.operations.reply]
+method = "POST"
+path = "/v0/inboxes/{inbox_id}/messages/{message_id}/reply"
+effect = "write"
+
 [connectors.telegram]
 type = "telegram"
 token_env = "TELEGRAM_BOT_TOKEN"
@@ -65,3 +99,11 @@ effect = "read"
 # url = "https://replica.example.org"
 # author = "64-character-author-fingerprint-from-worklife-identity"
 # token_env = "PARTICIPANT_B_TOKEN"
+
+# Optional Telegram service group for automatic verified block exchange.
+# Or select/create a group with `worklife telegram connect/create-group`.
+# [network.telegram]
+# chat = "-1001234567890"
+# api_id_env = "TELEGRAM_API_ID"
+# api_hash_env = "TELEGRAM_API_HASH"
+# session_env = "TELEGRAM_SESSION_STRING"

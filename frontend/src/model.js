@@ -137,6 +137,34 @@ export function exchangeSummary(network = {}) {
     auto: value.auto === true,
   };
 }
+export function employerDatabaseSummary(state = {}) {
+  const network = state.network || {}, chain = network.chain || {};
+  const pending = Array.isArray(state.employer_proposals) ? state.employer_proposals.length : network.proposals || 0;
+  const confirmed = list(state.employers).length;
+  const blocks = Number.isInteger(chain.blocks) ? chain.blocks : null;
+  const valid = network.valid !== false && chain.valid !== false;
+  return {
+    pending, confirmed, blocks, valid,
+    confirmations: Number.isInteger(chain.confirmations) ? chain.confirmations : null,
+    explanation: !valid
+      ? t("Проверка истории не завершена. Непроверенные записи не используются.")
+      : blocks === 0 && pending > 0
+        ? t("Подписанные наблюдения сохранены, но ещё не включены в блок. Они показаны ниже отдельно от подтверждённой базы.")
+        : confirmed === 0 && blocks > 0
+          ? t("Блоки уже сохранены. Наблюдения появятся в подтверждённой базе после нужного числа подтверждений.")
+          : confirmed > 0
+            ? t("Ниже — наблюдения из подтверждённой части блокчейна. Проверяйте содержание по источникам.")
+            : t("Подтверждённых наблюдений пока нет. Здесь будут появляться сведения, принятые в блокчейн."),
+  };
+}
+export function blockConfirmation(entry, required) {
+  const confirmation = entry.confirmation || {};
+  if (confirmation.status === "confirmed") return t("Подтверждено в блокчейне");
+  if (confirmation.status === "included") return required
+    ? t`Подтверждения: ${confirmation.depth} из ${required}`
+    : t`Подтверждений: ${confirmation.depth}`;
+  return t("Ожидает включения в блок");
+}
 export const conditionLabels = {
   remote: "Удалённая работа", min_salary: "Доход от", currency: "Валюта",
   salary_period: "Период оплаты", salary_gross: "До вычета налогов",
@@ -167,8 +195,8 @@ export function usageMetric(key, value) {
 export function observationBasis(entry) {
   const kind = entry.payload?.evidence_kind;
   return {
-    label: t(({ advertised: "По объявлению работодателя", observed: "Наблюдение участника", hypothesis: "Предположение", confirmed_author: "Подтверждено автором записи" })[kind] || "Основание не указано"),
-    verification: entry.trust === "confirmed_author" ? t("Автор подтверждает запись. Независимая проверка не проводилась.") : t("Независимая проверка не проводилась."),
+    label: t(({ advertised: "По объявлению работодателя", observed: "Наблюдение участника", hypothesis: "Предположение", confirmed: "Подтверждено автором записи" })[kind] || "Основание не указано"),
+    verification: t("Независимая проверка не проводилась."),
   };
 }
 export function scheduleResult(run, state = {}) {

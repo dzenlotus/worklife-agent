@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from starlette.testclient import TestClient
 
@@ -15,6 +17,8 @@ def test_local_app_uses_real_private_state_and_tools(tmp_path):
     with TestClient(app) as client:
         state = client.get("/api/state").json()
         assert state["profile"]["name"] == "Private person"
+        assert state["release"]["status"] == "offline"
+        assert state["release"]["update_available"] is False
         assert state["statistics"]["jobs"] == 0
         assert state["network"]["events"] == 0
         assert (
@@ -29,6 +33,108 @@ def test_local_app_uses_real_private_state_and_tools(tmp_path):
         assert response.json()["ok"], response.text
         assert client.get("/api/state").json()["resources"][0]["name"] == "Source"
         assert client.get("/api/state", headers={"Origin": "https://other.example"}).status_code == 403
+
+
+def test_employer_proposals_track_real_confirmation_without_private_data(tmp_path):
+    from worklife.app import create_app
+
+    app = create_app(Config(tmp_path, network_auto=False), scheduler=False)
+    server = app.state.worklife
+    w = server.worklife_workspace
+    w.save_profile({"name": "PRIVATE_PROFILE_SENTINEL", "facts": []})
+    w.save_job(
+        {
+            "id": "private-job",
+            "platform": "manual",
+            "title": "PRIVATE_JOB_SENTINEL",
+            "employer": "Acme",
+            "url": "https://acme.example/private-job",
+        }
+    )
+    server.worklife_agency.conversation_record(channel="email", text="PRIVATE_MESSAGE_SENTINEL")
+    event = w.ledger.publish(
+        "employer",
+        "acme.example",
+        {
+            "name": "Acme",
+            "claim": "Advertises remote roles",
+            "evidence_kind": "advertised",
+            "source_url": "https://acme.example/jobs",
+            "observed_at": "2026-10-15T10:00:00Z",
+        },
+    )
+    with TestClient(app) as client:
+        state = client.get("/api/state").json()
+        assert state["employers"] == []
+        assert state["employer_proposals"] == [
+            {**event, "confirmation": w.blockchain.confirmation(event["event_id"])}
+        ]
+        assert state["employer_proposals"][0]["confirmation"]["status"] == "pending"
+        assert state["employer_proposals"][0]["confirmation"]["depth"] == 0
+        assert state["network"]["proposals"] == 1
+        assert state["network"]["summary"]["auto"] is False
+        assert state["profile"]["name"] == "PRIVATE_PROFILE_SENTINEL"
+        assert state["jobs"][0]["title"] == "PRIVATE_JOB_SENTINEL"
+        assert state["messages"][0]["text"] == "PRIVATE_MESSAGE_SENTINEL"
+        assert "PRIVATE_" not in json.dumps(state["employer_proposals"])
+
+        w.blockchain.qualify(at="2026-10-15T10:00:00Z")
+        assert w.blockchain.mine(at="2026-10-15T10:00:00Z")["mined"]
+        state = client.get("/api/state").json()
+        assert state["employers"] == []
+        assert state["employer_proposals"] == [
+            {**event, "confirmation": w.blockchain.confirmation(event["event_id"])}
+        ]
+        assert state["employer_proposals"][0]["confirmation"]["status"] == "included"
+        assert state["employer_proposals"][0]["confirmation"]["depth"] == 1
+        assert state["network"]["chain"]["confirmations"] == 3
+        assert state["network"]["proposals"] == 1
+
+        for second in (1, 2):
+            assert w.blockchain.mine([], at=f"2026-10-15T10:00:{second:02d}Z")["mined"]
+        state = client.get("/api/state").json()
+        assert [record["event_id"] for record in state["employers"]] == [event["event_id"]]
+        assert state["employers"][0]["confirmation"]["status"] == "confirmed"
+        assert state["employers"][0]["confirmation"]["depth"] == 3
+        assert state["employer_proposals"] == []
+        assert state["network"]["proposals"] == 0
+
+
+@pytest.mark.parametrize("corrupt", ["ledger", "chain"])
+def test_employer_proposals_are_empty_during_recovery_with_auto_disabled(tmp_path, corrupt):
+    from worklife.app import create_app
+
+    app = create_app(Config(tmp_path, network_auto=False), scheduler=False)
+    w = app.state.worklife.worklife_workspace
+    event = w.ledger.publish(
+        "employer",
+        "acme.example",
+        {
+            "claim": "Advertises remote roles",
+            "evidence_kind": "advertised",
+            "source_url": "https://acme.example/jobs",
+            "observed_at": "2026-10-15T10:00:00Z",
+        },
+    )
+    if corrupt == "ledger":
+        changed = {**event, "payload": {**event["payload"], "claim": "Unsigned change"}}
+        with w.store.connect() as db:
+            db.execute("UPDATE events SET document=?", (json.dumps(changed),))
+    else:
+        w.blockchain.qualify(at="2026-10-15T10:00:00Z")
+        mined = w.blockchain.mine(at="2026-10-15T10:00:00Z")
+        assert mined["mined"]
+        block = mined["block"]
+        w.store.put("chain_blocks", block["block_id"], {**block, "nonce": block["nonce"] + 1})
+    with TestClient(app) as client:
+        state = client.get("/api/state").json()
+        assert state["network"]["valid"] is False
+        assert state["network"]["chain"]["valid"] is False
+        assert state["employers"] == []
+        assert state["employer_proposals"] == []
+        assert state["network"]["proposals"] == 0
+        assert state["network"]["summary"]["status"] == "recovering"
+        assert state["network"]["summary"]["auto"] is False
 
 
 def test_blocking_employer_stops_saved_jobs_and_prepared_contact(tmp_path):

@@ -14,7 +14,7 @@ def test_profile_loads_complete_portable_bundle():
     assert profile["id"] == "recruiter"
     assert profile["name"] == "Worklife Recruiter"
     assert profile["instructions"] == (BUNDLE_DIR / "AGENTS.md").read_text(encoding="utf-8")
-    assert len(profile["skills"]) == len({skill["name"] for skill in profile["skills"]}) == 7
+    assert len(profile["skills"]) == len({skill["name"] for skill in profile["skills"]}) == 8
     assert len(profile["allowed_tools"]) == len(set(profile["allowed_tools"]))
     assert {"recruiter_start", "recruiter_skill", "recommendation_save", "inbox_sync"} <= set(
         profile["allowed_tools"]
@@ -70,7 +70,13 @@ async def test_recruiter_toolset_matches_registered_tools(tmp_path):
     try:
         names = {tool.name for tool in await server.list_tools()}
         assert names == set(load_agent_profile()["allowed_tools"])
-        assert not any(name.startswith(("blockchain_", "peer_")) for name in names)
+        assert {name for name in names if name.startswith("blockchain_")} == {
+            "blockchain_status",
+            "blockchain_sync",
+            "blockchain_telegram_connect",
+            "blockchain_telegram_create_group",
+        }
+        assert not any(name.startswith("peer_") for name in names)
         assert not names & {
             "agent_run",
             "agent_cancel",
@@ -99,7 +105,8 @@ async def test_default_mcp_keeps_full_toolset(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_recruiter_bootstrap_and_skill_resources_supply_current_context(tmp_path):
+@pytest.mark.parametrize("skill_name", ["worklife-market", "worklife-onboarding"])
+async def test_recruiter_bootstrap_and_skill_resources_supply_current_context(tmp_path, skill_name):
     server = create_server(Config(tmp_path), profile="recruiter")
     try:
         w = server.worklife_workspace
@@ -107,14 +114,18 @@ async def test_recruiter_bootstrap_and_skill_resources_supply_current_context(tm
         draft = w.draft_action("fixture", "send", {"text": "Draft only"}, "draft-1")
         start = normalize_result(await server.call_tool("recruiter_start", {}))
         assert start["profile"]["name"] == "Fixture"
+        assert start["release"]["status"] == "offline"
+        assert start["release"]["update_available"] is False
         assert start["actions"][0]["id"] == draft["id"]
         assert {"agency", "market", "advisor", "connectors"} <= start.keys()
         assert start["agent"]["id"] == "recruiter"
         assert "blockchain_mine" not in server.instructions
         instructions = await server.read_resource("worklife://recruiter/instructions")
         assert list(instructions)[0].content == load_agent_profile()["instructions"]
-        skill = await server.read_resource("worklife://recruiter/skills/worklife-market")
-        assert list(skill)[0].content == read_agent_skill("worklife-market")
+        skill = await server.read_resource(f"worklife://recruiter/skills/{skill_name}")
+        assert list(skill)[0].content == read_agent_skill(skill_name)
+        result = normalize_result(await server.call_tool("recruiter_skill", {"name": skill_name}))
+        assert result == read_agent_skill(skill_name)
         with pytest.raises(Exception, match="Unknown tool"):
             await server.call_tool("agent_run", {"goal": "Do not run"})
     finally:

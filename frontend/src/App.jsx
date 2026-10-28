@@ -1,5 +1,6 @@
 import { t, getLocale, useLocale } from "./i18n.js";
 import LanguageSelect from "./LanguageSelect.jsx";
+import ProjectActions from "./ProjectActions.jsx";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Button,
@@ -33,6 +34,7 @@ import Overview, {
 } from "./Overview.jsx";
 import ModelConnection from "./ModelConnection.jsx";
 import { composeGoal, readDraft, saveDraft } from "./goals.js";
+import { readDismissedRelease, saveDismissedRelease, shouldShowReleaseNotice } from "./release-notice.js";
 import { documentBlocks } from "./document.js";
 import { callSummary, resultTarget } from "./activity.js";
 import {
@@ -83,6 +85,39 @@ const pageFromHash = () => {
   return navigation.some(([key]) => key === page) ? page : "overview";
 };
 const stringify = (value) => JSON.stringify(value, null, 2);
+function ReleaseNotice({ release }) {
+  const [dismissed, setDismissed] = useState(() => {
+    try { return readDismissedRelease(window.localStorage); } catch { return ""; }
+  });
+  const [copyState, setCopyState] = useState("");
+  if (!shouldShowReleaseNotice(release, dismissed)) return null;
+  const request = t`Обнови Worklife до ${release.latest_version}. Проверь текущий способ установки и настройки запуска MCP, сохрани личную базу, подключения и нативные скиллы.`;
+  const dismiss = () => {
+    setDismissed(release.latest_version);
+    try { saveDismissedRelease(window.localStorage, release.latest_version); } catch {}
+  };
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(request);
+      setCopyState("copied");
+    } catch { setCopyState("manual"); }
+  };
+  return <Alert>
+    <Alert.Content>
+      <Alert.Title>{t`Доступен Worklife ${release.latest_version}`}</Alert.Title>
+      <Alert.Description>{t`Установлена версия ${release.installed_version}.`}</Alert.Description>
+      <div className="flex flex-wrap items-center gap-3">
+        <Link href={safeURL(release.release_url)} target="_blank" rel="noopener noreferrer">{t("Открыть релиз")}<Icon name="external" className="size-4 shrink-0" /></Link>
+        <Button size="sm" variant="ghost" onPress={copy}>{copyState === "copied" ? t("Поручение скопировано") : t("Скопировать поручение агенту")}</Button>
+      </div>
+      {copyState === "manual" ? <div className="flex flex-col gap-2">
+        <p>{t("Не удалось скопировать поручение. Выделите его и скопируйте вручную.")}</p>
+        <Input aria-label={t("Поручение для обновления Worklife")} value={request} readOnly onFocus={(event) => event.target.select()} />
+      </div> : null}
+    </Alert.Content>
+    <CloseButton aria-label={t("Скрыть уведомление об этой версии")} onPress={dismiss} />
+  </Alert>;
+}
 function errorText(error) {
   const text = error?.message || String(error);
   if (text.includes("Agent not configured"))
@@ -648,6 +683,10 @@ export default function App() {
       notify(
         name === "agent_cancel"
           ? t("Остановка запрошена.")
+          : name === "blockchain_sync"
+            ? result.status === "healthy" ? t("Обмен завершён. Состояние базы обновлено.")
+              : result.status === "local_only" ? t("Обмен не настроен. Подключите общую базу с агентом.")
+                : t("Обмен требует внимания. Причина показана в разделе работодателей.")
           : name === "automation_configure"
             ? args.enabled ? t("Автопроверки сохранены и включены.") : t("Настройки сохранены. Автопроверки выключены.")
           : name === "automation_run"
@@ -934,6 +973,7 @@ export default function App() {
               onExpand={() => setSidebar(false)}
             />
           </div>
+          <ProjectActions placement="sidebar" />
           <div className="sidebar-footer">
             <LanguageSelect onChange={(value) => state && safeCommand("profile_save", { profile: { ...(state.profile || {}), interface_language: value } })} />
             <button aria-label={t("Обновить данные")} title={t("Обновить данные")} onClick={refresh}>
@@ -973,6 +1013,7 @@ export default function App() {
               <Icon name="refresh" />
             </Button>
           </header>
+          <ReleaseNotice key={state?.release?.latest_version || "none"} release={state?.release} />
           {message ? (
             <Alert>
               <Alert.Content>
@@ -1027,6 +1068,7 @@ export default function App() {
           title={t("Разделы Worklife")}
         >
           <Navigation id="dialog-navigation" page={page} onNavigate={navigate} />
+          <ProjectActions placement="menu" />
         </Dialog>
         {state ? (
           <>

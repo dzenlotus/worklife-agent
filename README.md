@@ -51,6 +51,10 @@ connectors are configured separately. Worklife does not provide unrestricted acc
 
 ## Worklife на русском
 
+Общую базу можно синхронизировать через отдельную служебную группу Telegram:
+подписанные блоки, чтение пропущенной истории и подключение новой пустой копии.
+Настройка и создание группы — [Telegram-синхронизация](docs/telegram-sync.md).
+
 Новая сеть без монет и комиссий: [протокол](docs/blockchain.md) и
 [подготовка публичного испытания](docs/public-network-launch.md).
 Профиль `public-testnet-v1` использует отдельный genesis, PoW 25/18 бит и шесть
@@ -157,8 +161,23 @@ uv run pytest -q
 
 ## Карьерный агент и установка в AI-клиент
 
-`worklife-recruiter` устанавливает MCP, инструкции Worklife Recruiter и семь предметных скиллов.
+`worklife-recruiter` устанавливает MCP, инструкции Worklife Recruiter и восемь предметных скиллов.
 Модель работает внутри вашего AI-клиента; дополнительный ключ модели для этого не нужен.
+
+Первое поручение: **«Используй worklife-onboarding. Быстро подключи всё нужное, включая Telegram»**.
+Скилл проверяет существующие условия и доступы, настраивает нужные площадки и почту,
+проводит через локальный вход Telegram и проверку синхронизации. Пароли, коды и сессия
+вводятся в вашем терминале. При повторном запуске он продолжает недостающие шаги.
+
+Агент при начале разговора и локальное приложение проверяют новые стабильные версии Worklife
+в PyPI не чаще раза в сутки. При выходе релиза появляется уведомление со ссылкой и кнопкой
+копирования поручения агенту обновить Worklife. Закрытое уведомление не возвращается для той же
+версии; сведения о ней остаются в настройках. Обновление запускается отдельно и сохраняет
+прежние настройки MCP, доступы и личную базу. После обновления пакета обновите нативные
+инструкции/скиллы прежней командой `worklife-recruiter install` и перезапустите MCP/приложение.
+Для запуска через `uvx --from worklife-agent==...` также обновляется закреплённая версия
+в настройках запуска MCP: изменение временного окружения uvx само по себе недостаточно.
+В режиме `WORKLIFE_NETWORK_OFFLINE=1` обращения к PyPI нет.
 
 ```sh
 uv run worklife-recruiter targets
@@ -410,6 +429,52 @@ IMAP-письма читаются без изменения флага Seen. SM
 если почтовый провайдер допускает только OAuth, используйте его HTTP API или добавьте соответствующую авторизацию.
 Telegram `updates` принимает `offset`; агент должен сохранить последний обработанный offset в своей заметке.
 HH: `me,resumes,negotiations,messages` для чтения; `apply,reply` для записи.
+
+### Отдельная почта агента: AgentMail
+
+Коннектор `agentmail` входит в `config.example.toml` и работает через те же MCP-инструменты Worklife.
+Отдельный MCP-сервер или дополнительная библиотека не нужны. Создайте ключ в
+[AgentMail Console](https://console.agentmail.to/) и задайте `AGENTMAIL_API_KEY` в `.env`.
+Если `config.toml` создан раньше, скопируйте в него блок `[connectors.agentmail]` со всеми операциями
+из примера. Перезапустите MCP-процесс с `--env-file .env`; `connectors_list` покажет операции и наличие ключа.
+
+Сначала проверьте существующие ящики:
+
+```json
+{"connector":"agentmail","operation":"inboxes","parameters":{}}
+```
+
+Это аргументы `connector_read`. Если нужен новый адрес, вызовите `action_draft`:
+
+```json
+{"connector":"agentmail","operation":"create_inbox","payload":{"display_name":"Worklife"},"idempotency_key":"agentmail-primary-inbox"}
+```
+
+Затем `action_approve` и `action_execute` с ID черновика в рамках поручения пользователя.
+Сохраните `email` и `inbox_id` из результата: `email` указывайте на сайтах,
+а `inbox_id` используйте в следующих вызовах. Повторно используйте существующий ящик, если новый не нужен.
+Без своего домена адрес создаётся на `@agentmail.to`.
+
+Чтение через `connector_read`:
+
+```json
+{"connector":"agentmail","operation":"messages","parameters":{"inbox_id":"RETURNED_INBOX_ID","labels":["received"],"limit":20}}
+{"connector":"agentmail","operation":"message","parameters":{"inbox_id":"RETURNED_INBOX_ID","message_id":"RETURNED_MESSAGE_ID"}}
+```
+
+Список возвращает метаданные; полный текст и HTML запрашивайте операцией `message`.
+`text` может отсутствовать у HTML-писем. Для ожидаемого подтверждения передавайте в `messages`
+параметр `after` с временем начала операции и проверяйте отправителя, получателя и тему.
+Следующие страницы доступны через `page_token` из `next_page_token` ответа.
+
+Отправка и ответ используют обычный путь действий: `send` с
+`{inbox_id,to:["recipient@example.org"],subject,text}`, либо `reply` с `{inbox_id,message_id,text}`.
+Здесь тело называется `text`, а не `body`, как у SMTP-коннектора.
+Письма принимаются сервисом постоянно; Worklife читает их при вызове инструмента.
+Автоматическое пробуждение агента по входящему письму требует отдельной настройки harness.
+Контракты: [создание ящика](https://docs.agentmail.to/api-reference/inboxes/create),
+[список писем](https://docs.agentmail.to/api-reference/inboxes/messages/list),
+[чтение письма](https://docs.agentmail.to/api-reference/inboxes/messages/get).
 
 ## Гипотезы и CV
 

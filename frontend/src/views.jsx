@@ -22,6 +22,8 @@ import {
   formatDate,
   employerGroups,
   exchangeSummary,
+  employerDatabaseSummary,
+  blockConfirmation,
   conditionLabels,
   humanLabel,
   usageMetric,
@@ -42,10 +44,10 @@ const Source = ({ value, children }) =>
   ) : value ? (
     <span >{value}</span>
   ) : null;
-function EmployerObservation({ entry }) {
+function EmployerObservation({ entry, confirmations }) {
   const basis = observationBasis(entry);
   return <div className="flex flex-col gap-3 py-3">
-    <div className="flex flex-wrap items-center justify-between gap-3"><Chip size="sm" variant="soft">{basis.label}</Chip><Typography.Paragraph size="xs" color="muted"><Timestamp value={entry.payload.observed_at} /></Typography.Paragraph></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex flex-wrap items-center gap-2"><Chip size="sm" variant="soft">{basis.label}</Chip><Status value={entry.confirmation?.status === "confirmed" ? "confirmed" : "partial"}>{blockConfirmation(entry, confirmations)}</Status>{entry.kind === "retraction" ? <Chip size="sm" variant="soft">{t("Отзыв записи")}</Chip> : null}</div><Typography.Paragraph size="xs" color="muted"><Timestamp value={entry.payload.observed_at} /></Typography.Paragraph></div>
     <Typography.Paragraph>{entry.payload.claim}</Typography.Paragraph>
     <div className="flex flex-wrap items-center gap-4"><Typography.Paragraph size="sm" color="muted">{basis.verification}</Typography.Paragraph>{entry.payload.source_url ? <Source value={entry.payload.source_url}>{t("Источник")}</Source> : <Typography.Paragraph size="sm" color="muted">{t("Источник не указан")}</Typography.Paragraph>}</div>
   </div>;
@@ -333,15 +335,30 @@ export function CVView({ state, ask, onInspect }) {
 export function EmployersView({ state, ask, onBlock, onCommand, pending }) {
   const groups = employerGroups(state.employers),
     blocks = list(state.employer_blocks),
-    summary = exchangeSummary(state.network);
+    proposals = list(state.employer_proposals),
+    summary = exchangeSummary(state.network),
+    database = employerDatabaseSummary(state),
+    chain = state.network?.chain || {};
   return (
     <>
       <PageHeading
         title={t("Работодатели")}
-        description={t("Общая база наблюдений о компаниях.")}
+        description={t("Наблюдения о компаниях с источниками и подтверждением в блокчейне.")}
       >
+        <Button variant="outline" size="sm" isPending={pending === "employer-sync"} onPress={() => onCommand("blockchain_sync", {}, "employer-sync")}><Icon name="refresh" className="size-4 shrink-0" />{t("Обновить обмен")}</Button>
         <Button variant="outline" size="sm" onPress={() => onBlock("")}>{t("Блокировать компанию")}</Button>
       </PageHeading>
+      <section className="employer-database-summary" aria-label={t("Состояние базы работодателей")}>
+        <dl className="employer-database-counts">
+          <div><dt>{t("Компаний")}</dt><dd>{groups.length}</dd></div>
+          <div><dt>{t("Подтверждено записей")}</dt><dd>{database.confirmed}</dd></div>
+          <div><dt>{t("Ожидают подтверждения")}</dt><dd>{database.pending}</dd></div>
+          <div><dt>{t("Блоков в цепочке")}</dt><dd>{database.blocks ?? "—"}</dd></div>
+        </dl>
+        <Typography.Paragraph>{database.explanation}</Typography.Paragraph>
+        {database.pending > 0 && chain.qualified === false ? <Typography.Paragraph size="sm" color="muted">{t("Для включения новых записей в блок нужен квалифицированный узел сети. Одна подпись ещё не добавляет запись в общую базу.")}</Typography.Paragraph> : null}
+        <div className="employer-database-actions"><AgentButton onPress={() => ask(t("Разберись с общей базой работодателей: проверь ожидающие записи, состояние блокчейна и доступные подключения. Настрой согласованный обмен, объясни, что нужно для включения записей в блоки. Личные данные и переписку не публикуй."))}>{t("Проверить базу с агентом")}</AgentButton></div>
+      </section>
       <div>{summary.status === "healthy" ? <div className="flex flex-wrap items-center gap-3"><Status value="success">{summary.label}</Status><Typography.Paragraph size="sm" color="muted">{t("Синхронизация:")}{" "}<Timestamp value={summary.last_sync} />{summary.employers !== undefined ? t` · Компаний: ${summary.employers}` : ""}</Typography.Paragraph></div> : <Alert status={["attention", "recovering"].includes(summary.status) ? "warning" : "default"}>
         <Alert.Indicator />
         <Alert.Content>
@@ -349,19 +366,18 @@ export function EmployersView({ state, ask, onBlock, onCommand, pending }) {
           <Alert.Description><div className="flex flex-col gap-2">
             <p>{summary.detail}</p>
             <p>{summary.last_sync ? <>{t("Последняя успешная синхронизация:")}{" "}<Timestamp value={summary.last_sync} /></> : t("Успешных синхронизаций ещё не было")}</p>
-            {summary.employers !== undefined ? <p>{t("Компаний в базе:")}{" "}{summary.employers}</p> : null}
           </div></Alert.Description>
         </Alert.Content>
       </Alert>}</div>
-      <Panel>
+      {groups.length > 0 || !database.pending ? <Panel title={t("Подтверждённая база")}>
         <RecordList
           items={groups}
-          empty={t("Общая база пока пуста. Агент будет собирать наблюдения о работодателях и обновлять их автоматически.")}
+          empty={t("Подтверждённых наблюдений пока нет. Здесь будут появляться сведения, принятые в блокчейн.")}
           render={(company) => (
               <div className="flex w-full min-w-0 flex-col gap-3">
                 <div className="flex flex-wrap items-start justify-between gap-3"><div className="flex flex-col gap-2"><h2 className={typographyVariants({ type: "h4", weight: "medium" }).base()}>{company.name}</h2><Typography.Paragraph size="sm" color="muted">{company.domain}</Typography.Paragraph></div><Button variant="ghost" size="sm" onPress={() => onBlock(company.domain)}>{t("Блокировать")}</Button></div>
                 {company.observations.slice(0, 2).map((entry, index) => (
-                  <EmployerObservation key={entry.event_id || index} entry={entry} />
+                  <EmployerObservation key={entry.event_id || index} entry={entry} confirmations={database.confirmations} />
                 ))}
                 {company.observations.length > 2 ? (
                   <DetailAccordion
@@ -369,16 +385,30 @@ export function EmployersView({ state, ask, onBlock, onCommand, pending }) {
                     id={company.domain}
                   >
                     {company.observations.slice(2).map((entry, index) => (
-                      <EmployerObservation key={entry.event_id || index} entry={entry} />
+                      <EmployerObservation key={entry.event_id || index} entry={entry} confirmations={database.confirmations} />
                     ))}
                   </DetailAccordion>
                 ) : null}
               </div>
           )}
         />
-      </Panel>
+      </Panel> : null}
+      {database.pending > 0 ? <Panel title={t`Ожидают подтверждения · ${database.pending}`}>
+        <Typography.Paragraph size="sm" color="muted">{t("Записи из подписанного журнала на этом устройстве. Они сохраняются здесь, пока не получат подтверждение в блокчейне.")}</Typography.Paragraph>
+        <RecordList items={proposals} empty={t("Обновите приложение, чтобы увидеть содержимое ожидающих записей.")} render={(entry) => <div className="min-w-0 w-full"><h3 className={typographyVariants({ type: "h4", weight: "medium" }).base()}>{typeof entry.payload?.name === "string" && entry.payload.name ? entry.payload.name : entry.subject}</h3>{typeof entry.payload?.name === "string" && entry.payload.name ? <Typography.Paragraph size="sm" color="muted">{entry.subject}</Typography.Paragraph> : null}<EmployerObservation entry={entry} confirmations={database.confirmations} /></div>} />
+      </Panel> : null}
+      <DetailAccordion title={t("Как работает блокчейн")} id="employer-blockchain" level={2}>
+        <Typography.Paragraph>{t("Подпись связывает наблюдение с автором. Узел включает его в блок, а следующие блоки увеличивают число подтверждений. В основной список попадают только подтверждённые записи.")}</Typography.Paragraph>
+        <DataTable headers={[t("Показатель"), t("Состояние")]} rows={[
+          [t("Сеть"), chain.profile === "development" ? t("Локальная тестовая сеть") : chain.profile === "public-testnet-v1" ? t("Публичная тестовая сеть") : chain.network || "—"],
+          [t("Высота цепочки"), chain.height ?? "—"],
+          [t("Нужно подтверждений для записи"), database.confirmations ?? "—"],
+          [t("Право создавать блоки"), chain.qualified === true ? t("Квалификация действует") : chain.qualified === false ? t("Требуется квалификация") : "—"],
+        ]} />
+        <Typography.Paragraph size="sm" color="muted">{t("Подтверждение в блокчейне означает проверку подписи и истории. Достоверность условий работодателя оценивайте по источникам.")}</Typography.Paragraph>
+      </DetailAccordion>
       <DetailAccordion title={t("Обмен и защита данных")} id="employer-protection" level={2}>
-        <p>{summary.auto ? t("Обмен работает автоматически.") : t("Автоматический обмен отключён.")}{summary.protected_copies !== undefined ? t` Последних подтверждённых копий: ${summary.protected_copies}.` : ""}</p>
+        <p>{summary.auto ? t("Фоновая синхронизация включена. Результат последней проверки показан выше.") : t("Автоматический обмен отключён.")}</p>
         <p>{t("Подпись защищает запись от подмены. Содержание независимо не проверено — оценивайте его по источнику.")}</p>
         <p>{t("Обмен касается только компаний: вакансий, условий и процесса найма. CV, личные результаты откликов, имена и контакты людей не публикуются. Перед публикацией агент проверяет, что текст касается только работодателя.")}</p>
       </DetailAccordion>
@@ -652,6 +682,14 @@ export function SettingsView({ state, onConditions, runtime }) {
         title={t("Настройки")}
         description={t("Условия поиска и дополнительные параметры Worklife.")}
       />
+      {state.release?.installed_version ? <Panel title={t("Версия Worklife")}>
+        <div className="flex flex-col gap-3">
+          <p>{t`Установлена версия ${state.release.installed_version}.`}</p>
+          {state.release.latest_version ? <p>{t`Последняя опубликованная версия: ${state.release.latest_version}.`}</p> : null}
+          {state.release.status !== "checked" ? <Typography.Paragraph color="muted">{t("Проверка обновлений сейчас недоступна.")}</Typography.Paragraph> : null}
+          <Link href={safeURL(state.release.release_url)} target="_blank" rel="noopener noreferrer">{t("Открыть релиз")}<Icon name="external" className="size-4 shrink-0" /></Link>
+        </div>
+      </Panel> : null}
       <Panel title={t("Что важно в работе")}>
         <div className="flex flex-col gap-4">
           {list(profile.life_preferences).length ? (

@@ -5,6 +5,7 @@
 !README.md
 !src/
 !src/**
+**/node_modules/
 **/__pycache__/
 **/*.pyc
 **/identity.key

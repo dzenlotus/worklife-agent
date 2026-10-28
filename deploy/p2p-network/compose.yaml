@@ -1,0 +1,72 @@
+# Isolated acceptance fixture, not a production bootstrap dependency.
+x-node: &node
+  image: ${WORKLIFE_P2P_IMAGE:-worklife-p2p:local}
+  environment:
+    WORKLIFE_HOME: /data
+    WORKLIFE_CHAIN_PROFILE: public-testnet-v1
+    WORKLIFE_P2P_TRANSPORT_DIR: /opt/worklife-p2p
+    PYTHONUNBUFFERED: "1"
+  command:
+    - p2p
+    - run
+    - --bootstrap
+    - bootstrap-a:49737
+    - --bootstrap
+    - bootstrap-b:49737
+    - --bootstrap
+    - bootstrap-c:49737
+    - --bootstrap
+    - bootstrap-d:49737
+    - --isolated
+    - --port
+    - "49737"
+    - --room
+    - worklife-docker-acceptance-v1
+    - --status-file
+    - /data/p2p-status.json
+  networks: [p2p-test]
+  depends_on: [bootstrap-a, bootstrap-b, bootstrap-c, bootstrap-d]
+  logging: &logging
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "2"
+
+x-bootstrap: &bootstrap
+  image: ${WORKLIFE_P2P_IMAGE:-worklife-p2p:local}
+  entrypoint: [node, /opt/worklife-p2p/swarm.mjs]
+  networks: [p2p-test]
+  logging: *logging
+
+services:
+  # HyperDHT needs >=3 distinct router IPs for NAT sampling; one is insufficient here.
+  bootstrap-a:
+    <<: *bootstrap
+    command: [--bootstrapper, --bootstrap-host, bootstrap-a, --port, "49737"]
+  bootstrap-b:
+    <<: *bootstrap
+    command: [--bootstrapper, --bootstrap-host, bootstrap-b, --port, "49737"]
+  bootstrap-c:
+    <<: *bootstrap
+    command: [--bootstrapper, --bootstrap-host, bootstrap-c, --port, "49737"]
+  bootstrap-d:
+    <<: *bootstrap
+    command: [--bootstrapper, --bootstrap-host, bootstrap-d, --port, "49737"]
+  node-a:
+    <<: *node
+    volumes: [data-a:/data]
+  node-b:
+    <<: *node
+    volumes: [data-b:/data]
+  node-c:
+    <<: *node
+    volumes: [data-c:/data]
+
+networks:
+  p2p-test:
+    internal: true
+
+volumes:
+  data-a:
+  data-b:
+  data-c:

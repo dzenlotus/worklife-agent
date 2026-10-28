@@ -4,6 +4,11 @@
   "version": 1,
   "skills": [
     {
+      "name": "worklife-onboarding",
+      "description": "Использовать при первом запуске Worklife, просьбе быстро пройти онбординг или подключить нужные площадки, почту и Telegram; при повторном запуске — для завершения недостающих подключений.",
+      "path": "skills/worklife-onboarding/SKILL.md"
+    },
+    {
       "name": "worklife-intake",
       "description": "Начать или возобновить личный поиск работы в Worklife, согласовать цели, ограничения и доступы, сохранить профиль без потери прежних фактов.",
       "path": "skills/worklife-intake/SKILL.md"

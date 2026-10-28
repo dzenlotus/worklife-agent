@@ -5,6 +5,8 @@ import {
   filterJobs,
   employerGroups,
   exchangeSummary,
+  employerDatabaseSummary,
+  blockConfirmation,
   safeURL,
   observationBasis,
   scheduleResult,
@@ -88,6 +90,31 @@ test("automatic network status never fabricates protected copies or successful s
     }).protected_copies,
     3,
   );
+});
+test("employer database distinguishes local proposals, included records and confirmed observations", () => {
+  const state = {
+    employers: [], employer_proposals: [{ confirmation: { status: "pending", depth: 0 } }],
+    network: { valid: true, proposals: 1, chain: { blocks: 0, height: 0, confirmations: 3 } },
+  };
+  const summary = employerDatabaseSummary(state);
+  assert.equal(summary.pending, 1);
+  assert.equal(summary.confirmed, 0);
+  assert.equal(summary.blocks, 0);
+  assert.match(summary.explanation, /ещё не включены в блок/);
+  assert.equal(blockConfirmation(state.employer_proposals[0], 3), "Ожидает включения в блок");
+  assert.equal(blockConfirmation({ confirmation: { status: "included", depth: 1 } }, 3), "Подтверждения: 1 из 3");
+  assert.equal(blockConfirmation({ confirmation: { status: "confirmed", depth: 3 } }, 3), "Подтверждено в блокчейне");
+  const received = employerDatabaseSummary({ employers: [{ subject: "acme.example" }], network: { chain: { blocks: 3 } } });
+  assert.equal(received.confirmed, 1);
+  assert.equal(received.pending, 0);
+  assert.equal(employerDatabaseSummary({ network: { proposals: 2 } }).pending, 2);
+});
+
+test("author-confirmed evidence is separate from blockchain confirmation", () => {
+  const entry = { trust: "unknown", payload: { evidence_kind: "confirmed" }, confirmation: { status: "pending" } };
+  assert.equal(observationBasis(entry).label, "Подтверждено автором записи");
+  assert.match(observationBasis(entry).verification, /Независимая проверка не проводилась/);
+  assert.equal(blockConfirmation(entry, 3), "Ожидает включения в блок");
 });
 test("external source links accept only HTTP(S)", () => {
   assert.equal(safeURL("javascript:alert(1)"), null);
