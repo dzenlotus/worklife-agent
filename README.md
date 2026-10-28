@@ -39,7 +39,7 @@ For an existing stdio MCP client, the career tools can also run directly from Py
   "mcpServers": {
     "worklife_recruiter": {
       "command": "uvx",
-      "args": ["--python", "3.12", "--from", "worklife-agent==0.5.1", "worklife-recruiter", "mcp"]
+      "args": ["--python", "3.12", "--from", "worklife-agent==0.5.2", "worklife-recruiter", "mcp"]
     }
   }
 }
@@ -126,7 +126,7 @@ MCP использует Python постоянного окружения: оч�
 сохранения чужих настроек и резервного копирования. Дополнительные параметры: `--destination`, `--install-dir`,
 `--home`, `--no-browser`. `--package-source` предназначен для проверки конкретного локального wheel до публикации.
 
-Релиз [0.5.1 опубликован в PyPI](https://pypi.org/project/worklife-agent/0.5.1/).
+Релиз [0.5.2 опубликован в PyPI](https://pypi.org/project/worklife-agent/0.5.2/).
 
 ### Запуск из исходников
 

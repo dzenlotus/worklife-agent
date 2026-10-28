@@ -6,16 +6,6 @@ import { repositoryUrl, siteUrl } from "./page-metadata.js";
 import { copyProjectLink, shareProject } from "./project-actions.js";
 import "./project-actions.css";
 
-export function ProjectStarLink() {
-  return <div className="project-star-space">
-    <div className="project-star-strip">
-      <Link className="project-star-link" href={repositoryUrl} target="_blank" rel="noopener noreferrer" aria-label={t("Поставить звезду на GitHub — открыть репозиторий Worklife")}>
-        <Star aria-hidden="true" /><span>{t("Поставить звезду на GitHub")}</span>
-      </Link>
-    </div>
-  </div>;
-}
-
 export default function ProjectActions({ placement = "site" }) {
   const [feedback, setFeedback] = useState("");
   const [pending, setPending] = useState(false);
@@ -31,6 +21,9 @@ export default function ProjectActions({ placement = "site" }) {
       <Button className="project-action" variant="ghost" onPress={share} isDisabled={pending} aria-label={t("Поделиться проектом Worklife")} title={t("Поделиться проектом Worklife")}>
         <Share2 aria-hidden="true" /><span className="project-action-label">{t("Поделиться")}</span>
       </Button>
+      <Link className="project-action project-action-star" href={repositoryUrl} target="_blank" rel="noopener noreferrer" aria-label={t("Поставить звезду на GitHub — открыть репозиторий Worklife")} title={t("Поставить звезду на GitHub")}>
+        <Star aria-hidden="true" /><span className="project-action-label">{t("Звезда")}</span>
+      </Link>
     </div>
     <div className="project-actions-notice">
       <p className="project-actions-feedback" role="status" aria-live="polite">{feedback === "copied" ? t("Ссылка на проект скопирована.") : feedback === "manual" ? t("Не удалось скопировать ссылку. Выделите адрес ниже и скопируйте его вручную.") : ""}</p>

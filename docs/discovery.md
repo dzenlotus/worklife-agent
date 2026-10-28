@@ -9,13 +9,13 @@ Use the [README](../README.md) for setup and [client support](recruiter-agent.md
 | Surface | What makes Worklife discoverable | Status on 2026-10-28 |
 |---|---|---|
 | GitHub | Repository description, topics, English README, project website | Description and 20 topics applied; English setup instructions and website metadata included in the repository |
-| PyPI | Package summary, README, keyword tags, Trove classifiers, project links | Release 0.5.1 includes keyword tags, classifiers, project links and the MCP ownership marker |
-| Official MCP Registry | Namespace, capability description, repository and setup URL in `server.json` | Manifest version: `io.github.dzenlotus/worklife-agent` 0.5.1; publication state is available from the public registry API |
+| PyPI | Package summary, README, keyword tags, Trove classifiers, project links | Release 0.5.2 includes keyword tags, classifiers, project links and the MCP ownership marker |
+| Official MCP Registry | Namespace, capability description, repository and setup URL in `server.json` | Manifest version: `io.github.dzenlotus/worklife-agent` 0.5.2; publication state is available from the public registry API |
 
 The [public registry API](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.dzenlotus%2Fworklife-agent)
 reports published versions with their status and `isLatest` flag. Version 0.4.1 was first
-verified active at `2026-10-28T05:54:38.461542Z`; the current manifest targets 0.5.1.
-The 0.5.1 distributions include the new metadata. Registry publication does not establish
+verified active at `2026-10-28T05:54:38.461542Z`; the current manifest targets 0.5.2.
+The 0.5.2 distributions include the new metadata. Registry publication does not establish
 search ranking or visibility and installation support in every downstream client directory.
 
 ## GitHub description and topics
@@ -46,7 +46,7 @@ command, then was published and verified through the public registry API.
 The real career MCP command is:
 
 ```sh
-uvx --python 3.12 --from worklife-agent==0.5.1 worklife-recruiter mcp
+uvx --python 3.12 --from worklife-agent==0.5.2 worklife-recruiter mcp
 ```
 
 The package-named command `worklife-agent` is an installer. Advertising
@@ -79,7 +79,7 @@ curl --fail --get 'https://registry.modelcontextprotocol.io/v0.1/servers' \
 ```
 
 For a future **PyPI package entry**, use a published distribution whose description includes
-the README marker `mcp-name: io.github.dzenlotus/worklife-agent`, as in version 0.5.1.
+the README marker `mcp-name: io.github.dzenlotus/worklife-agent`, as in version 0.5.2.
 Use an exact published package version and verify the command
 that a registry client generates actually starts `worklife-recruiter mcp` before adding
 `packages` to the manifest. Do not infer the command from the package name. No PyPI upload

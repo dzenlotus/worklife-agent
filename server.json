@@ -3,7 +3,7 @@
   "name": "io.github.dzenlotus/worklife-agent",
   "title": "Worklife — AI job search",
   "description": "MCP career tools for job search, resume matching, application tracking, and employer research.",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "repository": {
     "url": "https://github.com/dzenlotus/worklife-agent",
     "source": "github"
